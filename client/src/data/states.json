@@ -1,0 +1,82 @@
+{
+  "states": [
+    {
+      "id": 1,
+      "name": "California", 
+      "abbreviation": "CA",
+      "totalProduction2023": 3500000,
+      "totalAcres": 558000,
+      "wineries": 4700,
+      "avas": 147,
+      "established": "1769",
+      "primaryVarieties": ["Chardonnay", "Cabernet Sauvignon", "Pinot Noir"],
+      "centroid": [-119.4179, 36.7783],
+      "description": "California produces about 85% of US wine with diverse growing conditions from cool coastal regions to warm inland valleys."
+    },
+    {
+      "id": 2,
+      "name": "Oregon",
+      "abbreviation": "OR", 
+      "totalProduction2023": 85000,
+      "totalAcres": 31000,
+      "wineries": 800,
+      "avas": 19,
+      "established": "1961",
+      "primaryVarieties": ["Pinot Noir", "Pinot Gris", "Chardonnay"],
+      "centroid": [-120.5542, 43.8041],
+      "description": "Oregon is renowned for exceptional Pinot Noir from the cool, wet Willamette Valley and emerging regions in southern Oregon."
+    },
+    {
+      "id": 3,
+      "name": "Washington",
+      "abbreviation": "WA",
+      "totalProduction2023": 270000,
+      "totalAcres": 60000, 
+      "wineries": 1000,
+      "avas": 20,
+      "established": "1825",
+      "primaryVarieties": ["Cabernet Sauvignon", "Merlot", "Chardonnay"],
+      "centroid": [-120.7401, 47.7511],
+      "description": "Washington's Columbia Valley benefits from desert conditions with controlled irrigation, producing bold reds and crisp whites."
+    },
+    {
+      "id": 4,
+      "name": "New York",
+      "abbreviation": "NY",
+      "totalProduction2023": 52000,
+      "totalAcres": 30000,
+      "wineries": 470,
+      "avas": 11,
+      "established": "1829", 
+      "primaryVarieties": ["Riesling", "Chardonnay", "Cabernet Franc"],
+      "centroid": [-75.5268, 43.2994],
+      "description": "New York's Finger Lakes region excels in cool-climate varieties, particularly Riesling, with growing success in hybrid varieties."
+    },
+    {
+      "id": 5,
+      "name": "Virginia", 
+      "abbreviation": "VA",
+      "totalProduction2023": 28000,
+      "totalAcres": 3100,
+      "wineries": 300,
+      "avas": 7,
+      "established": "1976",
+      "primaryVarieties": ["Viognier", "Cabernet Franc", "Petit Verdot"],
+      "centroid": [-78.6569, 37.4316],
+      "description": "Virginia's wine industry is rapidly expanding with focus on Bordeaux varieties and exceptional Viognier in the Monticello region."
+    },
+    {
+      "id": 6,
+      "name": "Texas",
+      "abbreviation": "TX",
+      "totalProduction2023": 18000,
+      "totalAcres": 5000,
+      "wineries": 430,
+      "avas": 8,
+      "established": "1975",
+      "primaryVarieties": ["Tempranillo", "Viognier", "Sangiovese"],
+      "centroid": [-99.9018, 31.9686], 
+      "description": "Texas High Plains AVA produces distinctive wines adapted to extreme temperature variations and high altitude growing conditions."
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "layerDefinitions": {
+    "national": [],
+    "state": [
+      {
+        "category": "climate",
+        "name": "temperature",
+        "displayName": "Annual Average Temperature",
+        "unit": "°F",
+        "description": "Annual average temperature across the region",
+        "availableYears": [2020, 2021, 2022, 2023]
+      },
+      {
+        "category": "climate", 
+        "name": "precipitation",
+        "displayName": "Annual Precipitation",
+        "unit": "inches",
+        "description": "Total annual precipitation",
+        "availableYears": [2020, 2021, 2022, 2023]
+      }
+    ],
+    "ava": [
+      {
+        "category": "climate",
+        "name": "temperature",
+        "displayName": "Temperature",
+        "unit": "°F",
+        "description": "Monthly and annual temperature data",
+        "availableYears": [2020, 2021, 2022, 2023],
+        "colorRamp": "RdYlBu_r",
+        "dataType": "raster"
+      },
+      {
+        "category": "climate",
+        "name": "precipitation", 
+        "displayName": "Precipitation",
+        "unit": "inches",
+        "description": "Monthly and annual precipitation totals",
+        "availableYears": [2020, 2021, 2022, 2023],
+        "colorRamp": "Blues",
+        "dataType": "raster"
+      },
+      {
+        "category": "climate",
+        "name": "gdd",
+        "displayName": "Growing Degree Days", 
+        "unit": "°F days",
+        "description": "Accumulated growing degree days (base 50°F)",
+        "availableYears": [2020, 2021, 2022, 2023],
+        "colorRamp": "YlOrRd",
+        "dataType": "raster"
+      },
+      {
+        "category": "soil",
+        "name": "texture",
+        "displayName": "Texture",
+        "unit": "class",
+        "description": "Soil texture classification",
+        "dataType": "categorical",
+        "isStatic": true
+      },
+      {
+        "category": "soil",
+        "name": "drainage",
+        "displayName": "Drainage",
+        "unit": "class", 
+        "description": "Soil drainage characteristics",
+        "dataType": "categorical",
+        "isStatic": true
+      },
+      {
+        "category": "soil",
+        "name": "depth",
+        "displayName": "Depth",
+        "unit": "inches",
+        "description": "Depth to restrictive layer",
+        "dataType": "raster",
+        "isStatic": true
+      },
+      {
+        "category": "soil",
+        "name": "ph",
+        "displayName": "pH",
+        "unit": "pH units",
+        "description": "Soil pH (acidity/alkalinity)",
+        "dataType": "raster", 
+        "isStatic": true
+      },
+      {
+        "category": "topography",
+        "name": "elevation",
+        "displayName": "Elevation",
+        "unit": "feet",
+        "description": "Elevation above sea level",
+        "colorRamp": "terrain",
+        "dataType": "raster",
+        "isStatic": true
+      },
+      {
+        "category": "topography", 
+        "name": "slope",
+        "displayName": "Slope",
+        "unit": "degrees",
+        "description": "Terrain slope angle",
+        "dataType": "raster",
+        "isStatic": true
+      },
+      {
+        "category": "topography",
+        "name": "aspect", 
+        "displayName": "Aspect",
+        "unit": "degrees",
+        "description": "Terrain aspect (direction of slope)",
+        "dataType": "raster",
+        "isStatic": true
+      },
+      {
+        "category": "topography",
+        "name": "solar_exposure",
+        "displayName": "Solar Exposure",
+        "unit": "MJ/m²",
+        "description": "Annual solar radiation exposure",
+        "dataType": "raster",
+        "isStatic": true
+      },
+      {
+        "category": "geology",
+        "name": "bedrock",
+        "displayName": "Bedrock Geology", 
+        "unit": "class",
+        "description": "Underlying bedrock geological formations",
+        "dataType": "categorical",
+        "isStatic": true
+      },
+      {
+        "category": "geology",
+        "name": "surficial",
+        "displayName": "Surficial Geology",
+        "unit": "class", 
+        "description": "Surface geological deposits and formations",
+        "dataType": "categorical",
+        "isStatic": true
+      },
+      {
+        "category": "wind",
+        "name": "wind_speed",
+        "displayName": "Average Wind Speed",
+        "unit": "mph",
+        "description": "Average wind speed",
+        "availableYears": [2020, 2021, 2022, 2023],
+        "dataType": "raster"
+      },
+      {
+        "category": "wind",
+        "name": "wind_direction",
+        "displayName": "Prevailing Direction", 
+        "unit": "degrees",
+        "description": "Prevailing wind direction",
+        "availableYears": [2020, 2021, 2022, 2023],
+        "dataType": "raster"
+      }
+    ]
+  }
+}
