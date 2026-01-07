@@ -104,3 +104,41 @@
   margin-left: var(--space-6);
   font-style: italic;
 }
+
+/* Collapsible Category Styles */
+.category-header {
+  cursor: pointer;
+  padding: var(--space-2) var(--space-1);
+  border-radius: 4px;
+  transition: background-color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.category-header:hover {
+  background-color: rgba(196, 30, 58, 0.03);
+}
+
+.category-chevron {
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+  transition: transform var(--transition-fast);
+  user-select: none;
+  font-weight: bold;
+}
+
+.category-layers {
+  overflow: hidden;
+  transition: max-height var(--transition-base) ease-out;
+}
+
+/* Update existing category title for collapsible headers */
+.category-header .category-title {
+  margin: 0;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-gray);
+  text-transform: uppercase;
+}

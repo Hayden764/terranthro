@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Montserrat:wght@700;800&display=swap');
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
@@ -14,7 +14,7 @@
   --sky-blue: #0077B6;
   --mineral-copper: #B87333;
   --base-white: #FFFFFF;
-  --base-cream: #FFFEF7;
+  --base-cream: #F5EFE0;
   --text-charcoal: #2B2B2B;
   --text-gray: #505050;
   --border-gray: #CCCCCC;
@@ -24,7 +24,7 @@
 
   /* Typography */
   --font-primary: 'Inter', 'Helvetica Neue', sans-serif;
-  --font-display: 'Space Grotesk', 'Futura', sans-serif;
+  --font-display: 'Montserrat', 'Futura', sans-serif;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -120,8 +120,8 @@ a {
 /* Layer Panel */
 .layer-panel {
   position: absolute;
-  top: var(--space-8);
-  right: var(--space-8);
+  top: calc(var(--space-8) + 60px);
+  left: var(--space-8);
   width: 280px;
   max-height: calc(100vh - var(--space-16));
   background: var(--base-white);
@@ -167,7 +167,7 @@ a {
   padding: var(--space-3) var(--space-6);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  z-index: 10;
+  z-index: 11; /* Higher than layer panel */
 }
 
 .breadcrumb-link {
@@ -175,6 +175,8 @@ a {
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--text-gray);
+  text-decoration: none;
+  cursor: pointer;
   transition: color var(--transition-fast);
 }
 
@@ -238,4 +240,62 @@ a {
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .layer-panel {
+    display: none; /* Hide layer panel on mobile, can be made into drawer later */
+  }
+  
+  .breadcrumb {
+    top: var(--space-4);
+    left: var(--space-4);
+    right: var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-xs);
+    max-width: calc(100vw - var(--space-8));
+    box-sizing: border-box;
+  }
+  
+  .breadcrumb-link,
+  .breadcrumb-current,
+  .breadcrumb-separator {
+    font-size: var(--text-xs);
+  }
+  
+  .projection-info {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: var(--text-sm) !important;
+  }
+  
+  .national-map {
+    left: 0 !important;
+    width: 100vw !important;
+  }
+  
+  /* Make touch interactions work better */
+  .state-path.wine-state {
+    -webkit-tap-highlight-color: rgba(196, 30, 58, 0.1);
+  }
+  
+  .state-symbols {
+    -webkit-tap-highlight-color: rgba(196, 30, 58, 0.1);
+  }
+}
+
+/* Production Symbol Animations */
+.production-symbol-group {
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.production-symbol-group:hover {
+  transform-origin: center;
+}
+
+/* Ensure circles within production groups don't interfere with transitions */
+.production-symbol-group circle {
+  pointer-events: none; /* Let parent group handle interactions */
 }

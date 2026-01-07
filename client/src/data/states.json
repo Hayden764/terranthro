@@ -4,6 +4,7 @@
       "id": 1,
       "name": "California", 
       "abbreviation": "CA",
+      "wine_producing": true,
       "totalProduction2023": 3500000,
       "totalAcres": 558000,
       "wineries": 4700,
@@ -16,7 +17,8 @@
     {
       "id": 2,
       "name": "Oregon",
-      "abbreviation": "OR", 
+      "abbreviation": "OR",
+      "wine_producing": true, 
       "totalProduction2023": 85000,
       "totalAcres": 31000,
       "wineries": 800,
@@ -30,6 +32,7 @@
       "id": 3,
       "name": "Washington",
       "abbreviation": "WA",
+      "wine_producing": true,
       "totalProduction2023": 270000,
       "totalAcres": 60000, 
       "wineries": 1000,
@@ -43,6 +46,7 @@
       "id": 4,
       "name": "New York",
       "abbreviation": "NY",
+      "wine_producing": true,
       "totalProduction2023": 52000,
       "totalAcres": 30000,
       "wineries": 470,
@@ -56,6 +60,7 @@
       "id": 5,
       "name": "Virginia", 
       "abbreviation": "VA",
+      "wine_producing": false,
       "totalProduction2023": 28000,
       "totalAcres": 3100,
       "wineries": 300,
@@ -69,6 +74,7 @@
       "id": 6,
       "name": "Texas",
       "abbreviation": "TX",
+      "wine_producing": false,
       "totalProduction2023": 18000,
       "totalAcres": 5000,
       "wineries": 430,
@@ -77,6 +83,314 @@
       "primaryVarieties": ["Tempranillo", "Viognier", "Sangiovese"],
       "centroid": [-99.9018, 31.9686], 
       "description": "Texas High Plains AVA produces distinctive wines adapted to extreme temperature variations and high altitude growing conditions."
+    },
+    {
+      "id": 7,
+      "name": "Alabama",
+      "abbreviation": "AL", 
+      "wine_producing": false,
+      "centroid": [-86.7911, 32.3668]
+    },
+    {
+      "id": 8,
+      "name": "Alaska",
+      "abbreviation": "AK",
+      "wine_producing": false, 
+      "centroid": [-152.4044, 61.3707]
+    },
+    {
+      "id": 9,
+      "name": "Arizona",
+      "abbreviation": "AZ",
+      "wine_producing": false,
+      "centroid": [-111.4312, 34.0489]
+    },
+    {
+      "id": 10,
+      "name": "Arkansas", 
+      "abbreviation": "AR",
+      "wine_producing": false,
+      "centroid": [-92.3731, 34.9513]
+    },
+    {
+      "id": 11,
+      "name": "Colorado",
+      "abbreviation": "CO",
+      "wine_producing": false,
+      "centroid": [-105.3111, 39.0598]
+    },
+    {
+      "id": 12,
+      "name": "Connecticut",
+      "abbreviation": "CT", 
+      "wine_producing": false,
+      "centroid": [-72.7269, 41.5978]
+    },
+    {
+      "id": 13,
+      "name": "Delaware",
+      "abbreviation": "DE",
+      "wine_producing": false,
+      "centroid": [-75.5277, 39.3185]
+    },
+    {
+      "id": 14,
+      "name": "Florida",
+      "abbreviation": "FL",
+      "wine_producing": false,
+      "centroid": [-81.6869, 27.7663]
+    },
+    {
+      "id": 15,
+      "name": "Georgia",
+      "abbreviation": "GA",
+      "wine_producing": false,
+      "centroid": [-83.6431, 33.0406]
+    },
+    {
+      "id": 16,
+      "name": "Hawaii",
+      "abbreviation": "HI", 
+      "wine_producing": false,
+      "centroid": [-157.4983, 21.0943]
+    },
+    {
+      "id": 17,
+      "name": "Idaho",
+      "abbreviation": "ID",
+      "wine_producing": false,
+      "centroid": [-114.4788, 44.2619]
+    },
+    {
+      "id": 18,
+      "name": "Illinois",
+      "abbreviation": "IL",
+      "wine_producing": false,
+      "centroid": [-88.9863, 40.3364]
+    },
+    {
+      "id": 19,
+      "name": "Indiana",
+      "abbreviation": "IN",
+      "wine_producing": false,
+      "centroid": [-86.2604, 39.8647]
+    },
+    {
+      "id": 20,
+      "name": "Iowa",
+      "abbreviation": "IA",
+      "wine_producing": false,
+      "centroid": [-93.7755, 42.0115]
+    },
+    {
+      "id": 21,
+      "name": "Kansas",
+      "abbreviation": "KS",
+      "wine_producing": false,
+      "centroid": [-96.7265, 38.5111]
+    },
+    {
+      "id": 22,
+      "name": "Kentucky",
+      "abbreviation": "KY",
+      "wine_producing": false,
+      "centroid": [-84.6701, 37.6668]
+    },
+    {
+      "id": 23,
+      "name": "Louisiana",
+      "abbreviation": "LA",
+      "wine_producing": false,
+      "centroid": [-91.8259, 31.1695]
+    },
+    {
+      "id": 24,
+      "name": "Maine",
+      "abbreviation": "ME",
+      "wine_producing": false,
+      "centroid": [-69.7795, 44.6074]
+    },
+    {
+      "id": 25,
+      "name": "Maryland",
+      "abbreviation": "MD",
+      "wine_producing": false,
+      "centroid": [-76.5020, 39.0558]
+    },
+    {
+      "id": 26,
+      "name": "Massachusetts",
+      "abbreviation": "MA",
+      "wine_producing": false,
+      "centroid": [-71.5301, 42.2352]
+    },
+    {
+      "id": 27,
+      "name": "Michigan",
+      "abbreviation": "MI",
+      "wine_producing": false,
+      "centroid": [-84.5361, 43.3266]
+    },
+    {
+      "id": 28,
+      "name": "Minnesota",
+      "abbreviation": "MN",
+      "wine_producing": false,
+      "centroid": [-95.1054, 45.7326]
+    },
+    {
+      "id": 29,
+      "name": "Mississippi",
+      "abbreviation": "MS",
+      "wine_producing": false,
+      "centroid": [-89.6762, 32.7673]
+    },
+    {
+      "id": 30,
+      "name": "Missouri",
+      "abbreviation": "MO",
+      "wine_producing": false,
+      "centroid": [-92.2884, 38.4561]
+    },
+    {
+      "id": 31,
+      "name": "Montana",
+      "abbreviation": "MT",
+      "wine_producing": false,
+      "centroid": [-110.3626, 46.9219]
+    },
+    {
+      "id": 32,
+      "name": "Nebraska",
+      "abbreviation": "NE",
+      "wine_producing": false,
+      "centroid": [-99.9018, 41.4925]
+    },
+    {
+      "id": 33,
+      "name": "Nevada",
+      "abbreviation": "NV",
+      "wine_producing": false,
+      "centroid": [-117.0554, 38.4199]
+    },
+    {
+      "id": 34,
+      "name": "New Hampshire",
+      "abbreviation": "NH",
+      "wine_producing": false,
+      "centroid": [-71.5491, 43.4525]
+    },
+    {
+      "id": 35,
+      "name": "New Jersey",
+      "abbreviation": "NJ",
+      "wine_producing": false,
+      "centroid": [-74.5089, 40.2989]
+    },
+    {
+      "id": 36,
+      "name": "New Mexico",
+      "abbreviation": "NM",
+      "wine_producing": false,
+      "centroid": [-106.2485, 34.8405]
+    },
+    {
+      "id": 37,
+      "name": "North Carolina",
+      "abbreviation": "NC",
+      "wine_producing": false,
+      "centroid": [-79.8431, 35.7796]
+    },
+    {
+      "id": 38,
+      "name": "North Dakota",
+      "abbreviation": "ND",
+      "wine_producing": false,
+      "centroid": [-99.7840, 47.4501]
+    },
+    {
+      "id": 39,
+      "name": "Ohio",
+      "abbreviation": "OH",
+      "wine_producing": false,
+      "centroid": [-82.7649, 40.3736]
+    },
+    {
+      "id": 40,
+      "name": "Oklahoma",
+      "abbreviation": "OK",
+      "wine_producing": false,
+      "centroid": [-96.9247, 35.5376]
+    },
+    {
+      "id": 41,
+      "name": "Pennsylvania",
+      "abbreviation": "PA",
+      "wine_producing": false,
+      "centroid": [-77.2098, 40.5908]
+    },
+    {
+      "id": 42,
+      "name": "Rhode Island",
+      "abbreviation": "RI",
+      "wine_producing": false,
+      "centroid": [-71.5118, 41.6809]
+    },
+    {
+      "id": 43,
+      "name": "South Carolina",
+      "abbreviation": "SC",
+      "wine_producing": false,
+      "centroid": [-80.9056, 33.8191]
+    },
+    {
+      "id": 44,
+      "name": "South Dakota",
+      "abbreviation": "SD",
+      "wine_producing": false,
+      "centroid": [-99.9018, 44.2998]
+    },
+    {
+      "id": 45,
+      "name": "Tennessee",
+      "abbreviation": "TN",
+      "wine_producing": false,
+      "centroid": [-86.7816, 35.7449]
+    },
+    {
+      "id": 46,
+      "name": "Utah",
+      "abbreviation": "UT",
+      "wine_producing": false,
+      "centroid": [-111.8910, 40.1135]
+    },
+    {
+      "id": 47,
+      "name": "Vermont",
+      "abbreviation": "VT",
+      "wine_producing": false,
+      "centroid": [-72.7093, 44.0459]
+    },
+    {
+      "id": 48,
+      "name": "West Virginia",
+      "abbreviation": "WV",
+      "wine_producing": false,
+      "centroid": [-80.9696, 38.4680]
+    },
+    {
+      "id": 49,
+      "name": "Wisconsin",
+      "abbreviation": "WI",
+      "wine_producing": false,
+      "centroid": [-89.6165, 44.2563]
+    },
+    {
+      "id": 50,
+      "name": "Wyoming",
+      "abbreviation": "WY",
+      "wine_producing": false,
+      "centroid": [-107.3025, 42.7475]
     }
   ]
 }

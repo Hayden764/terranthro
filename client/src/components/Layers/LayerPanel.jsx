@@ -8,6 +8,23 @@ const LayerPanel = () => {
   const { currentLevel, selectedState, selectedAVA } = useMapContext();
   const { activeLayers, toggleLayer, setLayerOpacity, layerOpacity } = useLayerContext();
   const [availableLayers, setAvailableLayers] = useState([]);
+  
+  // State to track which categories are expanded
+  const [expandedCategories, setExpandedCategories] = useState({
+    climate: false,
+    soil: false,
+    topography: false,
+    geology: false,
+    wind: false
+  });
+
+  // Function to toggle category expansion
+  const toggleCategory = (category) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
 
   useEffect(() => {
     // Fetch available layers based on current level
@@ -40,9 +57,51 @@ const LayerPanel = () => {
     <div className="layer-panel">
       <h2 className="panel-title">LAYERS</h2>
       
-      {Object.entries(layerCategories).map(([category, layers]) => (
-        <div key={category} className="layer-category">
-          <h3 className="category-title">{category.toUpperCase()}</h3>
+      {Object.entries(layerCategories).map(([category, layers]) => {
+        const isExpanded = expandedCategories[category];
+        
+        return (
+          <div key={category} className="layer-category">
+            <div 
+              className="category-header"
+              onClick={() => toggleCategory(category)}
+              style={{
+                cursor: 'pointer',
+                padding: 'var(--space-2) var(--space-1)',
+                borderRadius: '4px',
+                transition: 'background-color var(--transition-fast)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(196, 30, 58, 0.03)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+              }}
+            >
+              <h3 className="category-title" style={{ margin: 0 }}>
+                {category.toUpperCase()}
+              </h3>
+              <span className="category-chevron" style={{
+                fontSize: 'var(--text-sm)',
+                color: 'var(--text-gray)',
+                transition: 'transform var(--transition-fast)',
+                userSelect: 'none'
+              }}>
+                {isExpanded ? '↓' : '→'}
+              </span>
+            </div>
+            
+            <div 
+              className="category-layers"
+              style={{
+                overflow: 'hidden',
+                transition: 'max-height var(--transition-base)',
+                maxHeight: isExpanded ? '500px' : '0'
+              }}
+            >
           
           {layers.map(layer => {
             const layerData = availableLayers.find(
@@ -82,8 +141,10 @@ const LayerPanel = () => {
               </div>
             );
           })}
-        </div>
-      ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

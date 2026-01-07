@@ -6,6 +6,7 @@ import StateMap from './components/Map/StateMap';
 import AVAMap from './components/Map/AVAMap';
 import Breadcrumb from './components/Navigation/Breadcrumb';
 import LayerPanel from './components/Layers/LayerPanel';
+import ProjectionInfoModal from './components/UI/ProjectionInfoModal';
 import './styles/globals.css';
 
 function MapContainer() {
@@ -29,6 +30,7 @@ function MapContainer() {
       {renderMap()}
       <Breadcrumb />
       <LayerPanel />
+      <ProjectionInfoModal />
     </div>
   );
 }
