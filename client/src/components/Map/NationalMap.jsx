@@ -4,43 +4,15 @@ import { feature } from 'topojson-client';
 import { useMapContext } from '../../context/MapContext';
 import { calculateSymbolSize } from '../../utils/symbolScale';
 import usStatesTopo from '../../data/us-states-topo.json';
+import wineStatesData from '../../data/wine-states-production.json';
 
 const NationalMap = () => {
   const mapContainer = useRef(null);
   const svgRef = useRef(null);
   const { navigateToState } = useMapContext();
 
-  // Mock data for US states with wine production
-  const mockStates = [
-    { 
-      id: 1, 
-      name: 'California', 
-      abbreviation: 'CA', 
-      tons_crushed: 3500000,
-      centroid: { coordinates: [-119.4179, 36.7783] }
-    },
-    { 
-      id: 2, 
-      name: 'Oregon', 
-      abbreviation: 'OR', 
-      tons_crushed: 85000,
-      centroid: { coordinates: [-120.5542, 43.8041] }
-    },
-    { 
-      id: 3, 
-      name: 'Washington', 
-      abbreviation: 'WA', 
-      tons_crushed: 270000,
-      centroid: { coordinates: [-120.7401, 47.7511] }
-    },
-    { 
-      id: 4, 
-      name: 'New York', 
-      abbreviation: 'NY', 
-      tons_crushed: 52000,
-      centroid: { coordinates: [-75.5268, 43.2994] }
-    }
-  ];
+  // Create wine state abbreviations set for quick lookup
+  const wineStateAbbreviations = new Set(wineStatesData.map(state => state.abbreviation));
 
   // Helper function to get state abbreviation from full name
   const getStateAbbreviation = (stateName) => {
@@ -104,9 +76,6 @@ const NationalMap = () => {
     // Convert TopoJSON to GeoJSON
     const states = feature(usStatesTopo, usStatesTopo.objects.states);
     
-    // Create wine state abbreviations set for quick lookup
-    const wineStates = new Set(['CA', 'OR', 'WA', 'NY']);
-
     // Group for states
     const statesGroup = svg.append('g').attr('class', 'states');
 
@@ -119,7 +88,7 @@ const NationalMap = () => {
       .attr('class', d => {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
-        const isWineState = wineStates.has(stateAbbr);
+        const isWineState = wineStateAbbreviations.has(stateAbbr);
         console.log(`State: ${stateName} (${stateAbbr}) - Wine state: ${isWineState}`);
         return `state-path ${isWineState ? 'wine-state' : ''}`;
       })
@@ -128,34 +97,33 @@ const NationalMap = () => {
       .style('stroke-width', d => {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
-        return wineStates.has(stateAbbr) ? '1.5px' : '0.5px';
+        return wineStateAbbreviations.has(stateAbbr) ? '1.5px' : '0.5px';
       })
       .style('cursor', d => {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
-        return wineStates.has(stateAbbr) ? 'pointer' : 'default';
+        return wineStateAbbreviations.has(stateAbbr) ? 'pointer' : 'default';
       })
       .on('mouseenter', function(event, d) {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
-        if (wineStates.has(stateAbbr)) {
+        if (wineStateAbbreviations.has(stateAbbr)) {
           d3.select(this).style('fill', 'rgba(196, 30, 58, 0.05)');
         }
       })
       .on('mouseleave', function(event, d) {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
-        if (wineStates.has(stateAbbr)) {
+        if (wineStateAbbreviations.has(stateAbbr)) {
           d3.select(this).style('fill', '#E8E4D9');
         }
       })
       .on('click', function(event, d) {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
-        if (wineStates.has(stateAbbr)) {
-          const state = mockStates.find(s => s.abbreviation === stateAbbr);
+        if (wineStateAbbreviations.has(stateAbbr)) {
+          const state = wineStatesData.find(s => s.abbreviation === stateAbbr);
           if (state) {
-            console.log('Navigating to state:', state);
             navigateToState(state);
           }
         }
@@ -164,8 +132,8 @@ const NationalMap = () => {
     // Group for production symbols
     const symbolsGroup = svg.append('g').attr('class', 'symbols-group');
 
-    // Add production symbols for wine states
-    mockStates.forEach(state => {
+    // Add production symbols for all wine states
+    wineStatesData.forEach(state => {
       console.log('Adding symbols for:', state.name, state.abbreviation);
       const coordinates = state.centroid.coordinates;
       const projected = projection(coordinates);
@@ -181,7 +149,6 @@ const NationalMap = () => {
           .style('cursor', 'pointer')
           .style('transition', 'transform 0.2s ease')
           .on('click', () => {
-            console.log('Symbol clicked for:', state);
             navigateToState(state);
           })
           .on('mouseenter', function() {
@@ -260,7 +227,7 @@ const NationalMap = () => {
       // Update symbol positions
       symbolsGroup.selectAll('.state-symbols').remove();
       
-      mockStates.forEach(state => {
+      wineStatesData.forEach(state => {
         const coordinates = state.centroid.coordinates;
         const projected = projection(coordinates);
         
@@ -272,7 +239,9 @@ const NationalMap = () => {
             .attr('transform', `translate(${projected[0]}, ${projected[1]})`)
             .style('cursor', 'pointer')
             .style('transition', 'transform 0.2s ease')
-            .on('click', () => navigateToState(state))
+            .on('click', () => {
+              navigateToState(state);
+            })
             .on('mouseenter', function() {
               d3.select(this)
                 .transition()
@@ -299,15 +268,6 @@ const NationalMap = () => {
             .attr('class', 'inner-circle')
             .attr('cx', 0)
             .attr('cy', 0)
-            .attr('r', symbolSizes.outer)
-            .style('fill', 'transparent')
-            .style('stroke', '#C41E3A')
-            .style('stroke-width', '2.5px');
-
-          stateSymbolGroup.append('circle')
-            .attr('class', 'inner-circle')
-            .attr('cx', projected[0])
-            .attr('cy', projected[1])
             .attr('r', symbolSizes.inner)
             .style('fill', 'transparent')
             .style('stroke', '#C41E3A')

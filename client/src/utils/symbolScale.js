@@ -7,8 +7,8 @@ export const calculateSymbolSize = (tons, level) => {
     national: {
       minTons: 1000,
       maxTons: 4000000,
-      minSize: 12,
-      maxSize: 50,
+      minSize: 6,        // Reduce from 8 to 6 (even smaller minimum)
+      maxSize: 80,       // Keep at 80 (larger maximum)
       innerRatio: 0.65
     },
     state: {
@@ -36,7 +36,17 @@ export const calculateSymbolSize = (tons, level) => {
   const outerSize = config.minSize + 
     (normalizedValue * (config.maxSize - config.minSize));
   
-  const innerSize = outerSize * config.innerRatio;
+  // Dynamic innerRatio based on symbol size to prevent merging at small sizes
+  let innerRatio;
+  if (outerSize < 15) {
+    innerRatio = 0.50;  // More spacing for tiny symbols
+  } else if (outerSize < 30) {
+    innerRatio = 0.60;  // Medium spacing
+  } else {
+    innerRatio = 0.65;  // Original spacing for large symbols
+  }
+  
+  const innerSize = outerSize * innerRatio;
   
   return {
     outer: Math.round(outerSize),

@@ -1,7 +1,46 @@
 import { useState } from 'react';
+import { useMapContext } from '../../context/MapContext';
+
+// Projection configuration for each wine-producing state (matches StateMap.jsx)
+const STATE_PROJECTIONS = {
+  'California': { zone: 10, rotation: -3 },
+  'Oregon': { zone: 10, rotation: -2 },
+  'Washington': { zone: 10, rotation: -4 },
+  'Idaho': { zone: 11, rotation: -2 },
+  'Colorado': { zone: 13, rotation: 0 },
+  'Arizona': { zone: 12, rotation: 0 },
+  'New Mexico': { zone: 13, rotation: 1 },
+  'Texas': { zone: 14, rotation: 1 },
+  'Missouri': { zone: 15, rotation: 0 },
+  'Arkansas': { zone: 15, rotation: 0 },
+  'Oklahoma': { zone: 14, rotation: 0 },
+  'Louisiana': { zone: 15, rotation: 0 },
+  'Mississippi': { zone: 16, rotation: 2 },
+  'Tennessee': { zone: 16, rotation: 0 },
+  'Kentucky': { zone: 16, rotation: 0 },
+  'Illinois': { zone: 16, rotation: 2 },
+  'Indiana': { zone: 16, rotation: 0 },
+  'Iowa': { zone: 15, rotation: 0 },
+  'Wisconsin': { zone: 16, rotation: 3 },
+  'Minnesota': { zone: 15, rotation: 1 },
+  'Ohio': { zone: 17, rotation: 2 },
+  'Michigan': { zone: 16, rotation: -1 },
+  'Pennsylvania': { zone: 18, rotation: 3 },
+  'New York': { zone: 18, rotation: 2 },
+  'Maryland': { zone: 18, rotation: 2 },
+  'Virginia': { zone: 17, rotation: 0 },
+  'North Carolina': { zone: 17, rotation: 0 },
+  'Georgia': { zone: 17, rotation: 5 },
+  'New Jersey': { zone: 18, rotation: 1 },
+  'Connecticut': { zone: 18, rotation: 0 },
+  'Massachusetts': { zone: 19, rotation: 4 },
+  'Rhode Island': { zone: 19, rotation: 0 },
+  'New Hampshire': { zone: 19, rotation: 2 }
+};
 
 const ProjectionInfoModal = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { currentLevel, selectedState } = useMapContext();
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
@@ -139,19 +178,110 @@ const ProjectionInfoModal = () => {
               >
                 Current Projection
               </h3>
-              <p style={{ 
-                fontSize: 'var(--text-base)', 
-                color: 'var(--text-charcoal)',
-                marginBottom: 'var(--space-2)'
-              }}>
-                Albers Equal Area Conic (EPSG:5070)
-              </p>
-              <p style={{ 
-                fontSize: 'var(--text-base)', 
-                color: 'var(--text-charcoal)'
-              }}>
-                <strong>Datum:</strong> NAD83
-              </p>
+              
+              {/* National Level - Albers USA */}
+              {currentLevel === 'national' && (
+                <>
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>Projection:</strong> Albers Equal Area Conic (EPSG:5070)
+                  </p>
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>Datum:</strong> NAD83
+                  </p>
+                  <p style={{ 
+                    fontSize: 'var(--text-sm)', 
+                    color: 'var(--text-gray)',
+                    fontStyle: 'italic'
+                  }}>
+                    Optimized for continental United States visualization
+                  </p>
+                </>
+              )}
+              
+              {/* State Level - UTM */}
+              {currentLevel === 'state' && selectedState && (
+                <>
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>Projection:</strong> UTM Zone {STATE_PROJECTIONS[selectedState.name]?.zone}N (Transverse Mercator)
+                  </p>
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>EPSG Code:</strong> {32600 + (STATE_PROJECTIONS[selectedState.name]?.zone || 0)}
+                  </p>
+                  {STATE_PROJECTIONS[selectedState.name]?.rotation !== 0 && (
+                    <p style={{ 
+                      fontSize: 'var(--text-base)', 
+                      color: 'var(--text-charcoal)',
+                      marginBottom: 'var(--space-2)'
+                    }}>
+                      <strong>Rotation:</strong> {Math.abs(STATE_PROJECTIONS[selectedState.name]?.rotation)}° {STATE_PROJECTIONS[selectedState.name]?.rotation > 0 ? 'clockwise' : 'counter-clockwise'}
+                    </p>
+                  )}
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>Datum:</strong> WGS84
+                  </p>
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>State:</strong> {selectedState.name}
+                  </p>
+                  <p style={{ 
+                    fontSize: 'var(--text-sm)', 
+                    color: 'var(--text-gray)',
+                    fontStyle: 'italic'
+                  }}>
+                    UTM projection minimizes distortion for regional-scale terroir analysis
+                  </p>
+                </>
+              )}
+              
+              {/* AVA Level - Local UTM with 3D */}
+              {currentLevel === 'ava' && (
+                <>
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>Projection:</strong> Local UTM with 3D Terrain
+                  </p>
+                  <p style={{ 
+                    fontSize: 'var(--text-base)', 
+                    color: 'var(--text-charcoal)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <strong>Datum:</strong> WGS84
+                  </p>
+                  <p style={{ 
+                    fontSize: 'var(--text-sm)', 
+                    color: 'var(--text-gray)',
+                    fontStyle: 'italic'
+                  }}>
+                    High-precision local projection with elevation data for vineyard-scale analysis
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Data Sources */}

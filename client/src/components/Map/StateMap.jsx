@@ -1,122 +1,194 @@
 import { useEffect, useRef } from 'react';
+import * as d3 from 'd3';
+import { feature } from 'topojson-client';
 import { useMapContext } from '../../context/MapContext';
+import usStatesTopo from '../../data/us-states-topo.json';
+
+// Projection configuration for each wine-producing state with UTM zone and rotation
+const STATE_PROJECTIONS = {
+  'California': { zone: 10, rotation: -3 },
+  'Oregon': { zone: 10, rotation: -2 },
+  'Washington': { zone: 10, rotation: -4 },
+  'Idaho': { zone: 11, rotation: -2 },
+  'Colorado': { zone: 13, rotation: 0 },
+  'Arizona': { zone: 12, rotation: 0 },
+  'New Mexico': { zone: 13, rotation: 1 },
+  'Texas': { zone: 14, rotation: 1 },
+  'Missouri': { zone: 15, rotation: 0 },
+  'Arkansas': { zone: 15, rotation: 0 },
+  'Oklahoma': { zone: 14, rotation: 0 },
+  'Louisiana': { zone: 15, rotation: 0 },
+  'Mississippi': { zone: 16, rotation: 2 },
+  'Tennessee': { zone: 16, rotation: 0 },
+  'Kentucky': { zone: 16, rotation: 0 },
+  'Illinois': { zone: 16, rotation: 2 },
+  'Indiana': { zone: 16, rotation: 0 },
+  'Iowa': { zone: 15, rotation: 0 },
+  'Wisconsin': { zone: 16, rotation: 3 },
+  'Minnesota': { zone: 15, rotation: 1 },
+  'Ohio': { zone: 17, rotation: 2 },
+  'Michigan': { zone: 16, rotation: -1 },
+  'Pennsylvania': { zone: 18, rotation: 3 },
+  'New York': { zone: 18, rotation: 2 },
+  'Maryland': { zone: 18, rotation: 2 },
+  'Virginia': { zone: 17, rotation: 0 },
+  'North Carolina': { zone: 17, rotation: 0 },
+  'Georgia': { zone: 17, rotation: 5 },
+  'New Jersey': { zone: 18, rotation: 1 },
+  'Connecticut': { zone: 18, rotation: 0 },
+  'Massachusetts': { zone: 19, rotation: 4 },
+  'Rhode Island': { zone: 19, rotation: 0 },
+  'New Hampshire': { zone: 19, rotation: 2 }
+};
+
+// Create UTM projection using Transverse Mercator with optional rotation
+function createUTMProjection(zone, rotation = 0) {
+  // Calculate central meridian for UTM zone
+  const centralMeridian = (zone - 1) * 6 - 180 + 3;
+  
+  return d3.geoTransverseMercator()
+    .rotate([-centralMeridian, 0, rotation])  // Apply rotation parameter (positive = clockwise)
+    .center([0, 0])
+    .scale(1)
+    .translate([0, 0]);  // Let manual bounds calculation handle translation
+}
 
 const StateMap = () => {
   const mapContainer = useRef(null);
-  const map = useRef(null);
-  const { selectedState, navigateToAVA } = useMapContext();
-
-  // Mock AVA data for the selected state
-  const mockAVAs = {
-    1: [ // California
-      { id: 15, name: 'Napa Valley', tons_crushed: 150000, centroid: { coordinates: [-122.2869, 38.5025] } },
-      { id: 16, name: 'Sonoma County', tons_crushed: 200000, centroid: { coordinates: [-122.9074, 38.5816] } },
-      { id: 17, name: 'Paso Robles', tons_crushed: 75000, centroid: { coordinates: [-120.6906, 35.6269] } },
-      { id: 18, name: 'Santa Barbara County', tons_crushed: 45000, centroid: { coordinates: [-120.0357, 34.5794] } }
-    ],
-    2: [ // Oregon
-      { id: 19, name: 'Willamette Valley', tons_crushed: 65000, centroid: { coordinates: [-123.0231, 44.9429] } },
-      { id: 20, name: 'Southern Oregon', tons_crushed: 15000, centroid: { coordinates: [-123.3307, 42.4403] } }
-    ],
-    3: [ // Washington
-      { id: 21, name: 'Columbia Valley', tons_crushed: 180000, centroid: { coordinates: [-119.2728, 46.2396] } },
-      { id: 22, name: 'Walla Walla Valley', tons_crushed: 25000, centroid: { coordinates: [-118.3302, 46.0645] } }
-    ]
-  };
+  const svgRef = useRef(null);
+  const { selectedState } = useMapContext();
 
   useEffect(() => {
-    if (mapContainer.current && !map.current && selectedState) {
-      const container = mapContainer.current;
-      container.style.background = 'linear-gradient(135deg, #FFFEF7 0%, #F0F0F0 100%)';
-      container.style.position = 'relative';
+    if (!mapContainer.current || !selectedState) return;
 
-      const avas = mockAVAs[selectedState.id] || [];
+    // Clear any existing SVG
+    d3.select(mapContainer.current).selectAll('*').remove();
 
-      const mapPlaceholder = document.createElement('div');
-      mapPlaceholder.innerHTML = `
-        <div style="
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          text-align: center;
-          color: var(--text-gray);
-        ">
-          <div style="font-size: 2.5rem; margin-bottom: 1rem;">🍇</div>
-          <h2 style="font-family: var(--font-display); margin-bottom: 0.5rem; color: var(--text-charcoal);">
-            ${selectedState.name}
-          </h2>
-          <p style="font-size: var(--text-lg); margin-bottom: 2rem; color: var(--text-gray);">
-            American Viticultural Areas
-          </p>
-          <div style="
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            max-width: 600px;
-            margin: 0 auto;
-          ">
-            ${avas.map(ava => `
-              <button 
-                onclick="window.selectAVA(${ava.id})"
-                style="
-                  padding: 1.5rem;
-                  background: var(--base-white);
-                  border: 2px solid var(--border-gray);
-                  border-radius: 8px;
-                  cursor: pointer;
-                  transition: all var(--transition-base);
-                  text-align: center;
-                "
-                onmouseover="this.style.borderColor='var(--primary-burgundy)'; this.style.transform='translateY(-2px)'"
-                onmouseout="this.style.borderColor='var(--border-gray)'; this.style.transform='translateY(0)'"
-              >
-                <div style="font-weight: bold; color: var(--text-charcoal); margin-bottom: 0.5rem;">
-                  ${ava.name}
-                </div>
-                <div style="font-size: var(--text-sm); color: var(--text-gray);">
-                  ${(ava.tons_crushed / 1000).toLocaleString()}K tons
-                </div>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      `;
+    // Calculate available space accounting for layer panel
+    const layerPanelWidth = window.innerWidth > 768 ? 340 : 0;
+    const width = window.innerWidth - layerPanelWidth;
+    const height = window.innerHeight;
 
-      container.appendChild(mapPlaceholder);
+    // Extract the selected state from TopoJSON
+    const states = feature(usStatesTopo, usStatesTopo.objects.states);
+    const stateFeature = states.features.find(d => d.properties.name === selectedState.name);
 
-      // Global function to handle AVA selection
-      window.selectAVA = (avaId) => {
-        const ava = avas.find(a => a.id === avaId);
-        if (ava) {
-          navigateToAVA(ava);
-        }
-      };
-
-      map.current = { container };
+    if (!stateFeature) {
+      console.error(`State '${selectedState.name}' not found in TopoJSON`);
+      return;
     }
 
-    return () => {
-      if (window.selectAVA) {
-        delete window.selectAVA;
+    console.log(`Rendering state: ${selectedState.name}`);
+
+    // Get projection configuration for selected state
+    const projConfig = STATE_PROJECTIONS[selectedState.name];
+    let projection;
+    
+    if (!projConfig) {
+      console.warn(`No projection defined for ${selectedState.name}, using AlbersUSA fallback`);
+      projection = d3.geoAlbersUsa();
+      // Use fitExtent for AlbersUSA
+      projection.fitExtent([[20, 20], [width - 20, height - 20]], stateFeature);
+    } else {
+      console.log(`Using UTM Zone ${projConfig.zone} with rotation ${projConfig.rotation}° for ${selectedState.name}`);
+      projection = createUTMProjection(projConfig.zone, projConfig.rotation);
+      
+      // Manually calculate bounds for better control with UTM projection
+      const pathGenerator = d3.geoPath().projection(projection);
+      const bounds = pathGenerator.bounds(stateFeature);
+      const dx = bounds[1][0] - bounds[0][0];
+      const dy = bounds[1][1] - bounds[0][1];
+      const x = (bounds[0][0] + bounds[1][0]) / 2;
+      const y = (bounds[0][1] + bounds[1][1]) / 2;
+
+      const scale = 0.9 / Math.max(dx / width, dy / height);
+      const translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+      projection.scale(scale).translate(translate);
+    }
+
+    const pathGenerator = d3.geoPath().projection(projection);
+
+    // Create SVG
+    const svg = d3.select(mapContainer.current)
+      .append('svg')
+      .attr('width', width)
+      .attr('height', height)
+      .style('display', 'block');
+
+    svgRef.current = svg.node();
+
+    // Render state outline
+    svg.append('path')
+      .datum(stateFeature)
+      .attr('d', pathGenerator)
+      .attr('fill', '#E8E4D9')
+      .attr('stroke', 'black')
+      .attr('stroke-width', 2.5);
+
+    // Handle window resize
+    const handleResize = () => {
+      const layerPanelWidth = window.innerWidth > 768 ? 340 : 0;
+      const newWidth = window.innerWidth - layerPanelWidth;
+      const newHeight = window.innerHeight;
+
+      if (!projConfig) {
+        // Use fitExtent for AlbersUSA fallback
+        projection.fitExtent([[20, 20], [newWidth - 20, newHeight - 20]], stateFeature);
+      } else {
+        // Manually calculate bounds for UTM projection
+        const bounds = pathGenerator.bounds(stateFeature);
+        const dx = bounds[1][0] - bounds[0][0];
+        const dy = bounds[1][1] - bounds[0][1];
+        const x = (bounds[0][0] + bounds[1][0]) / 2;
+        const y = (bounds[0][1] + bounds[1][1]) / 2;
+
+        const scale = 0.9 / Math.max(dx / newWidth, dy / newHeight);
+        const translate = [newWidth / 2 - scale * x, newHeight / 2 - scale * y];
+
+        projection.scale(scale).translate(translate);
       }
+
+      svg
+        .attr('width', newWidth)
+        .attr('height', newHeight);
+
+      svg.select('path')
+        .attr('d', pathGenerator);
     };
-  }, [selectedState, navigateToAVA]);
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      d3.select(mapContainer.current).selectAll('*').remove();
+    };
+  }, [selectedState]);
 
   if (!selectedState) {
-    return <div>Loading state view...</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">No state selected</p>
+      </div>
+    );
   }
 
   return (
-    <div 
-      ref={mapContainer} 
-      className="map" 
-      style={{ 
-        width: '100%', 
-        height: '100vh',
-        background: 'var(--base-cream)'
-      }} 
-    />
+    <div className="relative w-full h-full">
+      <div 
+        ref={mapContainer} 
+        className="map state-map" 
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: window.innerWidth > 768 ? '340px' : 0,
+          width: window.innerWidth > 768 ? 'calc(100vw - 340px)' : '100vw',
+          height: '100vh',
+          background: 'var(--base-cream)',
+          transition: 'all 0.3s ease'
+        }} 
+      />
+    </div>
   );
 };
 

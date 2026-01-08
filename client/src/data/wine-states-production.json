@@ -1,0 +1,266 @@
+[
+  {
+    "id": 1,
+    "name": "California",
+    "abbreviation": "CA",
+    "tons_crushed": 3500000,
+    "fips": "06",
+    "centroid": { "coordinates": [-119.4179, 36.7783] }
+  },
+  {
+    "id": 2,
+    "name": "Washington",
+    "abbreviation": "WA",
+    "tons_crushed": 270000,
+    "fips": "53",
+    "centroid": { "coordinates": [-120.7401, 47.7511] }
+  },
+  {
+    "id": 3,
+    "name": "Oregon",
+    "abbreviation": "OR",
+    "tons_crushed": 85000,
+    "fips": "41",
+    "centroid": { "coordinates": [-120.5542, 43.8041] }
+  },
+  {
+    "id": 4,
+    "name": "New York",
+    "abbreviation": "NY",
+    "tons_crushed": 52000,
+    "fips": "36",
+    "centroid": { "coordinates": [-75.5268, 43.2994] }
+  },
+  {
+    "id": 5,
+    "name": "Michigan",
+    "abbreviation": "MI",
+    "tons_crushed": 15000,
+    "fips": "26",
+    "centroid": { "coordinates": [-85.6024, 44.3467] }
+  },
+  {
+    "id": 6,
+    "name": "Pennsylvania",
+    "abbreviation": "PA",
+    "tons_crushed": 12000,
+    "fips": "42",
+    "centroid": { "coordinates": [-77.1945, 41.2033] }
+  },
+  {
+    "id": 7,
+    "name": "Ohio",
+    "abbreviation": "OH",
+    "tons_crushed": 12000,
+    "fips": "39",
+    "centroid": { "coordinates": [-82.7937, 40.2732] }
+  },
+  {
+    "id": 8,
+    "name": "Texas",
+    "abbreviation": "TX",
+    "tons_crushed": 10000,
+    "fips": "48",
+    "centroid": { "coordinates": [-99.9018, 31.9686] }
+  },
+  {
+    "id": 9,
+    "name": "Virginia",
+    "abbreviation": "VA",
+    "tons_crushed": 8000,
+    "fips": "51",
+    "centroid": { "coordinates": [-78.6569, 37.4316] }
+  },
+  {
+    "id": 10,
+    "name": "Missouri",
+    "abbreviation": "MO",
+    "tons_crushed": 8000,
+    "fips": "29",
+    "centroid": { "coordinates": [-92.3341, 38.5767] }
+  },
+  {
+    "id": 11,
+    "name": "North Carolina",
+    "abbreviation": "NC",
+    "tons_crushed": 6000,
+    "fips": "37",
+    "centroid": { "coordinates": [-79.0193, 35.7596] }
+  },
+  {
+    "id": 12,
+    "name": "Georgia",
+    "abbreviation": "GA",
+    "tons_crushed": 5000,
+    "fips": "13",
+    "centroid": { "coordinates": [-83.1137, 32.3617] }
+  },
+  {
+    "id": 13,
+    "name": "Colorado",
+    "abbreviation": "CO",
+    "tons_crushed": 3000,
+    "fips": "08",
+    "centroid": { "coordinates": [-105.3111, 39.0598] }
+  },
+  {
+    "id": 14,
+    "name": "Arizona",
+    "abbreviation": "AZ",
+    "tons_crushed": 2800,
+    "fips": "04",
+    "centroid": { "coordinates": [-111.4312, 34.0489] }
+  },
+  {
+    "id": 15,
+    "name": "Illinois",
+    "abbreviation": "IL",
+    "tons_crushed": 2500,
+    "fips": "17",
+    "centroid": { "coordinates": [-89.3985, 40.6331] }
+  },
+  {
+    "id": 16,
+    "name": "Tennessee",
+    "abbreviation": "TN",
+    "tons_crushed": 2200,
+    "fips": "47",
+    "centroid": { "coordinates": [-86.5804, 35.5175] }
+  },
+  {
+    "id": 17,
+    "name": "Idaho",
+    "abbreviation": "ID",
+    "tons_crushed": 2000,
+    "fips": "16",
+    "centroid": { "coordinates": [-114.0422, 44.2619] }
+  },
+  {
+    "id": 18,
+    "name": "Kentucky",
+    "abbreviation": "KY",
+    "tons_crushed": 2000,
+    "fips": "21",
+    "centroid": { "coordinates": [-84.8630, 37.5389] }
+  },
+  {
+    "id": 19,
+    "name": "Wisconsin",
+    "abbreviation": "WI",
+    "tons_crushed": 2000,
+    "fips": "55",
+    "centroid": { "coordinates": [-89.6165, 43.7844] }
+  },
+  {
+    "id": 20,
+    "name": "Maryland",
+    "abbreviation": "MD",
+    "tons_crushed": 1800,
+    "fips": "24",
+    "centroid": { "coordinates": [-76.6413, 39.0639] }
+  },
+  {
+    "id": 21,
+    "name": "Indiana",
+    "abbreviation": "IN",
+    "tons_crushed": 1800,
+    "fips": "18",
+    "centroid": { "coordinates": [-86.1349, 40.2732] }
+  },
+  {
+    "id": 22,
+    "name": "Arkansas",
+    "abbreviation": "AR",
+    "tons_crushed": 1600,
+    "fips": "05",
+    "centroid": { "coordinates": [-92.3731, 34.9697] }
+  },
+  {
+    "id": 23,
+    "name": "New Mexico",
+    "abbreviation": "NM",
+    "tons_crushed": 1500,
+    "fips": "35",
+    "centroid": { "coordinates": [-106.2485, 34.8405] }
+  },
+  {
+    "id": 24,
+    "name": "Iowa",
+    "abbreviation": "IA",
+    "tons_crushed": 1400,
+    "fips": "19",
+    "centroid": { "coordinates": [-93.7755, 42.0115] }
+  },
+  {
+    "id": 25,
+    "name": "Connecticut",
+    "abbreviation": "CT",
+    "tons_crushed": 1300,
+    "fips": "09",
+    "centroid": { "coordinates": [-72.7273, 41.5978] }
+  },
+  {
+    "id": 26,
+    "name": "Massachusetts",
+    "abbreviation": "MA",
+    "tons_crushed": 1300,
+    "fips": "25",
+    "centroid": { "coordinates": [-71.5376, 42.2373] }
+  },
+  {
+    "id": 27,
+    "name": "Oklahoma",
+    "abbreviation": "OK",
+    "tons_crushed": 1200,
+    "fips": "40",
+    "centroid": { "coordinates": [-96.9289, 35.2226] }
+  },
+  {
+    "id": 28,
+    "name": "Minnesota",
+    "abbreviation": "MN",
+    "tons_crushed": 1200,
+    "fips": "27",
+    "centroid": { "coordinates": [-94.6859, 46.7296] }
+  },
+  {
+    "id": 29,
+    "name": "Mississippi",
+    "abbreviation": "MS",
+    "tons_crushed": 1100,
+    "fips": "28",
+    "centroid": { "coordinates": [-89.6678, 32.7673] }
+  },
+  {
+    "id": 30,
+    "name": "New Jersey",
+    "abbreviation": "NJ",
+    "tons_crushed": 1100,
+    "fips": "34",
+    "centroid": { "coordinates": [-74.7429, 40.2206] }
+  },
+  {
+    "id": 31,
+    "name": "Louisiana",
+    "abbreviation": "LA",
+    "tons_crushed": 1000,
+    "fips": "22",
+    "centroid": { "coordinates": [-91.8259, 31.1801] }
+  },
+  {
+    "id": 32,
+    "name": "New Hampshire",
+    "abbreviation": "NH",
+    "tons_crushed": 1000,
+    "fips": "33",
+    "centroid": { "coordinates": [-71.5653, 43.4525] }
+  },
+  {
+    "id": 33,
+    "name": "Rhode Island",
+    "abbreviation": "RI",
+    "tons_crushed": 800,
+    "fips": "44",
+    "centroid": { "coordinates": [-71.5118, 41.6809] }
+  }
+]
