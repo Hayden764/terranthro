@@ -64,9 +64,8 @@ const StateMap = () => {
     // Clear any existing SVG
     d3.select(mapContainer.current).selectAll('*').remove();
 
-    // Calculate available space accounting for layer panel
-    const layerPanelWidth = window.innerWidth > 768 ? 340 : 0;
-    const width = window.innerWidth - layerPanelWidth;
+    // Calculate available space - use full viewport
+    const width = window.innerWidth;
     const height = window.innerHeight;
 
     // Extract the selected state from TopoJSON
@@ -128,13 +127,12 @@ const StateMap = () => {
 
     // Handle window resize
     const handleResize = () => {
-      const layerPanelWidth = window.innerWidth > 768 ? 340 : 0;
-      const newWidth = window.innerWidth - layerPanelWidth;
+      const newWidth = window.innerWidth;
       const newHeight = window.innerHeight;
 
       if (!projConfig) {
         // Use fitExtent for AlbersUSA fallback
-        projection.fitExtent([[20, 20], [newWidth - 20, newHeight - 20]], stateFeature);
+        projection.fitExtent([[10, 10], [newWidth - 10, newHeight - 10]], stateFeature);
       } else {
         // Manually calculate bounds for UTM projection
         const bounds = pathGenerator.bounds(stateFeature);
@@ -181,8 +179,8 @@ const StateMap = () => {
         style={{ 
           position: 'absolute',
           top: 0,
-          left: window.innerWidth > 768 ? '340px' : 0,
-          width: window.innerWidth > 768 ? 'calc(100vw - 340px)' : '100vw',
+          left: 0,
+          width: '100vw',
           height: '100vh',
           background: 'var(--base-cream)',
           transition: 'all 0.3s ease'

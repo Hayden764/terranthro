@@ -4,7 +4,7 @@ import { useLayerContext } from '../../context/LayerContext';
 import LayerToggle from './LayerToggle';
 import OpacitySlider from './OpacitySlider';
 
-const LayerPanel = () => {
+const LayerPanel = ({ isModal = false }) => {
   const { currentLevel, selectedState, selectedAVA } = useMapContext();
   const { activeLayers, toggleLayer, setLayerOpacity, layerOpacity } = useLayerContext();
   const [availableLayers, setAvailableLayers] = useState([]);
@@ -54,8 +54,8 @@ const LayerPanel = () => {
   };
 
   return (
-    <div className="layer-panel">
-      <h2 className="panel-title">LAYERS</h2>
+    <div className={isModal ? "layer-panel-modal" : "layer-panel"}>
+      {!isModal && <h2 className="panel-title">LAYERS</h2>}
       
       {Object.entries(layerCategories).map(([category, layers]) => {
         const isExpanded = expandedCategories[category];

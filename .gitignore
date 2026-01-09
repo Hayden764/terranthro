@@ -40,3 +40,4 @@ data-pipeline/processed_data/
 # Database
 *.db
 *.sqlite
+data-sources/

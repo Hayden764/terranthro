@@ -37,12 +37,11 @@ const NationalMap = () => {
     // Clear any existing SVG
     d3.select(mapContainer.current).selectAll('*').remove();
 
-    // Calculate available space accounting for layer panel
-    const layerPanelWidth = window.innerWidth > 768 ? 340 : 0; // 280px panel + 60px spacing
-    const width = window.innerWidth - layerPanelWidth;
+    // Calculate available space - use full viewport
+    const width = window.innerWidth;
     const height = window.innerHeight;
 
-    console.log('Map dimensions:', { width, height, layerPanelWidth });
+    console.log('Map dimensions:', { width, height });
 
     // Create SVG element
     const svg = d3.select(mapContainer.current)
@@ -97,7 +96,7 @@ const NationalMap = () => {
       .style('stroke-width', d => {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
-        return wineStateAbbreviations.has(stateAbbr) ? '1.5px' : '0.5px';
+        return wineStateAbbreviations.has(stateAbbr) ? '1px' : '0.5px';
       })
       .style('cursor', d => {
         const stateName = d.properties.name;
@@ -108,14 +107,21 @@ const NationalMap = () => {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
         if (wineStateAbbreviations.has(stateAbbr)) {
-          d3.select(this).style('fill', 'rgba(196, 30, 58, 0.05)');
+          d3.select(this)
+            .style('fill', 'rgba(196, 30, 58, 0.05)')
+            .style('stroke', '#C41E3A')
+            .style('stroke-width', '2px')
+            .raise();  // Move to front to prevent border overlap
         }
       })
       .on('mouseleave', function(event, d) {
         const stateName = d.properties.name;
         const stateAbbr = getStateAbbreviation(stateName);
         if (wineStateAbbreviations.has(stateAbbr)) {
-          d3.select(this).style('fill', '#E8E4D9');
+          d3.select(this)
+            .style('fill', '#E8E4D9')
+            .style('stroke', '#000000')
+            .style('stroke-width', '1px');
         }
       })
       .on('click', function(event, d) {
@@ -133,6 +139,9 @@ const NationalMap = () => {
     const symbolsGroup = svg.append('g').attr('class', 'symbols-group');
 
     // Add production symbols for all wine states
+    const isMobile = window.innerWidth < 768;
+    const mobileScale = isMobile ? 0.7 : 1;
+    
     wineStatesData.forEach(state => {
       console.log('Adding symbols for:', state.name, state.abbreviation);
       const coordinates = state.centroid.coordinates;
@@ -169,7 +178,7 @@ const NationalMap = () => {
           .attr('class', 'outer-circle')
           .attr('cx', 0)
           .attr('cy', 0)
-          .attr('r', symbolSizes.outer)
+          .attr('r', symbolSizes.outer * mobileScale)
           .style('fill', 'transparent')
           .style('stroke', '#C41E3A')
           .style('stroke-width', '2.5px');
@@ -179,14 +188,14 @@ const NationalMap = () => {
           .attr('class', 'inner-circle')
           .attr('cx', 0)
           .attr('cy', 0)
-          .attr('r', symbolSizes.inner)
+          .attr('r', symbolSizes.inner * mobileScale)
           .style('fill', 'transparent')
           .style('stroke', '#C41E3A')
           .style('stroke-width', '1.5px');
 
         console.log(`Created symbols for ${state.name} at [${projected[0]}, ${projected[1]}]`);
       } else {
-        console.warn(`Could not project coordinates for ${state.name}:`, coordinates);
+        console.log(`Could not project coordinates for ${state.name}:`, coordinates);
       }
     });
 
@@ -210,11 +219,10 @@ const NationalMap = () => {
 
     // Handle window resize
     const handleResize = () => {
-      const layerPanelWidth = window.innerWidth > 768 ? 340 : 0;
-      const newWidth = window.innerWidth - layerPanelWidth;
+      const newWidth = window.innerWidth;
       const newHeight = window.innerHeight;
       
-      console.log('Resizing map:', { newWidth, newHeight, layerPanelWidth });
+      console.log('Resizing map:', { newWidth, newHeight });
       
       svg.attr('width', newWidth).attr('height', newHeight);
       
@@ -226,6 +234,9 @@ const NationalMap = () => {
       
       // Update symbol positions
       symbolsGroup.selectAll('.state-symbols').remove();
+      
+      const isMobileResize = newWidth < 768;
+      const mobileScaleResize = isMobileResize ? 0.7 : 1;
       
       wineStatesData.forEach(state => {
         const coordinates = state.centroid.coordinates;
@@ -259,7 +270,7 @@ const NationalMap = () => {
             .attr('class', 'outer-circle')
             .attr('cx', 0)
             .attr('cy', 0)
-            .attr('r', symbolSizes.outer)
+            .attr('r', symbolSizes.outer * mobileScaleResize)
             .style('fill', 'transparent')
             .style('stroke', '#C41E3A')
             .style('stroke-width', '2.5px');
@@ -268,7 +279,7 @@ const NationalMap = () => {
             .attr('class', 'inner-circle')
             .attr('cx', 0)
             .attr('cy', 0)
-            .attr('r', symbolSizes.inner)
+            .attr('r', symbolSizes.inner * mobileScaleResize)
             .style('fill', 'transparent')
             .style('stroke', '#C41E3A')
             .style('stroke-width', '1.5px');
@@ -308,8 +319,8 @@ const NationalMap = () => {
       style={{ 
         position: 'absolute',
         top: 0,
-        left: window.innerWidth > 768 ? '340px' : 0,
-        width: window.innerWidth > 768 ? 'calc(100vw - 340px)' : '100vw',
+        left: 0,
+        width: '100vw',
         height: '100vh',
         background: 'var(--base-cream)',
         transition: 'all 0.3s ease'
