@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { feature } from 'topojson-client';
 import { useMapContext } from '../../context/MapContext';
@@ -57,6 +57,18 @@ const StateMap = () => {
   const mapContainer = useRef(null);
   const svgRef = useRef(null);
   const { selectedState } = useMapContext();
+  const [oregonAVAs, setOregonAVAs] = useState(null);
+
+  // Fetch Oregon AVAs data
+  useEffect(() => {
+    fetch('/src/data/OR_avas.geojson')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Loaded Oregon AVAs:', data.features.length);
+        setOregonAVAs(data);
+      })
+      .catch(error => console.error('Error loading Oregon AVAs:', error));
+  }, []);
 
   useEffect(() => {
     if (!mapContainer.current || !selectedState) return;
@@ -117,13 +129,64 @@ const StateMap = () => {
 
     svgRef.current = svg.node();
 
-    // Render state outline
+    // Render Oregon AVAs if selected state is Oregon
+    if (selectedState.name === 'Oregon') {
+      // Check if AVA data is loaded
+      if (!oregonAVAs) {
+        console.log('Oregon AVAs not loaded yet');
+        return;
+      }
+      
+      // Sort AVAs by size (largest first) so small sub-AVAs render on top
+      const displayAVAs = oregonAVAs.features.slice().sort((a, b) => {
+        // Calculate approximate area using bounding box
+        const areaA = d3.geoBounds(a);
+        const areaB = d3.geoBounds(b);
+        const sizeA = (areaA[1][0] - areaA[0][0]) * (areaA[1][1] - areaA[0][1]);
+        const sizeB = (areaB[1][0] - areaB[0][0]) * (areaB[1][1] - areaB[0][1]);
+        return sizeB - sizeA; // Largest first (bottom layer)
+      });
+      
+      console.log('Rendering all Oregon AVAs:', displayAVAs.length);
+      console.log('AVA IDs:', displayAVAs.map(a => a.properties.ava_id));
+      
+      // Render AVA boundaries (no labels)
+      svg.selectAll('.ava-boundary')
+        .data(displayAVAs)
+        .enter()
+        .append('path')
+        .attr('class', 'ava-boundary')
+        .attr('d', pathGenerator)
+        .attr('fill', '#E8E4D9')  // Match state fill
+        .attr('stroke', '#C41E3A')  // Burgundy border
+        .attr('stroke-width', 1)
+        .style('cursor', 'pointer')
+        .on('mouseenter', function(event, d) {
+          d3.select(this)
+            .attr('fill', 'rgba(196, 30, 58, 0.1)')
+            .attr('stroke-width', 1.5)
+            .raise();
+        })
+        .on('mouseleave', function(event, d) {
+          d3.select(this)
+            .attr('fill', '#E8E4D9')
+            .attr('stroke-width', 1);
+        })
+        .on('click', (event, d) => {
+          console.log('Clicked AVA:', d.properties.name);
+        });
+    }
+
+    // Render state outline AFTER AVAs so border stays on top
     svg.append('path')
       .datum(stateFeature)
+      .attr('class', 'state-boundary-top')
       .attr('d', pathGenerator)
-      .attr('fill', '#E8E4D9')
-      .attr('stroke', 'black')
-      .attr('stroke-width', 2.5);
+      .attr('fill', 'none')  // No fill - transparent
+      .attr('stroke', '#000000')  // Black border
+      .attr('stroke-width', 2.5)
+      .attr('pointer-events', 'none')  // Don't block AVA interactions
+      .style('z-index', 1000);  // On top
 
     // Handle window resize
     const handleResize = () => {
