@@ -126,7 +126,7 @@ const Breadcrumb = () => {
           
           {item.component === 'Link' ? (
             <Link 
-              to="/about"
+              to="/"
               className={styles.link}
             >
               {item.label}

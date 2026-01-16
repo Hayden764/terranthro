@@ -3,14 +3,19 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MapProvider } from './context/MapContext';
 import { LayerProvider } from './context/LayerContext';
 import { useMapContext } from './context/MapContext';
-import NationalMap from './components/Map/NationalMap';
-import StateMap from './components/Map/StateMap';
+// D3 components (kept as backup)
+// import NationalMap from './components/Map/NationalMap';
+// import StateMap from './components/Map/StateMap';
+// Mapbox components (active)
+import MapboxNationalMap from './components/Map/MapboxNationalMap';
 import AVAMap from './components/Map/AVAMap';
 import Breadcrumb from './components/Navigation/Breadcrumb';
 import LayersMenuButton from './components/UI/LayersMenuButton';
 import LayersModal from './components/Layers/LayersModal';
 import ProjectionInfoModal from './components/UI/ProjectionInfoModal';
 import About from './pages/About';
+import StatePage from './pages/StatePage';
+import AVAPage from './components/AVAPage/AVAPage';
 import './styles/globals.css';
 
 function MapContainer() {
@@ -20,13 +25,11 @@ function MapContainer() {
   const renderMap = () => {
     switch (currentLevel) {
       case 'national':
-        return <NationalMap />;
-      case 'state':
-        return <StateMap />;
+        return <MapboxNationalMap />;
       case 'ava':
         return <AVAMap />;
       default:
-        return <NationalMap />;
+        return <MapboxNationalMap />;
     }
   };
 
@@ -57,6 +60,8 @@ function App() {
             </LayerProvider>
           </MapProvider>
         } />
+        <Route path="/states/:stateName" element={<StatePage />} />
+        <Route path="/states/:stateName/avas/:avaSlug" element={<AVAPage />} />
         <Route path="/about" element={<About />} />
       </Routes>
     </BrowserRouter>

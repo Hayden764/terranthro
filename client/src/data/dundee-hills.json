@@ -1,0 +1,36 @@
+{
+  "id": "ava-or-dundee-hills",
+  "name": "Dundee Hills",
+  "slug": "dundee-hills",
+  "state": "Oregon",
+  "bbox": [-123.05, 45.25, -122.95, 45.35],
+  "centroid": [-123.00, 45.30],
+  "geometry": {
+    "type": "Feature",
+    "properties": {
+      "name": "Dundee Hills"
+    },
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [-123.05, 45.25],
+        [-122.95, 45.25],
+        [-122.95, 45.35],
+        [-123.05, 45.35],
+        [-123.05, 45.25]
+      ]]
+    }
+  },
+  "elevation": {
+    "min": 200,
+    "max": 1000,
+    "units": "feet"
+  },
+  "description": {
+    "short": "Red volcanic soils at 200-1000ft elevation, ideal for Pinot Noir"
+  },
+  "tradeAssociation": {
+    "name": "Dundee Hills Winegrowers Association",
+    "url": "https://dundeehills.org"
+  }
+}

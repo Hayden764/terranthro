@@ -1,0 +1,235 @@
+/* MapLibre AVA Viewer - View Controls Responsive Styling */
+
+/* Desktop View Controls - Always visible on desktop */
+.view-controls-desktop {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+  background: var(--base-white, #FFFFFF);
+  border: 1px solid var(--border-gray, #E0E0E0);
+  border-radius: 4px;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile View Controls Button - Hidden on desktop */
+.view-controls-mobile-button {
+  display: none;
+}
+
+/* Mobile View Menu - Hidden on desktop */
+.view-mobile-backdrop {
+  display: none;
+}
+
+.view-mobile-menu {
+  display: none;
+}
+
+/* Tablet Responsiveness */
+@media (max-width: 1024px) {
+  .view-controls-desktop {
+    top: 20px;
+    right: 20px;
+    padding: 6px;
+    gap: 6px;
+  }
+}
+
+/* Mobile Responsiveness - Icon Button for Views */
+@media (max-width: 768px) {
+  /* Hide desktop controls */
+  .view-controls-desktop {
+    display: none;
+  }
+
+  /* Show mobile icon button */
+  .view-controls-mobile-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    background: white;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    color: #2B2B2B;
+    z-index: 1001;
+    transition: all 0.2s ease;
+  }
+
+  .view-controls-mobile-button:hover {
+    background: #F5EFE0;
+    border-color: #C41E3A;
+  }
+
+  .view-controls-mobile-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Mobile View Menu Backdrop */
+  .view-mobile-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1100;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Mobile View Menu Popup */
+  .view-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 40px);
+    max-width: 320px;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 1200;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -40%);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  /* Menu Title */
+  .view-mobile-menu-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2B2B2B;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  /* Menu Items */
+  .view-mobile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    background: transparent;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: #2B2B2B;
+    transition: all 0.2s ease;
+  }
+
+  .view-mobile-menu-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .view-mobile-menu-item:hover {
+    background: #F5EFE0;
+    border-color: #C41E3A;
+  }
+
+  .view-mobile-menu-item.active {
+    background: #C41E3A;
+    border-color: #C41E3A;
+    color: white;
+  }
+
+  /* Menu Item Icon */
+  .view-mobile-menu-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .view-mobile-menu-item.active .view-mobile-menu-icon {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Menu Item Label */
+  .view-mobile-menu-label {
+    flex: 1;
+    text-align: left;
+    font-weight: 500;
+  }
+
+  /* Menu Item Checkmark */
+  .view-mobile-menu-check {
+    font-size: 20px;
+    color: white;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .view-controls-mobile-button {
+    width: 40px;
+    height: 40px;
+    top: 16px;
+    right: 16px;
+  }
+
+  .view-controls-mobile-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .view-mobile-menu {
+    max-width: 280px;
+    padding: 16px;
+  }
+
+  .view-mobile-menu-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .view-mobile-menu-item {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .view-mobile-menu-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+}

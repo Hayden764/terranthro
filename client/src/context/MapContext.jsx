@@ -66,8 +66,13 @@ function mapReducer(state, action) {
   }
 }
 
-export function MapProvider({ children }) {
-  const [state, dispatch] = useReducer(mapReducer, initialState);
+export function MapProvider({ children, initialState: customInitialState }) {
+  // Merge custom initial state with defaults
+  const mergedInitialState = customInitialState 
+    ? { ...initialState, selectedState: customInitialState, currentLevel: 'state' }
+    : initialState;
+  
+  const [state, dispatch] = useReducer(mapReducer, mergedInitialState);
 
   const actions = {
     setCurrentLevel: (level) => dispatch({ type: 'SET_LEVEL', payload: level }),

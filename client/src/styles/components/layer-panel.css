@@ -1,0 +1,300 @@
+/* Layer Panel - Responsive with Hamburger Menu */
+
+/* Desktop: Always visible in top-left corner */
+.layer-panel {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  width: 300px;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+/* Mobile Hamburger Button - Hidden on desktop */
+.layer-hamburger-button {
+  display: none;
+}
+
+/* Mobile Backdrop - Hidden on desktop */
+.layer-mobile-backdrop {
+  display: none;
+}
+
+/* Mobile Close Button - Hidden on desktop */
+.layer-mobile-close {
+  display: none;
+}
+
+/* Panel Content */
+.panel-content {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Panel Title */
+.panel-title {
+  margin: 0 0 20px 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2B2B2B;
+}
+
+/* Categories Container */
+.categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Single Category */
+.category {
+  margin: 0;
+  padding: 0;
+}
+
+/* Category Header Button */
+.category-header {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  text-align: left;
+  transition: opacity 0.2s ease;
+}
+
+.category-header:hover {
+  opacity: 0.7;
+}
+
+/* Arrow Icon */
+.arrow {
+  font-size: 10px;
+  color: #6B6B6B;
+  width: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+/* Category Name */
+.category-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B6B6B;
+  letter-spacing: 0.5px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Layer List (when expanded) */
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 12px 24px;
+}
+
+/* Individual Layer Checkbox */
+.layer-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #2B2B2B;
+}
+
+.layer-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #C41E3A;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.layer-checkbox span {
+  user-select: none;
+  line-height: 1.4;
+}
+
+/* Tablet Responsiveness */
+@media (max-width: 1024px) {
+  .layer-panel {
+    width: 280px;
+  }
+  
+  .panel-title {
+    font-size: 16px;
+  }
+  
+  .category-name {
+    font-size: 12px;
+  }
+  
+  .layer-checkbox {
+    font-size: 13px;
+  }
+}
+
+/* Mobile Responsiveness - Hamburger Menu */
+@media (max-width: 768px) {
+  /* Hide desktop panel, show hamburger button */
+  .layer-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: 320px;
+    height: 100vh;
+    background: white;
+    padding: 20px;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1200;
+    overflow-y: auto;
+  }
+
+  .layer-panel.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Hamburger Button - Visible on mobile */
+  .layer-hamburger-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    background: white;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    color: #2B2B2B;
+    z-index: 1001;
+    transition: all 0.2s ease;
+  }
+
+  .layer-hamburger-button:hover {
+    background: #F5EFE0;
+    border-color: #C41E3A;
+  }
+
+  .layer-hamburger-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Mobile Backdrop */
+  .layer-mobile-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1100;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Mobile Close Button */
+  .layer-mobile-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 32px;
+    color: #6B6B6B;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s ease;
+  }
+
+  .layer-mobile-close:hover {
+    color: #C41E3A;
+  }
+
+  /* Panel Content - Add background on mobile */
+  .panel-content {
+    background: white;
+    padding: 0;
+  }
+
+  /* Adjust panel title for mobile close button */
+  .panel-title {
+    margin: 0 40px 20px 0;
+    font-size: 18px;
+  }
+
+  .category-name {
+    font-size: 12px;
+  }
+
+  .layer-checkbox {
+    font-size: 13px;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .layer-hamburger-button {
+    width: 40px;
+    height: 40px;
+    top: 16px;
+    left: 16px;
+  }
+
+  .layer-hamburger-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .layer-panel {
+    max-width: 280px;
+    padding: 16px;
+  }
+
+  .panel-title {
+    font-size: 16px;
+  }
+
+  .category-name {
+    font-size: 11px;
+  }
+
+  .layer-checkbox {
+    font-size: 12px;
+  }
+}
+
+

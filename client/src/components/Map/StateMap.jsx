@@ -58,6 +58,7 @@ const StateMap = () => {
   const svgRef = useRef(null);
   const { selectedState } = useMapContext();
   const [oregonAVAs, setOregonAVAs] = useState(null);
+  const [hoveredAVA, setHoveredAVA] = useState(null);
 
   // Fetch Oregon AVAs data
   useEffect(() => {
@@ -162,12 +163,14 @@ const StateMap = () => {
         .attr('stroke-width', 1)
         .style('cursor', 'pointer')
         .on('mouseenter', function(event, d) {
+          setHoveredAVA(d.properties.name);
           d3.select(this)
             .attr('fill', 'rgba(196, 30, 58, 0.1)')
             .attr('stroke-width', 1.5)
             .raise();
         })
         .on('mouseleave', function(event, d) {
+          setHoveredAVA(null);
           d3.select(this)
             .attr('fill', '#E8E4D9')
             .attr('stroke-width', 1);
@@ -249,6 +252,27 @@ const StateMap = () => {
           transition: 'all 0.3s ease'
         }} 
       />
+      
+      {/* AVA Name Overlay */}
+      {hoveredAVA && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '12px 16px',
+          borderRadius: '4px',
+          fontFamily: 'Montserrat, sans-serif',
+          fontSize: '16px',
+          fontWeight: '500',
+          pointerEvents: 'none',
+          zIndex: 1000,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+        }}>
+          {hoveredAVA}
+        </div>
+      )}
     </div>
   );
 };
