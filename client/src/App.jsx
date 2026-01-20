@@ -3,39 +3,22 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MapProvider } from './context/MapContext';
 import { LayerProvider } from './context/LayerContext';
 import { useMapContext } from './context/MapContext';
-// D3 components (kept as backup)
-// import NationalMap from './components/Map/NationalMap';
-// import StateMap from './components/Map/StateMap';
-// Mapbox components (active)
-import MapboxNationalMap from './components/Map/MapboxNationalMap';
-import AVAMap from './components/Map/AVAMap';
+import MapLibreNationalMap from './components/Map/MapLibreNationalMap';
 import Breadcrumb from './components/Navigation/Breadcrumb';
 import LayersMenuButton from './components/UI/LayersMenuButton';
 import LayersModal from './components/Layers/LayersModal';
 import ProjectionInfoModal from './components/UI/ProjectionInfoModal';
 import About from './pages/About';
 import StatePage from './pages/StatePage';
-import AVAPage from './components/AVAPage/AVAPage';
+import AVAPage from './pages/AVAPage';
 import './styles/globals.css';
 
 function MapContainer() {
-  const { currentLevel } = useMapContext();
   const [isLayersOpen, setIsLayersOpen] = useState(false);
-
-  const renderMap = () => {
-    switch (currentLevel) {
-      case 'national':
-        return <MapboxNationalMap />;
-      case 'ava':
-        return <AVAMap />;
-      default:
-        return <MapboxNationalMap />;
-    }
-  };
 
   return (
     <div className="map-container">
-      {renderMap()}
+      <MapLibreNationalMap />
       <Breadcrumb />
       <LayersMenuButton onClick={() => setIsLayersOpen(true)} />
       <LayersModal 

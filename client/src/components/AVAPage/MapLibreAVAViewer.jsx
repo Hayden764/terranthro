@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '../../styles/components/maplibre-viewer.css';
 
-const MapLibreAVAViewer = ({ avaFeature }) => {
-  const mapContainer = useRef(null);
+/**
+ * MapLibre AVA Viewer Component
+ * Displays a single AVA with 3D terrain
+ * Uses MapLibre GL JS with ESRI satellite basemap and terrain
+ * Supports camera transitions from state map
+ */
+const MapLibreAVAViewer = ({ avaData, avaName }) => {
+  const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const location = useLocation();
   const [activeView, setActiveView] = useState('N');
   const [isMobileViewMenuOpen, setIsMobileViewMenuOpen] = useState(false);
 
@@ -35,117 +43,170 @@ const MapLibreAVAViewer = ({ avaFeature }) => {
   };
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainerRef.current) return;
 
-    // Create MapLibre map with 3D terrain
+    // Get previous camera from navigation state
+    const previousCamera = location.state?.previousCamera;
+
+    // Calculate AVA bounds if data available
+    let avaBounds = null;
+    let avaCenter = [-120.5, 44];
+    
+    if (avaData && avaData.features && avaData.features.length > 0) {
+      const feature = avaData.features[0];
+      const coords = [];
+      
+      const extractCoords = (geometry) => {
+        if (geometry.type === 'Polygon') {
+          geometry.coordinates[0].forEach(coord => coords.push(coord));
+        } else if (geometry.type === 'MultiPolygon') {
+          geometry.coordinates.forEach(polygon => {
+            polygon[0].forEach(coord => coords.push(coord));
+          });
+        }
+      };
+      
+      extractCoords(feature.geometry);
+      
+      if (coords.length > 0) {
+        const lngs = coords.map(c => c[0]);
+        const lats = coords.map(c => c[1]);
+        avaBounds = [
+          [Math.min(...lngs), Math.min(...lats)],
+          [Math.max(...lngs), Math.max(...lats)]
+        ];
+        avaCenter = [
+          (avaBounds[0][0] + avaBounds[1][0]) / 2,
+          (avaBounds[0][1] + avaBounds[1][1]) / 2
+        ];
+      }
+    }
+
+    // Determine initial camera
+    const initialCenter = previousCamera?.center || avaCenter;
+    const initialZoom = previousCamera?.zoom || 8;
+    const initialPitch = previousCamera?.pitch || 0;
+
+    // Initialize map with terrain
     const map = new maplibregl.Map({
-      container: mapContainer.current,
+      container: mapContainerRef.current,
       style: {
         version: 8,
         sources: {
-          'terrain-rgb': {
-            type: 'raster-dem',
-            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-            encoding: 'terrarium',
-            tileSize: 256,
-            maxzoom: 15
-          },
           'esri-satellite': {
             type: 'raster',
             tiles: [
               'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256,
-            attribution: 'Esri, Maxar, Earthstar Geographics'
+            attribution: '© Esri, Maxar, Earthstar Geographics'
+          },
+          'terrain-source': {
+            type: 'raster-dem',
+            tiles: [
+              'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            encoding: 'terrarium'
           }
         },
         layers: [
           {
-            id: 'satellite',
+            id: 'satellite-layer',
             type: 'raster',
-            source: 'esri-satellite'
+            source: 'esri-satellite',
+            minzoom: 0,
+            maxzoom: 22
           }
         ],
         terrain: {
-          source: 'terrain-rgb',
+          source: 'terrain-source',
           exaggeration: 1.5
+        },
+        sky: {
+          'sky-color': '#87CEEB',
+          'horizon-color': '#f0f8ff',
+          'fog-color': '#f0f8ff'
         }
       },
-      center: [-123.0, 45.28], // Dundee Hills coordinates
-      zoom: 13.5,
-      pitch: 60, // Tilted 3D view
-      bearing: -20, // Slight rotation
-      antialias: true,
-      hash: false
+      center: initialCenter,
+      zoom: initialZoom,
+      pitch: initialPitch,
+      bearing: previousCamera?.bearing || 0,
+      minZoom: 6,
+      maxZoom: 18,
+      maxPitch: 85
     });
 
     mapRef.current = map;
 
-    // Hide default MapLibre controls
-    map.addControl(new maplibregl.NavigationControl({
-      showCompass: false,
-      showZoom: false
-    }), 'top-right');
-
-    // Smooth fly animation on load
     map.on('load', () => {
-      // Use the passed avaFeature prop directly
-      if (avaFeature) {
-        console.log('Loading AVA boundary:', avaFeature.properties.name);
-        
-        // Add source
+      // Animate to AVA if we have previous camera
+      if (previousCamera && avaBounds) {
+        setTimeout(() => {
+          map.flyTo({
+            center: avaCenter,
+            zoom: 10,
+            pitch: 60,
+            bearing: -20,
+            duration: 2000,
+            essential: true
+          });
+        }, 100);
+      } else if (!previousCamera) {
+        // Direct URL access - start high and zoom down
+        map.flyTo({
+          center: avaCenter,
+          zoom: 10,
+          pitch: 60,
+          bearing: -20,
+          duration: 1500,
+          essential: true
+        });
+      }
+
+      // Add AVA boundary if data available
+      if (avaData && avaData.features && avaData.features.length > 0) {
         map.addSource('ava-boundary', {
           type: 'geojson',
-          data: avaFeature
+          data: avaData
         });
-        
-        // Add outline only (no fill)
+
+        // AVA fill
+        map.addLayer({
+          id: 'ava-fill',
+          type: 'fill',
+          source: 'ava-boundary',
+          paint: {
+            'fill-color': '#C41E3A',
+            'fill-opacity': 0.15
+          }
+        });
+
+        // AVA outline
         map.addLayer({
           id: 'ava-outline',
           type: 'line',
           source: 'ava-boundary',
           paint: {
             'line-color': '#FFFFFF',
-            'line-width': 2
+            'line-width': 3,
+            'line-opacity': 0.9
           }
         });
+      }
 
-        // Calculate bounds from geometry
-        const calculateBounds = (geometry) => {
-          let minLng = Infinity, maxLng = -Infinity;
-          let minLat = Infinity, maxLat = -Infinity;
-          
-          const processCoords = (coords) => {
-            if (typeof coords[0] === 'number') {
-              // This is a [lng, lat] pair
-              minLng = Math.min(minLng, coords[0]);
-              maxLng = Math.max(maxLng, coords[0]);
-              minLat = Math.min(minLat, coords[1]);
-              maxLat = Math.max(maxLat, coords[1]);
-            } else {
-              // Nested array, recurse
-              coords.forEach(c => processCoords(c));
-            }
-          };
-              
-              processCoords(geometry.coordinates);
-              return [[minLng, minLat], [maxLng, maxLat]];
-            };
+      // Add navigation controls
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-          
-          const bounds = calculateBounds(avaFeature.geometry);
-          
-          // Fit camera to AVA bounds with 3D perspective - North view (looking south)
-          map.fitBounds(bounds, {
-            padding: 80,      // 80px padding around edges
-            pitch: 45,        // 45° tilt for balanced 3D view
-            bearing: 0,       // North view (looking south at AVA)
-            duration: 2000,   // 2 second animation
-            essential: true
-          });
-        } else {
-          console.warn('No AVA feature provided');
-        }
+      // Add terrain control
+      map.addControl(
+        new maplibregl.TerrainControl({
+          source: 'terrain-source',
+          exaggeration: 1.5
+        }),
+        'top-right'
+      );
     });
 
     // Cleanup
@@ -155,12 +216,12 @@ const MapLibreAVAViewer = ({ avaFeature }) => {
         mapRef.current = null;
       }
     };
-  }, [avaFeature]);
+  }, [avaData, avaName, location.state]);
 
   return (
     <>
       <div 
-        ref={mapContainer}
+        ref={mapContainerRef}
         style={{
           position: 'absolute',
           top: 0,

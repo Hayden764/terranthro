@@ -1,8 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { STATE_CONFIG, getStateConfig } from '../config/stateConfig';
-import MapboxStateMap from '../components/Map/MapboxStateMap';
-import wineStatesData from '../data/wine-states-production.json';
+import { useState, useEffect, useRef } from 'react';
+import { getStateConfig } from '../config/stateConfig';
+import MapLibreStateMap from '../components/Map/MapLibreStateMap';
+import AVAListPanel from '../components/Map/AVAListPanel';
 import '../styles/globals.css';
 
 const StatePage = () => {
@@ -10,17 +10,9 @@ const StatePage = () => {
   const [avaData, setAvaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Get state configuration
-  const stateConfig = getStateConfig(stateName);
-
-  // Get production data for this state
-  const productionData = stateConfig 
-    ? wineStatesData.find(s => s.name === stateConfig.name)
-    : null;
-
-  // Fetch AVA data when state changes
-  useEffect(() => {
+  const avaHoverHandlerRef = useRef(null);
+  
+  const stateConfig = getStateConfig(stateName);  useEffect(() => {
     if (!stateConfig) {
       setLoading(false);
       return;
@@ -30,149 +22,148 @@ const StatePage = () => {
       setLoading(true);
       setError(null);
       
+      console.log(`Loading AVAs for ${stateConfig.name}:`, stateConfig.avaFile);
+      
       fetch(stateConfig.avaFile)
         .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
           return res.json();
         })
         .then(data => {
-          console.log(`Loaded ${data.features.length} ${stateConfig.name} AVAs`);
+          console.log(`✅ Loaded ${data.features?.length || 0} AVAs for ${stateConfig.name}`);
           setAvaData(data);
           setLoading(false);
         })
         .catch(err => {
-          console.error('Error loading AVAs:', err);
+          console.error(`❌ Error loading AVAs for ${stateConfig.name}:`, err);
           setError(err.message);
           setLoading(false);
         });
     } else {
-      // No AVA file for this state yet
-      console.log(`No AVA file available for ${stateConfig.name}`);
+      console.log(`No AVA data available for ${stateConfig.name}`);
       setAvaData(null);
       setLoading(false);
     }
   }, [stateName, stateConfig]);
 
-  // Handle state not found
   if (!stateConfig) {
     return (
       <div className="state-page">
         <div className="state-not-found">
           <h1>State Not Found</h1>
-          <p>The state "{stateName}" was not found in our database.</p>
-          <Link to="/" className="back-link">← Back to National Map</Link>
+          <p>The state "{stateName}" was not found.</p>
+          <Link to="/">← Back to National Map</Link>
         </div>
       </div>
     );
   }
 
-  // Format production number
-  const formatProduction = (tons) => {
-    if (tons >= 1000000) {
-      return `${(tons / 1000000).toFixed(1)}M tons`;
-    } else if (tons >= 1000) {
-      return `${(tons / 1000).toFixed(0)}K tons`;
-    }
-    return `${tons} tons`;
-  };
-
   return (
     <div className="state-page">
-      {/* Breadcrumb for state page */}
-      <header className="state-header">
-        <nav className="state-breadcrumb">
-          <Link to="/" className="breadcrumb-link">TERRANTHRO</Link>
-          <span className="breadcrumb-separator">→</span>
-          <Link to="/" className="breadcrumb-link">UNITED STATES</Link>
-          <span className="breadcrumb-separator">→</span>
-          <span className="breadcrumb-current">{stateConfig.name.toUpperCase()}</span>
-        </nav>
-      </header>
-
-      {/* Intro Section */}
-      <section className="state-intro">
-        <h1>{stateConfig.name.toUpperCase()} WINE REGIONS</h1>
-        <p className="intro-text">{stateConfig.intro}</p>
-
-        {/* Stats Panel */}
-        <div className="stats-grid">
-          <div className="stat">
-            <span className="stat-label">AVAs</span>
-            <span className="stat-value">
-              {loading ? '...' : (avaData ? avaData.features.length : 'TBD')}
-            </span>
-          </div>
-          <div className="stat">
-            <span className="stat-label">Production</span>
-            <span className="stat-value">
-              {productionData ? formatProduction(productionData.tons_crushed) : 'TBD'}
-            </span>
-          </div>
-          <div className="stat">
-            <span className="stat-label">Rank</span>
-            <span className="stat-value">
-              {productionData ? `#${wineStatesData.findIndex(s => s.name === stateConfig.name) + 1}` : 'TBD'}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Map Section */}
-      <section className="state-map-section">
-        {loading && (
-          <div className="loading-overlay">
-            <div className="spinner"></div>
-            <p>Loading {stateConfig.name} AVAs...</p>
-          </div>
-        )}
+      <div className="state-map-container" style={{ position: 'relative', width: '100%', height: '100vh' }}>
+        <MapLibreStateMap 
+          stateConfig={stateConfig}
+          avaData={avaData}
+          onAVAHoverHandler={(handler) => { avaHoverHandlerRef.current = handler; }}
+        />
         
-        {error && (
-          <div className="error-message">
-            <p>Error loading AVA data: {error}</p>
+        {!loading && !error && avaData && (
+          <AVAListPanel
+            avaData={avaData}
+            stateName={stateName}
+            onAVAHover={(name, hover) => avaHoverHandlerRef.current?.(name, hover)}
+          />
+        )}
+
+        {/* Back to National Map Button */}
+        <Link 
+          to="/" 
+          className="back-button"
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            background: '#FFFEF7',
+            color: '#2B2B2B',
+            padding: '10px 16px',
+            borderRadius: '6px',
+            textDecoration: 'none',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '14px',
+            fontWeight: '500',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            zIndex: 1000
+          }}
+        >
+          ← Back to US Map
+        </Link>
+
+        {/* Loading State */}
+        {loading && (
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: '40%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0, 0, 0, 0.85)',
+              color: '#FFFFFF',
+              padding: '16px 32px',
+              borderRadius: '8px',
+              zIndex: 1000,
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '16px'
+            }}
+          >
+            Loading AVA data...
           </div>
         )}
 
-        <div className="state-map-container">
-          <MapboxStateMap 
-            stateConfig={stateConfig}
-            avaData={avaData}
-          />
-        </div>
-      </section>
-
-      {/* AVA List Section */}
-      {avaData && avaData.features.length > 0 && (
-        <section className="ava-list-section">
-          <h2>AMERICAN VITICULTURAL AREAS</h2>
-          <div className="ava-grid">
-            {avaData.features
-              .map(f => f.properties.name)
-              .filter(Boolean)
-              .sort()
-              .map((name, index) => (
-                <div key={index} className="ava-item">
-                  {name}
-                </div>
-              ))
-            }
+        {/* Error State */}
+        {error && (
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: '40%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(196, 30, 58, 0.95)',
+              color: '#FFFFFF',
+              padding: '16px 32px',
+              borderRadius: '8px',
+              zIndex: 1000,
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px',
+              maxWidth: '400px',
+              textAlign: 'center'
+            }}
+          >
+            Failed to load AVA data: {error}
           </div>
-        </section>
-      )}
+        )}
 
-      {/* No AVA Data Message */}
-      {!loading && !avaData && (
-        <section className="no-ava-section">
-          <p>
-            AVA boundary data for {stateConfig.name} is coming soon. 
-            Check back later for detailed appellation maps.
-          </p>
-        </section>
-      )}
-
-      {/* Back to National Map */}
-      <footer className="state-footer">
-        <Link to="/" className="back-link">← Back to National Map</Link>
-      </footer>
+        {/* No AVA Data State */}
+        {!loading && !error && !avaData && (
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: '40%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0, 0, 0, 0.85)',
+              color: '#FFFFFF',
+              padding: '16px 32px',
+              borderRadius: '8px',
+              zIndex: 1000,
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px',
+              textAlign: 'center'
+            }}
+          >
+            No AVA data available for {stateConfig.name}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

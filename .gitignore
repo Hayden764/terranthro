@@ -41,3 +41,5 @@ data-pipeline/processed_data/
 *.db
 *.sqlite
 data-sources/
+._*
+.DS_Store
