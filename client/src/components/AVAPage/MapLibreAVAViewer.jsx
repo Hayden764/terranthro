@@ -1,93 +1,67 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import '../../styles/components/maplibre-viewer.css';
+import TerrainControlsPanel from './TerrainControlsPanel';
 
 /**
  * MapLibre AVA Viewer Component
- * Displays a single AVA with 3D terrain
- * Uses MapLibre GL JS with ESRI satellite basemap and terrain
- * Supports camera transitions from state map
+ * Displays AVA detail map with 3D terrain and interactive controls
  */
-const MapLibreAVAViewer = ({ avaData, avaName }) => {
+const MapLibreAVAViewer = ({ avaData }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const boundsRef = useRef(null);
+  const hasAnimatedRef = useRef(false);
   const location = useLocation();
-  const [activeView, setActiveView] = useState('N');
-  const [isMobileViewMenuOpen, setIsMobileViewMenuOpen] = useState(false);
-
-  // Cardinal direction view presets
-  const viewPresets = {
-    N: { bearing: 0, label: 'N', description: 'North' },
-    E: { bearing: 90, label: 'E', description: 'East' },
-    S: { bearing: 180, label: 'S', description: 'South' },
-    W: { bearing: 270, label: 'W', description: 'West' }
-  };
-
-  // Handle view change - preserves user's custom pitch
-  const changeView = (direction) => {
-    if (!mapRef.current) return;
-    
-    const preset = viewPresets[direction];
-    const currentPitch = mapRef.current.getPitch(); // Preserve user's current pitch
-    
-    mapRef.current.easeTo({
-      bearing: preset.bearing,
-      pitch: currentPitch, // Keep existing pitch
-      duration: 1000
-    });
-    
-    setActiveView(direction);
-    setIsMobileViewMenuOpen(false); // Close mobile menu after selection
-  };
+  const [terrainEnabled, setTerrainEnabled] = useState(true);
+  const [currentPitch, setCurrentPitch] = useState(60);
+  const [currentBearing, setCurrentBearing] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    // Get previous camera from navigation state
-    const previousCamera = location.state?.previousCamera;
-
-    // Calculate AVA bounds if data available
-    let avaBounds = null;
-    let avaCenter = [-120.5, 44];
-    
-    if (avaData && avaData.features && avaData.features.length > 0) {
-      const feature = avaData.features[0];
-      const coords = [];
-      
-      const extractCoords = (geometry) => {
-        if (geometry.type === 'Polygon') {
-          geometry.coordinates[0].forEach(coord => coords.push(coord));
-        } else if (geometry.type === 'MultiPolygon') {
-          geometry.coordinates.forEach(polygon => {
-            polygon[0].forEach(coord => coords.push(coord));
-          });
-        }
-      };
-      
-      extractCoords(feature.geometry);
-      
-      if (coords.length > 0) {
-        const lngs = coords.map(c => c[0]);
-        const lats = coords.map(c => c[1]);
-        avaBounds = [
-          [Math.min(...lngs), Math.min(...lats)],
-          [Math.max(...lngs), Math.max(...lats)]
-        ];
-        avaCenter = [
-          (avaBounds[0][0] + avaBounds[1][0]) / 2,
-          (avaBounds[0][1] + avaBounds[1][1]) / 2
-        ];
-      }
+    if (!mapContainerRef.current || mapRef.current) return;
+    if (!avaData) {
+      console.warn('MapLibreAVAViewer: No avaData provided');
+      return;
     }
 
-    // Determine initial camera
-    const initialCenter = previousCamera?.center || avaCenter;
-    const initialZoom = previousCamera?.zoom || 8;
-    const initialPitch = previousCamera?.pitch || 0;
+    // Handle both full GeoJSON FeatureCollection and single Feature
+    const geometry = avaData.geometry || (avaData.features && avaData.features[0]?.geometry);
+    if (!geometry) {
+      console.warn('MapLibreAVAViewer: No geometry found in avaData', avaData);
+      return;
+    }
 
-    // Initialize map with terrain
+    // Create a proper GeoJSON object for the source
+    const geoJsonData = avaData.type === 'Feature' 
+      ? avaData 
+      : { type: 'Feature', properties: avaData.properties || {}, geometry };
+
+    // Calculate initial center and bounds from geometry
+    let initialCenter = [-120, 38];
+    const bounds = new maplibregl.LngLatBounds();
+    
+    try {
+      const processCoords = (coords) => {
+        coords.forEach(coord => bounds.extend(coord));
+      };
+      
+      if (geometry.type === 'Polygon') {
+        processCoords(geometry.coordinates[0]);
+      } else if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates.forEach(polygon => processCoords(polygon[0]));
+      }
+      
+      if (!bounds.isEmpty()) {
+        initialCenter = bounds.getCenter().toArray();
+        boundsRef.current = bounds;
+      }
+    } catch (e) {
+      console.warn('Could not calculate bounds:', e);
+    }
+
+    // Initialize map
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {
@@ -100,14 +74,6 @@ const MapLibreAVAViewer = ({ avaData, avaName }) => {
             ],
             tileSize: 256,
             attribution: '© Esri, Maxar, Earthstar Geographics'
-          },
-          'terrain-source': {
-            type: 'raster-dem',
-            tiles: [
-              'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
-            ],
-            tileSize: 256,
-            encoding: 'terrarium'
           }
         },
         layers: [
@@ -118,207 +84,225 @@ const MapLibreAVAViewer = ({ avaData, avaName }) => {
             minzoom: 0,
             maxzoom: 22
           }
-        ],
-        terrain: {
-          source: 'terrain-source',
-          exaggeration: 1.5
-        },
-        sky: {
-          'sky-color': '#87CEEB',
-          'horizon-color': '#f0f8ff',
-          'fog-color': '#f0f8ff'
-        }
+        ]
       },
       center: initialCenter,
-      zoom: initialZoom,
-      pitch: initialPitch,
-      bearing: previousCamera?.bearing || 0,
-      minZoom: 6,
-      maxZoom: 18,
+      zoom: 10,
+      pitch: 0,
+      bearing: 0,
+      minPitch: 0,
       maxPitch: 85
     });
 
     mapRef.current = map;
 
     map.on('load', () => {
-      // Animate to AVA if we have previous camera
-      if (previousCamera && avaBounds) {
-        setTimeout(() => {
-          map.flyTo({
-            center: avaCenter,
-            zoom: 10,
-            pitch: 60,
-            bearing: -20,
-            duration: 2000,
-            essential: true
-          });
-        }, 100);
-      } else if (!previousCamera) {
-        // Direct URL access - start high and zoom down
-        map.flyTo({
-          center: avaCenter,
-          zoom: 10,
-          pitch: 60,
-          bearing: -20,
-          duration: 1500,
-          essential: true
+      console.log('Map loaded, adding AVA layer');
+
+      // Add terrain source for 3D terrain
+      map.addSource('terrainSource', {
+        type: 'raster-dem',
+        tiles: [
+          'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+        ],
+        encoding: 'terrarium',
+        tileSize: 256,
+        maxzoom: 15
+      });
+
+      // Enable terrain by default with 60° pitch
+      map.setTerrain({ source: 'terrainSource', exaggeration: 2.0 });
+      map.setPitch(60);
+
+      // Add AVA boundary
+      map.addSource('ava-boundary', {
+        type: 'geojson',
+        data: geoJsonData
+      });
+
+      map.addLayer({
+        id: 'ava-boundary-fill',
+        type: 'fill',
+        source: 'ava-boundary',
+        paint: {
+          'fill-color': '#FFFFFF',
+          'fill-opacity': 0.1
+        }
+      });
+
+      map.addLayer({
+        id: 'ava-boundary-line',
+        type: 'line',
+        source: 'ava-boundary',
+        paint: {
+          'line-color': '#FFFFFF',
+          'line-width': 3,
+          'line-opacity': 0.9
+        }
+      });
+
+      // Fit to AVA bounds
+      if (boundsRef.current && !boundsRef.current.isEmpty()) {
+        map.fitBounds(boundsRef.current, {
+          padding: 80,
+          duration: 1000
         });
       }
-
-      // Add AVA boundary if data available
-      if (avaData && avaData.features && avaData.features.length > 0) {
-        map.addSource('ava-boundary', {
-          type: 'geojson',
-          data: avaData
-        });
-
-        // AVA fill
-        map.addLayer({
-          id: 'ava-fill',
-          type: 'fill',
-          source: 'ava-boundary',
-          paint: {
-            'fill-color': '#C41E3A',
-            'fill-opacity': 0.15
-          }
-        });
-
-        // AVA outline
-        map.addLayer({
-          id: 'ava-outline',
-          type: 'line',
-          source: 'ava-boundary',
-          paint: {
-            'line-color': '#FFFFFF',
-            'line-width': 3,
-            'line-opacity': 0.9
-          }
-        });
-      }
-
-      // Add navigation controls
-      map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
-      // Add terrain control
-      map.addControl(
-        new maplibregl.TerrainControl({
-          source: 'terrain-source',
-          exaggeration: 1.5
-        }),
-        'top-right'
-      );
     });
 
-    // Cleanup
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [avaData, avaName, location.state]);
+  }, [avaData]);
+
+  // Handler: Zoom in
+  const handleZoomIn = () => {
+    if (mapRef.current) {
+      mapRef.current.zoomIn({ duration: 300 });
+    }
+  };
+
+  // Handler: Zoom out
+  const handleZoomOut = () => {
+    if (mapRef.current) {
+      mapRef.current.zoomOut({ duration: 300 });
+    }
+  };
+
+  // Handler: Reset view to initial state
+  const handleResetView = () => {
+    if (mapRef.current) {
+      mapRef.current.easeTo({
+        bearing: 0,
+        pitch: 0,
+        duration: 800
+      });
+      setCurrentPitch(0);
+      setCurrentBearing(0);
+
+      // Fit to AVA bounds
+      if (boundsRef.current && !boundsRef.current.isEmpty()) {
+        setTimeout(() => {
+          mapRef.current.fitBounds(boundsRef.current, {
+            padding: 80,
+            duration: 1000
+          });
+        }, 100);
+      }
+    }
+  };
+
+  // Handler: Toggle 3D terrain
+  const handleToggleTerrain = (enabled) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (enabled) {
+      // First, ensure terrain source exists
+      if (!map.getSource('terrainSource')) {
+        map.addSource('terrainSource', {
+          type: 'raster-dem',
+          tiles: [
+            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+          ],
+          encoding: 'terrarium',
+          tileSize: 256,
+          maxzoom: 15
+        });
+      }
+
+      // Enable terrain with exaggeration
+      map.setTerrain({
+        source: 'terrainSource',
+        exaggeration: 2.0
+      });
+    } else {
+      // Disable terrain
+      map.setTerrain(null);
+
+      // Reset pitch to 0 when disabling
+      map.easeTo({ pitch: 0, duration: 500 });
+      setCurrentPitch(0);
+    }
+
+    setTerrainEnabled(enabled);
+  };
+
+  // Handler: Change camera bearing
+  const handleBearingChange = (bearing) => {
+    if (mapRef.current) {
+      mapRef.current.setBearing(bearing);
+      setCurrentBearing(bearing);
+    }
+  };
+
+  // Handler: Change camera pitch
+  const handlePitchChange = (pitch) => {
+    if (mapRef.current) {
+      mapRef.current.setPitch(pitch);
+      setCurrentPitch(pitch);
+    }
+  };
 
   return (
-    <>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div 
-        ref={mapContainerRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%'
-        }}
+        ref={mapContainerRef} 
+        style={{ width: '100%', height: '100%' }} 
       />
-      
-      {/* Desktop View Controls - Hidden on mobile */}
-      <div className="view-controls-desktop">
-        <div style={{
-          fontSize: 'var(--text-xs)',
-          fontWeight: '600',
-          textTransform: 'uppercase',
-          letterSpacing: 'var(--tracking-wider)',
-          color: 'var(--text-gray)',
-          display: 'flex',
-          alignItems: 'center',
-          paddingRight: '8px',
-          borderRight: '1px solid var(--border-gray)'
-        }}>
-          View
+
+      {/* Loading indicator during transition */}
+      {isTransitioning && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(0, 0, 0, 0.75)',
+            color: '#FFFFFF',
+            padding: '16px 32px',
+            borderRadius: '8px',
+            zIndex: 1000,
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '14px',
+            fontWeight: '500',
+            pointerEvents: 'none',
+            animation: 'fadeInOut 2s ease-in-out'
+          }}
+        >
+          Zooming to AVA...
         </div>
-        {Object.entries(viewPresets).map(([key, preset]) => (
-          <button
-            key={key}
-            onClick={() => changeView(key)}
-            style={{
-              background: activeView === key 
-                ? 'var(--primary-burgundy)' 
-                : 'transparent',
-              border: '1px solid',
-              borderColor: activeView === key ? 'var(--primary-burgundy)' : 'var(--border-gray)',
-              borderRadius: '4px',
-              padding: '8px 12px',
-              color: activeView === key ? 'white' : 'var(--text-charcoal)',
-              fontFamily: 'var(--font-primary)',
-              fontSize: 'var(--text-sm)',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              minWidth: '36px'
-            }}
-            onMouseEnter={(e) => {
-              if (activeView !== key) {
-                e.target.style.background = 'var(--base-cream)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (activeView !== key) {
-                e.target.style.background = 'transparent';
-              }
-            }}
-            title={`View from ${preset.description}`}
-          >
-            {preset.label}
-          </button>
-        ))}
+      )}
+
+      {/* Terrain Controls Panel */}
+      <div style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
+        <TerrainControlsPanel
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetView={handleResetView}
+          onToggleTerrain={handleToggleTerrain}
+          onBearingChange={handleBearingChange}
+          onPitchChange={handlePitchChange}
+          terrainEnabled={terrainEnabled}
+          currentBearing={currentBearing}
+          currentPitch={currentPitch}
+        />
       </div>
 
-      {/* Mobile View Controls - Icon Button */}
-      <button 
-        className="view-controls-mobile-button"
-        onClick={() => setIsMobileViewMenuOpen(!isMobileViewMenuOpen)}
-        aria-label="Change view direction"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="12 2 19 9 12 16 5 9" />
-          <line x1="12" y1="16" x2="12" y2="22" />
-        </svg>
-      </button>
-
-      {/* Mobile View Menu Popup */}
-      {isMobileViewMenuOpen && (
-        <>
-          <div 
-            className="view-mobile-backdrop"
-            onClick={() => setIsMobileViewMenuOpen(false)}
-          />
-          <div className="view-mobile-menu">
-            <div className="view-mobile-menu-title">Select View</div>
-            {Object.entries(viewPresets).map(([key, preset]) => (
-              <button
-                key={key}
-                className={`view-mobile-menu-item ${activeView === key ? 'active' : ''}`}
-                onClick={() => changeView(key)}
-              >
-                <span className="view-mobile-menu-icon">{preset.label}</span>
-                <span className="view-mobile-menu-label">{preset.description}</span>
-                {activeView === key && <span className="view-mobile-menu-check">✓</span>}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </>
+      {/* CSS for fade animation */}
+      <style>{`
+        @keyframes fadeInOut {
+          0% { opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
+    </div>
   );
 };
 
