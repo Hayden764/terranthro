@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import TerrainControlsPanel from './TerrainControlsPanel';
+import ClimateLayer from './ClimateLayer';
+import ClimateControls from './ClimateControls';
 
 /**
  * MapLibre AVA Viewer Component
@@ -14,10 +16,17 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const boundsRef = useRef(null);
   const hasAnimatedRef = useRef(false);
   const location = useLocation();
+  
+  // Terrain controls state
   const [terrainEnabled, setTerrainEnabled] = useState(true);
   const [currentPitch, setCurrentPitch] = useState(60);
   const [currentBearing, setCurrentBearing] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  
+  // Climate layer state
+  const [climateVisible, setClimateVisible] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -98,6 +107,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
 
     map.on('load', () => {
       console.log('Map loaded, adding AVA layer');
+      setMapLoaded(true);
 
       // Add terrain source for 3D terrain
       map.addSource('terrainSource', {
@@ -154,6 +164,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
+        setMapLoaded(false);
       }
     };
   }, [avaData]);
@@ -278,7 +289,17 @@ const MapLibreAVAViewer = ({ avaData }) => {
         </div>
       )}
 
-      {/* Terrain Controls Panel */}
+      {/* Climate Layer - manages PRISM data on map */}
+      {mapLoaded && mapRef.current && (
+        <ClimateLayer
+          map={mapRef.current}
+          avaName="dundee-hills"
+          isVisible={climateVisible}
+          currentMonth={currentMonth}
+        />
+      )}
+
+      {/* Terrain Controls Panel - top right */}
       <div style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
         <TerrainControlsPanel
           onZoomIn={handleZoomIn}
@@ -292,6 +313,14 @@ const MapLibreAVAViewer = ({ avaData }) => {
           currentPitch={currentPitch}
         />
       </div>
+
+      {/* Climate Controls - bottom left */}
+      <ClimateControls
+        isVisible={climateVisible}
+        onToggle={setClimateVisible}
+        currentMonth={currentMonth}
+        onMonthChange={setCurrentMonth}
+      />
 
       {/* CSS for fade animation */}
       <style>{`
