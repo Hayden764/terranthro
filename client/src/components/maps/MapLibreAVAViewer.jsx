@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import TerrainControlsPanel from './TerrainControlsPanel';
-import ClimateLayer from './ClimateLayer';
-import ClimateControls from './ClimateControls';
+import TerrainControlsPanel from "./shared/TerrainControls";
+import ClimateLayer from "./shared/ClimateLayer";
+import ClimateControls from "./shared/ClimateControls";
 
 /**
  * MapLibre AVA Viewer Component

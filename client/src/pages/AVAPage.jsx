@@ -1,15 +1,19 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useMapContext } from '../context/MapContext';
 import { getStateConfig } from '../config/stateConfig';
-import MapLibreAVAViewer from '../components/AVAPage/MapLibreAVAViewer';
+import MapLibreAVAViewer from '../components/maps/MapLibreAVAViewer';
 import '../styles/globals.css';
 
 const AVAPage = () => {
   const { stateName, avaSlug } = useParams();
+  const navigate = useNavigate();
   const [avaData, setAvaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [avaName, setAvaName] = useState('');
+
+  const { setSelectedAVA, setCurrentLevel } = useMapContext();
 
   const stateConfig = getStateConfig(stateName);
 
@@ -50,6 +54,13 @@ const AVAPage = () => {
         setLoading(false);
       });
   }, [stateName, avaSlug, stateConfig]);
+
+  useEffect(() => {
+    if (avaData) {
+      setCurrentLevel('ava');
+      setSelectedAVA(avaData);
+    }
+  }, [avaData]);
 
   if (loading) {
     return (

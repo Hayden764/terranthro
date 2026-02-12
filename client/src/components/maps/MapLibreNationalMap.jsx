@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { feature } from 'topojson-client';
-import usStatesTopo from '../../data/us-states-topo.json';
+import { useNavigate } from 'react-router-dom';
+import { useMapContext } from '../../context/MapContext';
+import usStatesGeoJson from "../../data/us-states.json";
 import { getConfiguredStateNames } from '../../config/stateConfig';
 
 /**
@@ -63,13 +63,10 @@ const MapLibreNationalMap = () => {
     mapRef.current = map;
 
     map.on('load', () => {
-      // Convert TopoJSON to GeoJSON
-      const statesGeoJSON = feature(usStatesTopo, usStatesTopo.objects.states);
-
       // Add states source with generateId for feature-state
       map.addSource('us-states', {
         type: 'geojson',
-        data: statesGeoJSON,
+        data: usStatesGeoJson,
         generateId: true
       });
 
