@@ -78,7 +78,7 @@ const Breadcrumb = () => {
   }
 
   // Add state if selected
-  if (selectedState) {
+  if (selectedState && selectedState.name) {
     allItems.push({
       type: 'state',
       label: selectedState.name.toUpperCase(),
@@ -88,7 +88,7 @@ const Breadcrumb = () => {
   }
 
   // Add AVA if selected (always shown as current/last item)
-  if (selectedAVA) {
+  if (selectedAVA && selectedAVA.name) {
     allItems.push({
       type: 'ava',
       label: selectedAVA.name.toUpperCase(),

@@ -46,5 +46,12 @@ export default defineConfig({
     port: 3001,
     strictPort: false,
     host: true
+  },
+  
+  // Add assureTypes configuration
+  resolve: {
+    alias: {
+      '.geojson': 'json'  // Tell Vite to treat .geojson as JSON
+    }
   }
 });

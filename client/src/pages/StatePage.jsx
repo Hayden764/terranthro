@@ -1,8 +1,9 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { getStateConfig } from '../config/stateConfig';
-import MapLibreStateMap from '../components/Map/MapLibreStateMap';
-import AVAListPanel from '../components/Map/AVAListPanel';
+import { useMapContext } from '../context/MapContext';
+import MapLibreStateMap from '../components/maps/MapLibreStateMap';
+import AVAListPanel from '../components/layers/AVAListPanel';
 import '../styles/globals.css';
 
 const StatePage = () => {
@@ -12,6 +13,7 @@ const StatePage = () => {
   const [error, setError] = useState(null);
   const avaHoverHandlerRef = useRef(null);
   
+  const { setSelectedState, setCurrentLevel } = useMapContext();
   const stateConfig = getStateConfig(stateName);  useEffect(() => {
     if (!stateConfig) {
       setLoading(false);
@@ -45,6 +47,13 @@ const StatePage = () => {
       setLoading(false);
     }
   }, [stateName, stateConfig]);
+
+  useEffect(() => {
+    setCurrentLevel('state');
+    if (stateConfig) {
+      setSelectedState(stateConfig);
+    }
+  }, [stateName]);
 
   if (!stateConfig) {
     return (
