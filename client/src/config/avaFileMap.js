@@ -1,44 +1,59 @@
 /**
  * AVA File Mapping Configuration
  * Maps state slugs to their AVA GeoJSON file names from UC Davis repository
- * Files should be placed in public/data/
- * 
+ * Files are in public/data/
+ *
  * Source: https://github.com/UCDavisLibrary/ava/tree/master/avas_by_state
+ *
+ * NOTE: Only states with actual GeoJSON files in public/data/ are listed here.
+ * Oklahoma, New Hampshire, Vermont, Maine have no file yet.
  */
 
 export const AVA_FILE_MAP = {
-  'california': 'CA_avas.geojson',
-  'oregon': 'OR_avas.geojson',
-  'washington': 'WA_avas.geojson',
-  'new-york': 'NY_avas.geojson',
-  'texas': 'TX_avas.geojson',
-  'virginia': 'VA_avas.geojson',
-  'pennsylvania': 'PA_avas.geojson',
-  'ohio': 'OH_avas.geojson',
-  'michigan': 'MI_avas.geojson',
-  'missouri': 'MO_avas.geojson',
+  // West Coast
+  'california':     'CA_avas.geojson',
+  'oregon':         'OR_avas.geojson',
+  'washington':     'WA_avas.geojson',
+  'hawaii':         'HI_avas.geojson',
+
+  // Mountain
+  'idaho':          'ID_avas.geojson',
+  'colorado':       'CO_avas.geojson',
+  'arizona':        'AZ_avas.geojson',
+  'new-mexico':     'NM_avas.geojson',
+
+  // South Central
+  'texas':          'TX_avas.geojson',
+  'arkansas':       'AR_avas.geojson',
+  'missouri':       'MO_avas.geojson',
+  'louisiana':      'LA_avas.geojson',
+  'mississippi':    'MS_avas.geojson',
+
+  // Southeast
+  'tennessee':      'TN_avas.geojson',
+  'georgia':        'GA_avas.geojson',
   'north-carolina': 'NC_avas.geojson',
-  'new-jersey': 'NJ_avas.geojson',
-  'illinois': 'IL_avas.geojson',
-  'indiana': 'IN_avas.geojson',
-  'colorado': 'CO_avas.geojson',
-  'arizona': 'AZ_avas.geojson',
-  'new-mexico': 'NM_avas.geojson',
-  'georgia': 'GA_avas.geojson',
-  'idaho': 'ID_avas.geojson',
-  'maryland': 'MD_avas.geojson',
-  'connecticut': 'CT_avas.geojson',
-  'massachusetts': 'MA_avas.geojson',
-  'rhode-island': 'RI_avas.geojson',
-  'vermont': 'VT_avas.geojson',
-  'new-hampshire': 'NH_avas.geojson',
-  'maine': 'ME_avas.geojson',
-  'wisconsin': 'WI_avas.geojson',
-  'minnesota': 'MN_avas.geojson',
-  'iowa': 'IA_avas.geojson',
-  'kentucky': 'KY_avas.geojson',
-  'tennessee': 'TN_avas.geojson',
-  'arkansas': 'AR_avas.geojson'
+  'virginia':       'VA_avas.geojson',
+  'west-virginia':  'WV_avas.geojson',
+
+  // Midwest
+  'illinois':       'IL_avas.geojson',
+  'indiana':        'IN_avas.geojson',
+  'iowa':           'IA_avas.geojson',
+  'wisconsin':      'WI_avas.geojson',
+  'minnesota':      'MN_avas.geojson',
+  'ohio':           'OH_avas.geojson',
+  'michigan':       'MI_avas.geojson',
+  'kentucky':       'KY_avas.geojson',
+
+  // Northeast
+  'pennsylvania':   'PA_avas.geojson',
+  'new-york':       'NY_avas.geojson',
+  'maryland':       'MD_avas.geojson',
+  'new-jersey':     'NJ_avas.geojson',
+  'connecticut':    'CT_avas.geojson',
+  'massachusetts':  'MA_avas.geojson',
+  'rhode-island':   'RI_avas.geojson'
 };
 
 /**
