@@ -20,7 +20,7 @@ const MapLibreNationalMap = () => {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Initialize map with globe projection
+    // Initialize map with globe projection and Esri satellite basemap
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {

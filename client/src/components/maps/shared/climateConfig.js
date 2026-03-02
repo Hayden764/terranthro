@@ -4,16 +4,16 @@
  */
 
 // Titiler and COG server URLs
-export const TITILER_URL = 'http://localhost:8001';
+export const TITILER_URL = 'http://localhost:8000';
 // COG server - use localhost for Titiler to access from Docker
 export const COG_SERVER_URL = 'http://localhost:8080';
 
 /**
  * Base URL for climate data COG files served by http-server
- * http-server is serving from /client/public/climate-data directory
- * So files are accessible at http://192.168.0.192:8080/dundee-hills/...
+ * Titiler runs inside Docker, so it needs host.docker.internal
+ * to reach the http-server running on the host at port 8080
  */
-const COG_BASE_URL = 'http://192.168.0.192:8080';
+const COG_BASE_URL = 'http://host.docker.internal:8080';
 
 // If ports 8000/8080 are in use, try these alternative ports:
 // export const TITILER_URL = 'http://localhost:8001';

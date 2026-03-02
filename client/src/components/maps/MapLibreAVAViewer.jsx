@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import TerrainControlsPanel from "./shared/TerrainControls";
 import ClimateLayer from "./shared/ClimateLayer";
-import ClimateControls from "./shared/ClimateControls";
+import TopographyLayer from "./shared/TopographyLayer";
+import DataLayerPanel from "./shared/DataLayerPanel";
 
 /**
  * MapLibre AVA Viewer Component
@@ -16,6 +17,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const boundsRef = useRef(null);
   const hasAnimatedRef = useRef(false);
   const location = useLocation();
+  const { avaSlug } = useParams();
   
   // Terrain controls state
   const [terrainEnabled, setTerrainEnabled] = useState(true);
@@ -27,6 +29,9 @@ const MapLibreAVAViewer = ({ avaData }) => {
   // Climate layer state
   const [climateVisible, setClimateVisible] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+
+  // Topography layer state
+  const [activeTopoLayer, setActiveTopoLayer] = useState(null);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -70,31 +75,10 @@ const MapLibreAVAViewer = ({ avaData }) => {
       console.warn('Could not calculate bounds:', e);
     }
 
-    // Initialize map
+    // Initialize map with MapTiler hybrid basemap
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          'esri-satellite': {
-            type: 'raster',
-            tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-            ],
-            tileSize: 256,
-            attribution: '© Esri, Maxar, Earthstar Geographics'
-          }
-        },
-        layers: [
-          {
-            id: 'satellite-layer',
-            type: 'raster',
-            source: 'esri-satellite',
-            minzoom: 0,
-            maxzoom: 22
-          }
-        ]
-      },
+      style: 'https://api.maptiler.com/maps/hybrid-v4/style.json?key=MxVkcANRbOpQXn3scb8K',
       center: initialCenter,
       zoom: 10,
       pitch: 0,
@@ -299,6 +283,15 @@ const MapLibreAVAViewer = ({ avaData }) => {
         />
       )}
 
+      {/* Topography Layer - manages slope/aspect/elevation on map */}
+      {mapLoaded && mapRef.current && (
+        <TopographyLayer
+          map={mapRef.current}
+          avaSlug={avaSlug}
+          activeLayer={activeTopoLayer}
+        />
+      )}
+
       {/* Terrain Controls Panel - top right */}
       <div style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
         <TerrainControlsPanel
@@ -314,12 +307,15 @@ const MapLibreAVAViewer = ({ avaData }) => {
         />
       </div>
 
-      {/* Climate Controls - bottom left */}
-      <ClimateControls
-        isVisible={climateVisible}
-        onToggle={setClimateVisible}
+      {/* Unified Data Layer Panel - bottom left */}
+      <DataLayerPanel
+        climateVisible={climateVisible}
+        onClimateToggle={setClimateVisible}
         currentMonth={currentMonth}
         onMonthChange={setCurrentMonth}
+        activeTopoLayer={activeTopoLayer}
+        onTopoLayerChange={setActiveTopoLayer}
+        avaSlug={avaSlug || ''}
       />
 
       {/* CSS for fade animation */}

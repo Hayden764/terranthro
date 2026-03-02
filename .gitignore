@@ -30,12 +30,27 @@ Thumbs.db
 *.swp
 *.swo
 
+# AI assistant context
+.claude/
+
 # Data files
 data-pipeline/raw_data/
 data-pipeline/processed_data/
 *.tif
 *.bil
 *.zip
+
+# Raster sidecar / metadata files
+*.aux.xml
+*.tif.aux.xml
+*.prj
+*.stx
+*.xml
+*.info.txt
+*.stn.csv
+
+# PRISM raw download folders (large unzipped data)
+ClimateData/Unprocessed/prism_*/
 
 # Database
 *.db
