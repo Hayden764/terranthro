@@ -13,9 +13,11 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
   const mapRef = useRef(null);
   const mapLoadedRef = useRef(false);
   const avaLayersAddedRef = useRef(false);
+  const isTouchRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [hoveredAVAName, setHoveredAVAName] = useState(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // First effect: Initialize map (runs once)
   useEffect(() => {
@@ -137,7 +139,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
         source: 'avas',
         paint: {
           'fill-color': '#FFFFFF',
-          'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.2, 0]
+          'fill-opacity': 0
         }
       });
 
@@ -147,34 +149,46 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
         source: 'avas',
         paint: {
           'line-color': '#FFFFFF',
-          'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2, 1],
+          'line-width': 1,
           'line-opacity': 0.9
         }
       });
 
+      // Hover highlight layer — sits on top of all AVA borders
+      map.addLayer({
+        id: 'ava-outlines-hover',
+        type: 'line',
+        source: 'avas',
+        paint: {
+          'line-color': '#7EC8E3',
+          'line-width': 2.5,
+          'line-opacity': 1
+        },
+        filter: ['==', ['id'], -1]
+      });
+
       let hoveredAVAId = null;
 
+      // Detect touch device
+      map.getCanvas().addEventListener('touchstart', () => { isTouchRef.current = true; }, { once: true });
+
       map.on('mousemove', 'ava-fills', (e) => {
+        if (isTouchRef.current) return;
         if (e.features.length > 0) {
           const name = e.features[0].properties.name;
           const id = e.features[0].id;
-          
-          if (hoveredAVAId !== null && hoveredAVAId !== id) {
-            map.setFeatureState({ source: 'avas', id: hoveredAVAId }, { hover: false });
-          }
-          
+          if (hoveredAVAId === id) return;
           hoveredAVAId = id;
-          map.setFeatureState({ source: 'avas', id: id }, { hover: true });
+          map.setFilter('ava-outlines-hover', ['==', ['id'], id]);
           map.getCanvas().style.cursor = 'pointer';
           setHoveredAVAName(name);
         }
       });
 
       map.on('mouseleave', 'ava-fills', () => {
-        if (hoveredAVAId !== null) {
-          map.setFeatureState({ source: 'avas', id: hoveredAVAId }, { hover: false });
-          hoveredAVAId = null;
-        }
+        if (isTouchRef.current) return;
+        hoveredAVAId = null;
+        map.setFilter('ava-outlines-hover', ['==', ['id'], -1]);
         map.getCanvas().style.cursor = '';
         setHoveredAVAName(null);
       });
@@ -182,7 +196,13 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
       map.on('click', 'ava-fills', (e) => {
         if (e.features.length > 0) {
           const name = e.features[0].properties.name;
+          const id = e.features[0].id;
           if (name) {
+            // On touch: highlight briefly then navigate
+            if (isTouchRef.current) {
+              map.setFilter('ava-outlines-hover', ['==', ['id'], id]);
+              setHoveredAVAName(name);
+            }
             const avaSlug = name.toLowerCase().replace(/\s+/g, '-');
             const stateSlug = stateConfig.name.toLowerCase().replace(/\s+/g, '-');
             navigate(`/states/${stateSlug}/avas/${avaSlug}`);
@@ -195,15 +215,12 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
         const id = avaFeaturesMap.get(avaName);
         if (id !== undefined) {
           if (isHovering) {
-            if (hoveredAVAId !== null && hoveredAVAId !== id) {
-              map.setFeatureState({ source: 'avas', id: hoveredAVAId }, { hover: false });
-            }
             hoveredAVAId = id;
-            map.setFeatureState({ source: 'avas', id: id }, { hover: true });
+            map.setFilter('ava-outlines-hover', ['==', ['id'], id]);
             setHoveredAVAName(avaName);
           } else if (hoveredAVAId === id) {
-            map.setFeatureState({ source: 'avas', id: id }, { hover: false });
             hoveredAVAId = null;
+            map.setFilter('ava-outlines-hover', ['==', ['id'], -1]);
             setHoveredAVAName(null);
           }
         }
@@ -231,24 +248,27 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
       />
       
       {hoveredAVAName && (
-        <div 
+        <div
           style={{
             position: 'absolute',
-            top: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            ...(isMobile
+              ? { bottom: '80px', left: '50%', transform: 'translateX(-50%)', top: 'auto' }
+              : { top: '20px', left: '50%', transform: 'translateX(-50%)' }
+            ),
             background: 'rgba(0, 0, 0, 0.85)',
             color: '#FFFFFF',
-            padding: '12px 24px',
+            padding: isMobile ? '10px 20px' : '12px 24px',
             borderRadius: '8px',
             zIndex: 1000,
             fontFamily: 'Montserrat, sans-serif',
-            fontSize: '16px',
+            fontSize: isMobile ? '14px' : '16px',
             fontWeight: '600',
             letterSpacing: '0.5px',
             textTransform: 'uppercase',
             pointerEvents: 'none',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            maxWidth: '90vw',
+            textAlign: 'center',
           }}
         >
           {hoveredAVAName}
