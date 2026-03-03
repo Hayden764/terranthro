@@ -64,7 +64,7 @@ const AVAPage = () => {
 
   if (loading) {
     return (
-      <div className="ava-page loading">
+      <div className="ava-page loading" style={{ background: 'var(--scene-bg)', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-on-glass)' }}>
         <p>Loading AVA...</p>
       </div>
     );
@@ -72,10 +72,10 @@ const AVAPage = () => {
 
   if (error || !avaData) {
     return (
-      <div className="ava-page error">
+      <div className="ava-page error" style={{ background: 'var(--scene-bg)', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', color: 'var(--text-on-glass)' }}>
         <h1>AVA Not Found</h1>
-        <p>{error || 'The requested AVA could not be found.'}</p>
-        <Link to={`/states/${stateName}`}>← Back to {stateName}</Link>
+        <p style={{ color: 'var(--text-on-glass-muted)' }}>{error || 'The requested AVA could not be found.'}</p>
+        <Link to={`/states/${stateName}`} style={{ color: 'var(--primary-burgundy)' }}>← Back to {stateName}</Link>
       </div>
     );
   }
@@ -94,16 +94,20 @@ const AVAPage = () => {
             position: 'absolute',
             top: '20px',
             left: '20px',
-            background: '#FFFEF7',
-            color: '#2B2B2B',
+            background: 'var(--glass-bg-medium)',
+            backdropFilter: 'var(--glass-blur-light)',
+            WebkitBackdropFilter: 'var(--glass-blur-light)',
+            color: 'var(--text-on-glass)',
             padding: '10px 16px',
-            borderRadius: '6px',
+            borderRadius: '10px',
             textDecoration: 'none',
             fontFamily: 'Inter, sans-serif',
             fontSize: '14px',
             fontWeight: '500',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            zIndex: 1000
+            border: '1px solid var(--glass-border)',
+            boxShadow: 'var(--glass-shadow-sm)',
+            zIndex: 1000,
+            transition: 'background 0.2s ease'
           }}
         >
           ← Back to {stateName.charAt(0).toUpperCase() + stateName.slice(1)}
@@ -115,17 +119,21 @@ const AVAPage = () => {
             top: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#FFFEF7',
-            color: '#2B2B2B',
+            background: 'var(--glass-bg-medium)',
+            backdropFilter: 'var(--glass-blur-light)',
+            WebkitBackdropFilter: 'var(--glass-blur-light)',
+            color: 'var(--text-on-glass)',
             padding: '12px 24px',
-            borderRadius: '6px',
+            borderRadius: '10px',
             fontFamily: 'Montserrat, sans-serif',
             fontSize: '18px',
             fontWeight: '700',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            border: '1px solid var(--glass-border)',
+            boxShadow: 'var(--glass-shadow-sm)',
             zIndex: 1000,
             textTransform: 'uppercase',
-            letterSpacing: '0.5px'
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap'
           }}
         >
           {avaName}

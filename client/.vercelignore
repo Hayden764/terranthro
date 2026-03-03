@@ -1,0 +1,9 @@
+# Exclude node_modules (Vercel installs them during build)
+node_modules
+
+# Exclude large local data files that are not needed for the deployed frontend
+public/topography-data
+public/climate-data
+
+# Exclude local build artifacts
+dist

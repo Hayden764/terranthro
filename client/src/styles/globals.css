@@ -22,6 +22,70 @@
   --warning-orange: #FF6B35;
   --info-cyan: #00B4D8;
 
+  /* ── Glassmorphism Design Tokens ── */
+  --scene-bg: #0d0810;
+
+  /* Glass surfaces */
+  --glass-bg:           rgba(255, 255, 255, 0.07);
+  --glass-bg-medium:    rgba(255, 255, 255, 0.10);
+  --glass-bg-heavy:     rgba(255, 255, 255, 0.14);
+  --glass-bg-input:     rgba(255, 255, 255, 0.06);
+
+  /* Glass borders */
+  --glass-border:       rgba(255, 255, 255, 0.14);
+  --glass-border-light: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.22);
+
+  /* Backdrop blur */
+  --glass-blur:         blur(36px) saturate(1.7);
+  --glass-blur-medium:  blur(20px) saturate(1.5);
+  --glass-blur-light:   blur(12px) saturate(1.3);
+  --glass-blur-scrim:   blur(2px);
+
+  /* Glass shadows */
+  --glass-shadow:
+    0 0 80px rgba(107, 45, 92, 0.18),
+    0 24px 64px rgba(0, 0, 0, 0.50),
+    0 8px 24px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  --glass-shadow-sm:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  --glass-shadow-hud:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+  /* Scrim overlay */
+  --scrim-bg: rgba(10, 6, 16, 0.50);
+
+  /* Text on glass */
+  --text-on-glass:         rgba(255, 255, 255, 0.92);
+  --text-on-glass-muted:   rgba(255, 255, 255, 0.50);
+  --text-on-glass-dim:     rgba(255, 255, 255, 0.30);
+  --text-on-glass-label:   rgba(255, 255, 255, 0.35);
+
+  /* ── UI Accent Color ──────────────────────────────────────
+     Used for interactive controls: toggles, sliders, active
+     states, HUD glows. Change this one value to retheme all
+     interactive accents across the app.
+     ────────────────────────────────────────────────────── */
+  --accent:           #5BBCFF;        /* sky blue */
+  --accent-rgb:       91, 188, 255;   /* for rgba() usage */
+  --accent-strong:    rgba(91, 188, 255, 0.85);
+  --accent-medium:    rgba(91, 188, 255, 0.70);
+  --accent-soft:      rgba(91, 188, 255, 0.50);
+  --accent-subtle:    rgba(91, 188, 255, 0.18);
+  --accent-border:    rgba(91, 188, 255, 0.40);
+  --glow-accent:      0 0 20px rgba(91, 188, 255, 0.40);
+  --glow-accent-sm:   0 0 10px rgba(91, 188, 255, 0.30);
+
+  /* Accent glow (legacy aliases — kept for backward compat) */
+  --glow-burgundy:    var(--glow-accent);
+  --glow-burgundy-sm: var(--glow-accent-sm);
+
   /* Typography */
   --font-primary: 'Inter', 'Helvetica Neue', sans-serif;
   --font-display: 'Montserrat', 'Futura', sans-serif;
@@ -69,8 +133,8 @@ html, body {
 body {
   font-family: var(--font-primary);
   font-size: var(--text-base);
-  color: var(--text-charcoal);
-  background-color: var(--base-cream);
+  color: var(--text-on-glass);
+  background-color: var(--scene-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -124,13 +188,21 @@ a {
   left: var(--space-8);
   width: 280px;
   max-height: calc(100vh - var(--space-16));
-  background: var(--base-white);
-  border: 1px solid var(--border-gray);
-  border-radius: 4px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
   padding: var(--space-6);
   overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow);
+  color: var(--text-on-glass);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
+.layer-panel::-webkit-scrollbar { width: 4px; }
+.layer-panel::-webkit-scrollbar-track { background: transparent; }
+.layer-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 
 /* Layer Panel inside Modal - no positioning, uses modal's layout */
 .layer-panel-modal {
@@ -142,7 +214,7 @@ a {
   font-size: var(--text-lg);
   letter-spacing: var(--tracking-wider);
   margin-bottom: var(--space-6);
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 .layer-category {
@@ -152,7 +224,7 @@ a {
 .category-title {
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wider);
-  color: var(--text-gray);
+  color: var(--text-on-glass-muted);
   margin-bottom: var(--space-3);
   text-transform: uppercase;
 }
@@ -169,29 +241,33 @@ a {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  background: var(--base-white);
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-medium);
+  -webkit-backdrop-filter: var(--glass-blur-medium);
   padding: var(--space-3) var(--space-6);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  z-index: 11; /* Higher than layer panel */
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-sm);
+  color: var(--text-on-glass);
+  z-index: 11;
 }
 
 .breadcrumb-link {
   font-size: var(--text-sm);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  color: var(--text-gray);
+  color: var(--text-on-glass-muted);
   text-decoration: none;
   cursor: pointer;
   transition: color var(--transition-fast);
 }
 
 .breadcrumb-link:hover {
-  color: var(--primary-burgundy);
+  color: var(--text-on-glass);
 }
 
 .breadcrumb-separator {
-  color: var(--border-gray);
+  color: var(--text-on-glass-dim);
   font-size: var(--text-sm);
 }
 
@@ -200,7 +276,7 @@ a {
   font-weight: 500;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 /* Map Controls */
@@ -216,22 +292,25 @@ a {
 .map-controls button {
   width: 40px;
   height: 40px;
-  background: var(--base-white);
-  border: 1px solid var(--border-gray);
-  border-radius: 4px;
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 10px;
   font-size: var(--text-xl);
   font-weight: 300;
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
   transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--glass-shadow-sm);
 }
 
 .map-controls button:hover {
-  background: var(--primary-burgundy);
-  color: var(--base-white);
-  border-color: var(--primary-burgundy);
+  background: var(--glass-bg-heavy);
+  border-color: var(--glass-border-hover) !important;
+  box-shadow: var(--glow-burgundy-sm), var(--glass-shadow-sm);
 }
 
 /* Mini Map */
@@ -241,11 +320,13 @@ a {
   right: var(--space-8);
   width: 200px;
   height: 150px;
-  background: var(--base-white);
-  border: 2px solid var(--border-gray);
-  border-radius: 4px;
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow-sm);
 }
 
 /* Mobile Responsive Styles */
@@ -317,13 +398,15 @@ a {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--base-cream);
+  background: var(--scene-bg);
 }
 
 .state-header {
   padding: var(--space-4) var(--space-6);
-  background: var(--base-white);
-  border-bottom: 1px solid var(--border-gray);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border-bottom: 1px solid var(--glass-border-light);
 }
 
 .state-breadcrumb {
@@ -337,32 +420,35 @@ a {
 }
 
 .breadcrumb-link {
-  color: var(--primary-burgundy);
+  color: var(--text-on-glass-muted);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .breadcrumb-link:hover {
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 .breadcrumb-separator {
-  color: var(--text-gray);
+  color: var(--text-on-glass-dim);
 }
 
 .breadcrumb-current {
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 .state-intro {
-  background: var(--base-white);
-  border: 1px solid var(--border-gray);
-  border-radius: 8px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-medium);
+  -webkit-backdrop-filter: var(--glass-blur-medium);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
   padding: var(--space-8);
   margin: var(--space-6);
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  box-shadow: var(--glass-shadow-sm);
 }
 
 .state-intro h1 {
@@ -371,14 +457,14 @@ a {
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
   margin-bottom: var(--space-4);
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 .state-intro .intro-text {
   font-family: var(--font-primary);
   font-size: var(--text-lg);
   line-height: 1.7;
-  color: var(--text-gray);
+  color: var(--text-on-glass-muted);
   margin-bottom: var(--space-6);
 }
 
@@ -387,7 +473,7 @@ a {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-6);
   padding-top: var(--space-4);
-  border-top: 1px solid var(--border-gray);
+  border-top: 1px solid var(--glass-border-light);
 }
 
 .stat {
@@ -400,7 +486,7 @@ a {
   font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
-  color: var(--text-gray);
+  color: var(--text-on-glass-muted);
   margin-bottom: var(--space-2);
 }
 
@@ -409,7 +495,7 @@ a {
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 .state-map-section {
@@ -422,16 +508,11 @@ a {
 
 .state-map-container {
   height: 600px;
-  background: var(--base-white);
-  border: 1px solid var(--border-gray);
-  border-radius: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.mapbox-state-map {
-  width: 100%;
-  height: 100%;
+  box-shadow: var(--glass-shadow);
 }
 
 .loading-overlay {
@@ -441,13 +522,17 @@ a {
   transform: translate(-50%, -50%);
   text-align: center;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border);
   padding: var(--space-6);
-  border-radius: 8px;
+  border-radius: 12px;
+  color: var(--text-on-glass);
 }
 
 .spinner {
-  border: 3px solid var(--border-gray);
+  border: 3px solid rgba(255,255,255,0.15);
   border-top: 3px solid var(--primary-burgundy);
   border-radius: 50%;
   width: 40px;
@@ -465,22 +550,26 @@ a {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #fee;
-  color: #c00;
+  background: rgba(196, 30, 58, 0.15);
+  border: 1px solid rgba(196, 30, 58, 0.35);
+  color: rgba(255, 150, 150, 0.9);
   padding: var(--space-4);
-  border-radius: 8px;
+  border-radius: 10px;
   z-index: 100;
 }
 
 .ava-list-section {
-  background: var(--base-white);
-  border: 1px solid var(--border-gray);
-  border-radius: 8px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-medium);
+  -webkit-backdrop-filter: var(--glass-blur-medium);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
   padding: var(--space-6);
   margin: var(--space-6);
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  box-shadow: var(--glass-shadow-sm);
 }
 
 .ava-list-section h2 {
@@ -489,7 +578,7 @@ a {
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
   margin-bottom: var(--space-4);
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 .ava-grid {
@@ -501,16 +590,23 @@ a {
 .ava-item {
   font-family: var(--font-primary);
   font-size: var(--text-sm);
-  color: var(--text-gray);
+  color: var(--text-on-glass-muted);
   padding: var(--space-2) var(--space-3);
-  background: var(--base-cream);
-  border-radius: 4px;
+  background: var(--glass-bg-input);
+  border: 1px solid var(--glass-border-light);
+  border-radius: 8px;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.ava-item:hover {
+  background: var(--glass-bg-medium);
+  color: var(--text-on-glass);
 }
 
 .no-ava-section {
-  background: var(--base-cream);
-  border: 1px solid var(--border-gray);
-  border-radius: 8px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
   padding: var(--space-6);
   margin: var(--space-6);
   max-width: 1200px;
@@ -522,7 +618,7 @@ a {
 .no-ava-section p {
   font-family: var(--font-primary);
   font-size: var(--text-base);
-  color: var(--text-gray);
+  color: var(--text-on-glass-muted);
 }
 
 .state-footer {
@@ -539,25 +635,26 @@ a {
 }
 
 .back-link:hover {
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
   text-decoration: underline;
 }
 
 .state-not-found {
   text-align: center;
   padding: var(--space-16);
+  color: var(--text-on-glass);
 }
 
 .state-not-found h1 {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
   margin-bottom: var(--space-4);
-  color: var(--text-charcoal);
+  color: var(--text-on-glass);
 }
 
 .state-not-found p {
   font-family: var(--font-primary);
-  color: var(--text-gray);
+  color: var(--text-on-glass-muted);
   margin-bottom: var(--space-6);
 }
 
@@ -566,8 +663,8 @@ a {
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: #fee;
-  color: #c00;
+  background: rgba(196, 30, 58, 0.10);
+  color: rgba(255, 150, 150, 0.9);
   padding: var(--space-4);
 }
 
@@ -608,4 +705,108 @@ a {
     grid-template-columns: 1fr 1fr;
     gap: var(--space-2);
   }
+}
+
+/* ─────────────────────────────────────────────────────
+   MapLibre GL NavigationControl — glass override
+   Targets the zoom +/− and compass buttons added via
+   map.addControl(new maplibregl.NavigationControl())
+   ───────────────────────────────────────────────────── */
+.maplibregl-ctrl-group {
+  background: var(--glass-bg-medium) !important;
+  backdrop-filter: var(--glass-blur-light) !important;
+  -webkit-backdrop-filter: var(--glass-blur-light) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--glass-shadow-sm) !important;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--glass-border-light) !important;
+}
+
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background-color: var(--glass-bg-heavy) !important;
+}
+
+.maplibregl-ctrl-icon {
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.85;
+}
+
+.maplibregl-ctrl-compass .maplibregl-ctrl-icon {
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.85;
+}
+
+/* ─────────────────────────────────────────────────────
+   MapLibre GL Attribution control — glass override
+   Preserves native compact UX; only reskins appearance.
+   ───────────────────────────────────────────────────── */
+
+/* Collapsed: just the ℹ button visible */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* The ℹ toggle button — proper 24×24 glass circle */
+.maplibregl-ctrl-attrib-button {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: var(--glass-bg-medium) !important;
+  backdrop-filter: var(--glass-blur-light) !important;
+  -webkit-backdrop-filter: var(--glass-blur-light) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow-sm) !important;
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.maplibregl-ctrl-attrib-button:hover {
+  opacity: 1 !important;
+  background: rgba(255,255,255,0.2) !important;
+}
+
+/* Expanded state — glass pill with text */
+.maplibregl-ctrl-attrib.maplibregl-compact.maplibregl-compact-show {
+  background: var(--glass-bg-medium) !important;
+  backdrop-filter: var(--glass-blur-light) !important;
+  -webkit-backdrop-filter: var(--glass-blur-light) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--glass-shadow-sm) !important;
+  padding: 5px 10px 5px 10px !important;
+}
+
+/* Text inside expanded attribution */
+.maplibregl-ctrl-attrib a,
+.maplibregl-ctrl-attrib-inner {
+  color: var(--text-on-glass-muted) !important;
+  font-size: 11px !important;
+  font-family: 'Inter', sans-serif !important;
+  line-height: 1.5 !important;
+}
+
+.maplibregl-ctrl-attrib a:hover {
+  color: var(--text-on-glass) !important;
+}
+
+/* Bottom-right control container spacing */
+.maplibregl-ctrl-bottom-right {
+  padding: 0 8px 8px 0;
+}
+
+.maplibregl-ctrl-bottom-left {
+  padding: 0 0 8px 8px;
 }

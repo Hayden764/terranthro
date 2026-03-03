@@ -75,7 +75,7 @@ const LayerPanel = ({ isModal = false }) => {
                 justifyContent: 'space-between'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(196, 30, 58, 0.03)';
+                e.target.style.backgroundColor = 'rgba(56, 189, 248, 0.06)';
               }}
               onMouseLeave={(e) => {
                 e.target.style.backgroundColor = 'transparent';
@@ -86,7 +86,7 @@ const LayerPanel = ({ isModal = false }) => {
               </h3>
               <span className="category-chevron" style={{
                 fontSize: 'var(--text-sm)',
-                color: 'var(--text-gray)',
+                color: 'var(--text-on-glass-muted)',
                 transition: 'transform var(--transition-fast)',
                 userSelect: 'none'
               }}>

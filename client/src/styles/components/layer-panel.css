@@ -121,7 +121,7 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #C41E3A;
+  accent-color: var(--accent);
   margin: 0;
   flex-shrink: 0;
 }
@@ -195,7 +195,7 @@
 
   .layer-hamburger-button:hover {
     background: #F5EFE0;
-    border-color: #C41E3A;
+    border-color: var(--accent);
   }
 
   .layer-hamburger-button:active {
@@ -241,7 +241,7 @@
   }
 
   .layer-mobile-close:hover {
-    color: #C41E3A;
+    color: var(--accent-text);
   }
 
   /* Panel Content - Add background on mobile */

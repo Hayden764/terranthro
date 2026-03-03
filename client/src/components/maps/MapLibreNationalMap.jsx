@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useNavigate } from 'react-router-dom';
 import { useMapContext } from '../../context/MapContext';
 import usStatesGeoJson from "../../data/us-states.json";
-import { getConfiguredStateNames } from '../../config/stateConfig';
+import { getConfiguredStateNames, getAllStateConfigs } from '../../config/stateConfig';
 
 /**
  * MapLibre National Map Component
@@ -16,6 +16,30 @@ const MapLibreNationalMap = () => {
   const mapRef = useRef(null);
   const navigate = useNavigate();
   const hoveredStateIdRef = useRef(null);
+  const isTouchRef = useRef(false);
+
+  // Draw diagonal hatch pattern on a canvas and return the format MapLibre expects
+  const createHatchPattern = () => {
+    const size = 12;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+    ctx.strokeStyle = 'rgba(255, 184, 28, 0.35)'; // gold, low opacity
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(size, 0);
+    ctx.lineTo(0, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * 2, 0);
+    ctx.lineTo(0, size * 2);
+    ctx.stroke();
+    // MapLibre addImage needs { width, height, data: Uint8ClampedArray }
+    const imageData = ctx.getImageData(0, 0, size, size);
+    return { width: size, height: size, data: imageData.data };
+  };
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -63,6 +87,10 @@ const MapLibreNationalMap = () => {
     mapRef.current = map;
 
     map.on('load', () => {
+      // Register hatch pattern image for non-wine states
+      const hatch = createHatchPattern();
+      map.addImage('hatch-pattern', { width: hatch.width, height: hatch.height, data: hatch.data });
+
       // Add states source with generateId for feature-state
       map.addSource('us-states', {
         type: 'geojson',
@@ -70,122 +98,176 @@ const MapLibreNationalMap = () => {
         generateId: true
       });
 
-      // Wine-producing states to highlight
-      const wineStates = getConfiguredStateNames();
+      // Only highlight/allow clicks on states that have AVA data
+      const wineStates = Object.values(getAllStateConfigs())
+        .filter(cfg => cfg.avaFile)
+        .map(cfg => cfg.name);
 
-      // States fill layer with hover effect
+      // Non-wine states: hatch fill pattern
+      map.addLayer({
+        id: 'states-hatch',
+        type: 'fill',
+        source: 'us-states',
+        paint: {
+          'fill-pattern': 'hatch-pattern',
+          'fill-opacity': 0.9
+        },
+        filter: ['!', ['in', ['get', 'name'], ['literal', wineStates]]]
+      });
+
+      // States fill layer — transparent click target only
       map.addLayer({
         id: 'states-fill',
         type: 'fill',
         source: 'us-states',
         paint: {
           'fill-color': '#FFFFFF',
-          'fill-opacity': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            0.2,
-            0
-          ]
+          'fill-opacity': 0
         }
       });
 
-      // States outline layer
+      // Wine states: faint warm tint — "frosted pane" over terrain
+      map.addLayer({
+        id: 'states-fill-tint',
+        type: 'fill',
+        source: 'us-states',
+        paint: {
+          'fill-color': '#FFB81C',
+          'fill-opacity': 0.04
+        },
+        filter: ['in', ['get', 'name'], ['literal', wineStates]]
+      });
+
+      // States fill hover — warm accent tint on hovered wine state
+      map.addLayer({
+        id: 'states-fill-hover',
+        type: 'fill',
+        source: 'us-states',
+        paint: {
+          'fill-color': '#38bdf8',
+          'fill-opacity': 0.08
+        },
+        filter: ['==', ['id'], -1]
+      });
+
+      // Non-wine state borders — dimmer, thinner
+      map.addLayer({
+        id: 'states-outline-inactive',
+        type: 'line',
+        source: 'us-states',
+        paint: {
+          'line-color': '#FFFFFF',
+          'line-width': 0.5,
+          'line-opacity': 0.2
+        },
+        filter: ['!', ['in', ['get', 'name'], ['literal', wineStates]]]
+      });
+
+      // Wine state borders — glow pass (wide, soft, low opacity)
+      map.addLayer({
+        id: 'states-outline-glow',
+        type: 'line',
+        source: 'us-states',
+        paint: {
+          'line-color': '#FFD97A',
+          'line-width': 8,
+          'line-opacity': 0.12,
+          'line-blur': 4
+        },
+        filter: ['in', ['get', 'name'], ['literal', wineStates]]
+      });
+
+      // Wine state borders — crisp warm ivory top line
       map.addLayer({
         id: 'states-outline',
         type: 'line',
         source: 'us-states',
         paint: {
-          'line-color': '#FFFFFF',
-          'line-width': [
-            'case',
-            ['boolean', ['feature-state', 'hover'], false],
-            2,
-            1
-          ],
-          'line-opacity': 0.8
-        }
+          'line-color': '#FFE8A0',
+          'line-width': 1.2,
+          'line-opacity': 0.75
+        },
+        filter: ['in', ['get', 'name'], ['literal', wineStates]]
       });
 
-      // Hover interaction using feature-state
+      // Hover glow pass — soft accent blue bloom
+      map.addLayer({
+        id: 'states-outline-hover-glow',
+        type: 'line',
+        source: 'us-states',
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 10,
+          'line-opacity': 0.2,
+          'line-blur': 5
+        },
+        filter: ['==', ['id'], -1]
+      });
+
+      // Hover crisp line — accent blue on top
+      map.addLayer({
+        id: 'states-outline-hover',
+        type: 'line',
+        source: 'us-states',
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 2,
+          'line-opacity': 0.95
+        },
+        filter: ['==', ['id'], -1]
+      });
+
+      // Detect touch device
+      map.getCanvas().addEventListener('touchstart', () => { isTouchRef.current = true; }, { once: true });
+
+      const clearHover = () => {
+        map.setFilter('states-outline-hover', ['==', ['id'], -1]);
+        map.setFilter('states-outline-hover-glow', ['==', ['id'], -1]);
+        map.setFilter('states-fill-hover', ['==', ['id'], -1]);
+        hoveredStateIdRef.current = null;
+        map.getCanvas().style.cursor = '';
+      };
+
+      // Hover interaction — pure setFilter, no feature-state
       map.on('mousemove', 'states-fill', (e) => {
+        if (isTouchRef.current) return;
         if (e.features.length > 0) {
           const stateName = e.features[0].properties.name;
           const currentFeatureId = e.features[0].id;
-          
-          // Only allow hover on wine states
+
           if (!wineStates.includes(stateName)) {
-            // Clear any existing hover if moving to non-wine state
-            if (hoveredStateIdRef.current !== null) {
-              map.setFeatureState(
-                { source: 'us-states', id: hoveredStateIdRef.current },
-                { hover: false }
-              );
-              hoveredStateIdRef.current = null;
-              map.getCanvas().style.cursor = '';
-            }
+            if (hoveredStateIdRef.current !== null) clearHover();
+            map.getCanvas().style.cursor = 'default';
             return;
           }
 
-          // Clear previous hover if moving to a different state
-          if (hoveredStateIdRef.current !== null && hoveredStateIdRef.current !== currentFeatureId) {
-            map.setFeatureState(
-              { source: 'us-states', id: hoveredStateIdRef.current },
-              { hover: false }
-            );
-          }
-          
-          // Set new hover only if it's different from current
           if (hoveredStateIdRef.current !== currentFeatureId) {
             hoveredStateIdRef.current = currentFeatureId;
-            map.setFeatureState(
-              { source: 'us-states', id: hoveredStateIdRef.current },
-              { hover: true }
-            );
+            map.setFilter('states-outline-hover', ['==', ['id'], currentFeatureId]);
+            map.setFilter('states-outline-hover-glow', ['==', ['id'], currentFeatureId]);
+            map.setFilter('states-fill-hover', ['==', ['id'], currentFeatureId]);
           }
           map.getCanvas().style.cursor = 'pointer';
         } else {
-          // No features under cursor - clear hover
-          if (hoveredStateIdRef.current !== null) {
-            map.setFeatureState(
-              { source: 'us-states', id: hoveredStateIdRef.current },
-              { hover: false }
-            );
-            hoveredStateIdRef.current = null;
-            map.getCanvas().style.cursor = '';
-          }
+          clearHover();
         }
       });
 
-      map.on('mouseleave', 'states-fill', () => {
-        if (hoveredStateIdRef.current !== null) {
-          map.setFeatureState(
-            { source: 'us-states', id: hoveredStateIdRef.current },
-            { hover: false }
-          );
-          hoveredStateIdRef.current = null;
-        }
-        map.getCanvas().style.cursor = '';
-      });
+      map.on('mouseleave', 'states-fill', clearHover);
 
-      // Click to navigate to state page
+      // Touch: tap wine state → navigate directly; non-wine states do nothing
       map.on('click', 'states-fill', (e) => {
         if (e.features.length > 0) {
           const feature = e.features[0];
           const stateName = feature.properties.name;
-          
-          // Only allow navigation for wine states
+
           if (!wineStates.includes(stateName)) {
             return;
           }
-          
-          if (!stateName) {
-            console.error('State name is undefined! Available properties:', Object.keys(feature.properties));
-            return;
-          }
-          
+
+          if (!stateName) return;
+
           const stateSlug = stateName.toLowerCase().replace(/\s+/g, '-');
-          
-          // Capture current camera position for smooth transition
           const center = map.getCenter();
           const cameraPosition = {
             center: [center.lng, center.lat],
@@ -193,13 +275,9 @@ const MapLibreNationalMap = () => {
             bearing: map.getBearing(),
             pitch: map.getPitch()
           };
-          
-          // Navigate with camera state
+
           navigate(`/states/${stateSlug}`, {
-            state: { 
-              fromNational: true,
-              previousCamera: cameraPosition 
-            }
+            state: { fromNational: true, previousCamera: cameraPosition }
           });
         }
       });
@@ -218,16 +296,12 @@ const MapLibreNationalMap = () => {
   }, [navigate]);
 
   return (
-    <div 
-      ref={mapContainerRef} 
-      style={{ 
-        width: '100%', 
-        height: '100vh',
-        position: 'absolute',
-        top: 0,
-        left: 0
-      }} 
-    />
+    <div style={{ width: '100%', height: '100vh', position: 'absolute', top: 0, left: 0 }}>
+      <div
+        ref={mapContainerRef}
+        style={{ width: '100%', height: '100%' }}
+      />
+    </div>
   );
 };
 

@@ -8,11 +8,13 @@
   display: flex;
   gap: 8px;
   z-index: 1000;
-  background: var(--base-white, #FFFFFF);
-  border: 1px solid var(--border-gray, #E0E0E0);
-  border-radius: 4px;
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
   padding: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow-sm);
 }
 
 /* Mobile View Controls Button - Hidden on desktop */
@@ -56,19 +58,21 @@
     right: 20px;
     width: 44px;
     height: 44px;
-    background: white;
-    border: 1px solid #E0E0E0;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    background: var(--glass-bg-medium);
+    backdrop-filter: var(--glass-blur-light);
+    -webkit-backdrop-filter: var(--glass-blur-light);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    box-shadow: var(--glass-shadow-sm);
     cursor: pointer;
-    color: #2B2B2B;
+    color: var(--text-on-glass);
     z-index: 1001;
     transition: all 0.2s ease;
   }
 
   .view-controls-mobile-button:hover {
-    background: #F5EFE0;
-    border-color: #C41E3A;
+    background: var(--glass-bg-heavy);
+    border-color: var(--glass-border-hover);
   }
 
   .view-controls-mobile-button:active {
@@ -83,7 +87,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--scrim-bg);
+    backdrop-filter: var(--glass-blur-scrim);
+    -webkit-backdrop-filter: var(--glass-blur-scrim);
     z-index: 1100;
     animation: fadeIn 0.3s ease;
   }
@@ -103,10 +109,13 @@
     transform: translate(-50%, -50%);
     width: calc(100% - 40px);
     max-width: 320px;
-    background: white;
-    border-radius: 12px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
     padding: 20px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--glass-shadow);
     z-index: 1200;
     animation: slideUp 0.3s ease;
   }
@@ -127,7 +136,7 @@
     font-family: 'Montserrat', sans-serif;
     font-size: 18px;
     font-weight: 700;
-    color: #2B2B2B;
+    color: var(--text-on-glass);
     margin-bottom: 16px;
     text-align: center;
   }
@@ -141,12 +150,12 @@
     padding: 14px 16px;
     margin-bottom: 8px;
     background: transparent;
-    border: 1px solid #E0E0E0;
+    border: 1px solid var(--glass-border);
     border-radius: 8px;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     font-size: 16px;
-    color: #2B2B2B;
+    color: var(--text-on-glass-muted);
     transition: all 0.2s ease;
   }
 
@@ -155,8 +164,9 @@
   }
 
   .view-mobile-menu-item:hover {
-    background: #F5EFE0;
-    border-color: #C41E3A;
+    background: var(--glass-bg-medium);
+    border-color: var(--glass-border-hover);
+    color: var(--text-on-glass);
   }
 
   .view-mobile-menu-item.active {
@@ -172,7 +182,7 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--glass-bg-medium);
     border-radius: 6px;
     font-family: 'Montserrat', sans-serif;
     font-size: 18px;
