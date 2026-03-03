@@ -74,13 +74,27 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
           data: { type: 'FeatureCollection', features: [stateFeature] }
         });
 
+        // State boundary — glow pass
+        map.addLayer({
+          id: 'state-boundary-glow',
+          type: 'line',
+          source: 'state-boundary',
+          paint: {
+            'line-color': '#FFD97A',
+            'line-width': 12,
+            'line-opacity': 0.12,
+            'line-blur': 6
+          }
+        });
+
+        // State boundary — crisp warm ivory line
         map.addLayer({
           id: 'state-boundary-line',
           type: 'line',
           source: 'state-boundary',
           paint: {
-            'line-color': '#FFFFFF',
-            'line-width': 2.5,
+            'line-color': '#FFE8A0',
+            'line-width': 2,
             'line-opacity': 0.6
           }
         });
@@ -133,36 +147,65 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
         }
       });
 
+      // AVA fill — faint warm tint (frosted pane)
       map.addLayer({
         id: 'ava-fills',
         type: 'fill',
         source: 'avas',
         paint: {
-          'fill-color': '#FFFFFF',
-          'fill-opacity': 0
+          'fill-color': '#FFB81C',
+          'fill-opacity': 0.04
         }
       });
 
+      // AVA borders — glow pass (wide, soft, warm)
+      map.addLayer({
+        id: 'ava-outlines-glow',
+        type: 'line',
+        source: 'avas',
+        paint: {
+          'line-color': '#FFD97A',
+          'line-width': 6,
+          'line-opacity': 0.15,
+          'line-blur': 3
+        }
+      });
+
+      // AVA borders — crisp warm ivory line on top
       map.addLayer({
         id: 'ava-outlines',
         type: 'line',
         source: 'avas',
         paint: {
-          'line-color': '#FFFFFF',
+          'line-color': '#FFE8A0',
           'line-width': 1,
-          'line-opacity': 0.9
+          'line-opacity': 0.8
         }
       });
 
-      // Hover highlight layer — sits on top of all AVA borders
+      // Hover glow pass — soft accent blue bloom
+      map.addLayer({
+        id: 'ava-outlines-hover-glow',
+        type: 'line',
+        source: 'avas',
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 10,
+          'line-opacity': 0.2,
+          'line-blur': 5
+        },
+        filter: ['==', ['id'], -1]
+      });
+
+      // Hover crisp line — accent blue on top
       map.addLayer({
         id: 'ava-outlines-hover',
         type: 'line',
         source: 'avas',
         paint: {
-          'line-color': '#7EC8E3',
-          'line-width': 2.5,
-          'line-opacity': 1
+          'line-color': '#38bdf8',
+          'line-width': 2,
+          'line-opacity': 0.95
         },
         filter: ['==', ['id'], -1]
       });
@@ -180,6 +223,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
           if (hoveredAVAId === id) return;
           hoveredAVAId = id;
           map.setFilter('ava-outlines-hover', ['==', ['id'], id]);
+          map.setFilter('ava-outlines-hover-glow', ['==', ['id'], id]);
           map.getCanvas().style.cursor = 'pointer';
           setHoveredAVAName(name);
         }
@@ -189,6 +233,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
         if (isTouchRef.current) return;
         hoveredAVAId = null;
         map.setFilter('ava-outlines-hover', ['==', ['id'], -1]);
+        map.setFilter('ava-outlines-hover-glow', ['==', ['id'], -1]);
         map.getCanvas().style.cursor = '';
         setHoveredAVAName(null);
       });
@@ -201,6 +246,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
             // On touch: highlight briefly then navigate
             if (isTouchRef.current) {
               map.setFilter('ava-outlines-hover', ['==', ['id'], id]);
+              map.setFilter('ava-outlines-hover-glow', ['==', ['id'], id]);
               setHoveredAVAName(name);
             }
             const avaSlug = name.toLowerCase().replace(/\s+/g, '-');
@@ -217,10 +263,12 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
           if (isHovering) {
             hoveredAVAId = id;
             map.setFilter('ava-outlines-hover', ['==', ['id'], id]);
+            map.setFilter('ava-outlines-hover-glow', ['==', ['id'], id]);
             setHoveredAVAName(avaName);
           } else if (hoveredAVAId === id) {
             hoveredAVAId = null;
             map.setFilter('ava-outlines-hover', ['==', ['id'], -1]);
+            map.setFilter('ava-outlines-hover-glow', ['==', ['id'], -1]);
             setHoveredAVAName(null);
           }
         }
@@ -255,18 +303,21 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
               ? { bottom: '80px', left: '50%', transform: 'translateX(-50%)', top: 'auto' }
               : { top: '20px', left: '50%', transform: 'translateX(-50%)' }
             ),
-            background: 'rgba(0, 0, 0, 0.85)',
-            color: '#FFFFFF',
-            padding: isMobile ? '10px 20px' : '12px 24px',
-            borderRadius: '8px',
+            background: 'var(--glass-bg-medium)',
+            backdropFilter: 'var(--glass-blur-light)',
+            WebkitBackdropFilter: 'var(--glass-blur-light)',
+            border: '1px solid var(--glass-border-hover)',
+            color: 'var(--text-on-glass)',
+            padding: isMobile ? '10px 20px' : '12px 28px',
+            borderRadius: '12px',
             zIndex: 1000,
             fontFamily: 'Montserrat, sans-serif',
-            fontSize: isMobile ? '14px' : '16px',
+            fontSize: isMobile ? '13px' : '15px',
             fontWeight: '600',
             letterSpacing: '0.5px',
             textTransform: 'uppercase',
             pointerEvents: 'none',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            boxShadow: 'var(--glass-shadow-sm)',
             maxWidth: '90vw',
             textAlign: 'center',
           }}

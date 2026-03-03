@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +17,6 @@ const MapLibreNationalMap = () => {
   const navigate = useNavigate();
   const hoveredStateIdRef = useRef(null);
   const isTouchRef = useRef(false);
-  const [tooltip, setTooltip] = useState(null); // { x, y, text }
 
   // Draw diagonal hatch pattern on a canvas and return the format MapLibre expects
   const createHatchPattern = () => {
@@ -127,17 +126,31 @@ const MapLibreNationalMap = () => {
         }
       });
 
-      // States fill hover — subtle tint on hovered wine state
+      // Wine states: faint warm tint — "frosted pane" over terrain
+      map.addLayer({
+        id: 'states-fill-tint',
+        type: 'fill',
+        source: 'us-states',
+        paint: {
+          'fill-color': '#FFB81C',
+          'fill-opacity': 0.04
+        },
+        filter: ['in', ['get', 'name'], ['literal', wineStates]]
+      });
+
+      // States fill hover — warm accent tint on hovered wine state
       map.addLayer({
         id: 'states-fill-hover',
         type: 'fill',
         source: 'us-states',
         paint: {
-          'fill-color': '#FFFFFF',
-          'fill-opacity': 0.15
+          'fill-color': '#38bdf8',
+          'fill-opacity': 0.08
         },
         filter: ['==', ['id'], -1]
-      });      // Non-wine state borders — dimmer, thinner
+      });
+
+      // Non-wine state borders — dimmer, thinner
       map.addLayer({
         id: 'states-outline-inactive',
         type: 'line',
@@ -145,33 +158,61 @@ const MapLibreNationalMap = () => {
         paint: {
           'line-color': '#FFFFFF',
           'line-width': 0.5,
-          'line-opacity': 0.3
+          'line-opacity': 0.2
         },
         filter: ['!', ['in', ['get', 'name'], ['literal', wineStates]]]
       });
 
-      // Wine state borders — brighter, slightly thicker at rest
+      // Wine state borders — glow pass (wide, soft, low opacity)
+      map.addLayer({
+        id: 'states-outline-glow',
+        type: 'line',
+        source: 'us-states',
+        paint: {
+          'line-color': '#FFD97A',
+          'line-width': 8,
+          'line-opacity': 0.12,
+          'line-blur': 4
+        },
+        filter: ['in', ['get', 'name'], ['literal', wineStates]]
+      });
+
+      // Wine state borders — crisp warm ivory top line
       map.addLayer({
         id: 'states-outline',
         type: 'line',
         source: 'us-states',
         paint: {
-          'line-color': '#FFFFFF',
+          'line-color': '#FFE8A0',
           'line-width': 1.2,
-          'line-opacity': 0.9
+          'line-opacity': 0.75
         },
         filter: ['in', ['get', 'name'], ['literal', wineStates]]
       });
 
-      // Hover highlight layer — only the hovered state, always on top
+      // Hover glow pass — soft accent blue bloom
+      map.addLayer({
+        id: 'states-outline-hover-glow',
+        type: 'line',
+        source: 'us-states',
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 10,
+          'line-opacity': 0.2,
+          'line-blur': 5
+        },
+        filter: ['==', ['id'], -1]
+      });
+
+      // Hover crisp line — accent blue on top
       map.addLayer({
         id: 'states-outline-hover',
         type: 'line',
         source: 'us-states',
         paint: {
-          'line-color': '#7EC8E3',
-          'line-width': 2.5,
-          'line-opacity': 1
+          'line-color': '#38bdf8',
+          'line-width': 2,
+          'line-opacity': 0.95
         },
         filter: ['==', ['id'], -1]
       });
@@ -181,9 +222,10 @@ const MapLibreNationalMap = () => {
 
       const clearHover = () => {
         map.setFilter('states-outline-hover', ['==', ['id'], -1]);
+        map.setFilter('states-outline-hover-glow', ['==', ['id'], -1]);
+        map.setFilter('states-fill-hover', ['==', ['id'], -1]);
         hoveredStateIdRef.current = null;
         map.getCanvas().style.cursor = '';
-        setTooltip(null);
       };
 
       // Hover interaction — pure setFilter, no feature-state
@@ -194,17 +236,16 @@ const MapLibreNationalMap = () => {
           const currentFeatureId = e.features[0].id;
 
           if (!wineStates.includes(stateName)) {
-            // Show "no data" tooltip for non-wine states
             if (hoveredStateIdRef.current !== null) clearHover();
-            setTooltip({ x: e.point.x, y: e.point.y, text: 'No AVAs in this state' });
             map.getCanvas().style.cursor = 'default';
             return;
           }
 
-          setTooltip(null);
           if (hoveredStateIdRef.current !== currentFeatureId) {
             hoveredStateIdRef.current = currentFeatureId;
             map.setFilter('states-outline-hover', ['==', ['id'], currentFeatureId]);
+            map.setFilter('states-outline-hover-glow', ['==', ['id'], currentFeatureId]);
+            map.setFilter('states-fill-hover', ['==', ['id'], currentFeatureId]);
           }
           map.getCanvas().style.cursor = 'pointer';
         } else {
@@ -214,17 +255,13 @@ const MapLibreNationalMap = () => {
 
       map.on('mouseleave', 'states-fill', clearHover);
 
-      // Touch: tap wine state → navigate directly; tap non-wine → brief tooltip
+      // Touch: tap wine state → navigate directly; non-wine states do nothing
       map.on('click', 'states-fill', (e) => {
         if (e.features.length > 0) {
           const feature = e.features[0];
           const stateName = feature.properties.name;
 
           if (!wineStates.includes(stateName)) {
-            if (isTouchRef.current) {
-              setTooltip({ x: e.point.x, y: e.point.y, text: 'No AVAs in this state' });
-              setTimeout(() => setTooltip(null), 2000);
-            }
             return;
           }
 
@@ -264,29 +301,6 @@ const MapLibreNationalMap = () => {
         ref={mapContainerRef}
         style={{ width: '100%', height: '100%' }}
       />
-      {tooltip && (
-        <div
-          style={{
-            position: 'absolute',
-            left: `${tooltip.x}px`,
-            top: `${tooltip.y - 40}px`,
-            transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.75)',
-            color: '#FFFFFF',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: 500,
-            letterSpacing: '0.03em',
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
-            zIndex: 500,
-          }}
-        >
-          {tooltip.text}
-        </div>
-      )}
     </div>
   );
 };

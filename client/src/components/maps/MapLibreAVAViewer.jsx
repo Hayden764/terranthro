@@ -114,24 +114,39 @@ const MapLibreAVAViewer = ({ avaData }) => {
         data: geoJsonData
       });
 
+      // AVA boundary fill — faint warm tint (frosted pane)
       map.addLayer({
         id: 'ava-boundary-fill',
         type: 'fill',
         source: 'ava-boundary',
         paint: {
-          'fill-color': '#FFFFFF',
-          'fill-opacity': 0.1
+          'fill-color': '#FFB81C',
+          'fill-opacity': 0.05
         }
       });
 
+      // AVA boundary — outer glow pass (wide, soft, warm)
+      map.addLayer({
+        id: 'ava-boundary-glow',
+        type: 'line',
+        source: 'ava-boundary',
+        paint: {
+          'line-color': '#FFD97A',
+          'line-width': 14,
+          'line-opacity': 0.15,
+          'line-blur': 7
+        }
+      });
+
+      // AVA boundary — crisp warm ivory line on top
       map.addLayer({
         id: 'ava-boundary-line',
         type: 'line',
         source: 'ava-boundary',
         paint: {
-          'line-color': '#FFFFFF',
-          'line-width': 3,
-          'line-opacity': 0.9
+          'line-color': '#FFE8A0',
+          'line-width': 2.5,
+          'line-opacity': 0.85
         }
       });
 

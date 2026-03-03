@@ -59,7 +59,25 @@ const TerrainControlsPanel = ({
     return (
       <button
         onClick={toggleExpanded}
-        className="absolute top-20 right-4 z-50 w-12 h-12 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-lg shadow-xl flex items-center justify-center hover:bg-gray-50 transition-all duration-200"
+        style={{
+          position: 'absolute',
+          top: '80px',
+          right: '16px',
+          zIndex: 50,
+          width: '48px',
+          height: '48px',
+          background: 'var(--glass-bg-medium)',
+          backdropFilter: 'var(--glass-blur-light)',
+          WebkitBackdropFilter: 'var(--glass-blur-light)',
+          border: '1px solid var(--glass-border)',
+          borderRadius: '12px',
+          boxShadow: 'var(--glass-shadow-sm)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+        }}
         aria-label="Open terrain controls"
         aria-expanded="false"
       >
@@ -70,17 +88,32 @@ const TerrainControlsPanel = ({
 
   // Expanded state - full panel
   return (
-    <div className="absolute top-20 right-4 z-50 w-64 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-lg shadow-xl p-4 transition-all duration-200">
+    <div
+      style={{
+        position: 'absolute',
+        top: '80px',
+        right: '16px',
+        zIndex: 50,
+        width: '256px',
+        background: 'var(--glass-bg)',
+        backdropFilter: 'var(--glass-blur)',
+        WebkitBackdropFilter: 'var(--glass-blur)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: '16px',
+        boxShadow: 'var(--glass-shadow)',
+        padding: '16px',
+        transition: 'all 0.2s ease',
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
-        <h3 className="text-sm font-bold text-gray-800 tracking-wide">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border-light)' }}>
+        <h3 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-on-glass)', letterSpacing: '0.05em', margin: 0, fontFamily: 'Montserrat, sans-serif', textTransform: 'uppercase' }}>
           Terrain Controls
         </h3>
         <button
           onClick={toggleExpanded}
-          className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded"
+          style={{ color: 'var(--text-on-glass-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '6px', lineHeight: 1 }}
           aria-label="Collapse terrain controls"
-          aria-expanded="true"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -89,159 +122,122 @@ const TerrainControlsPanel = ({
       </div>
 
       {/* Zoom Controls */}
-      <div className="mb-4">
-        <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', fontFamily: 'Inter, sans-serif' }}>
           Zoom
         </label>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onZoomIn}
-            className="w-10 h-10 rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200 flex items-center justify-center text-xl font-medium shadow-sm"
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-          <button
-            onClick={onZoomOut}
-            className="w-10 h-10 rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200 flex items-center justify-center text-xl font-medium shadow-sm"
-            aria-label="Zoom out"
-          >
-            −
-          </button>
-          
-          {/* Reset View Button */}
-          <button
-            onClick={onResetView}
-            className="w-10 h-10 rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200 flex items-center justify-center text-lg shadow-sm ml-auto"
-            aria-label="Reset view"
-            title="Reset view"
-          >
-            ↻
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={onZoomIn} aria-label="Zoom in"
+            style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--glass-bg-medium)', border: '1px solid var(--glass-border)', color: 'var(--text-on-glass)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '500', boxShadow: 'var(--glass-shadow-sm)', transition: 'all 0.15s ease' }}
+          >+</button>
+          <button onClick={onZoomOut} aria-label="Zoom out"
+            style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--glass-bg-medium)', border: '1px solid var(--glass-border)', color: 'var(--text-on-glass)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '500', boxShadow: 'var(--glass-shadow-sm)', transition: 'all 0.15s ease' }}
+          >−</button>
+          <button onClick={onResetView} aria-label="Reset view" title="Reset view"
+            style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--glass-bg-medium)', border: '1px solid var(--glass-border)', color: 'var(--text-on-glass)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: 'var(--glass-shadow-sm)', marginLeft: 'auto', transition: 'all 0.15s ease' }}
+          >↻</button>
         </div>
       </div>
 
       {/* 3D Terrain Toggle */}
-      <div className="mb-4 pb-4 border-b border-gray-200">
-        <label className="flex items-center cursor-pointer group">
-          <div className="relative">
+      <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid var(--glass-border-light)' }}>
+        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '12px' }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
             <input
               type="checkbox"
               checked={terrainEnabled}
               onChange={(e) => onToggleTerrain(e.target.checked)}
-              className="sr-only"
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
               aria-label="Toggle 3D terrain"
             />
-            <div
-              className={`w-11 h-6 rounded-full transition-colors duration-200 ${
-                terrainEnabled ? 'bg-teal-500' : 'bg-gray-300'
-              }`}
-            >
-              <div
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                  terrainEnabled ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
+            <div style={{
+              width: '44px', height: '24px', borderRadius: '12px',
+              background: terrainEnabled ? 'var(--accent-medium)' : 'rgba(255,255,255,0.15)',
+              border: terrainEnabled ? '1px solid var(--accent-border)' : '1px solid var(--glass-border)',
+              transition: 'all 0.2s ease', position: 'relative'
+            }}>
+              <div style={{
+                position: 'absolute', top: '2px',
+                left: terrainEnabled ? '22px' : '2px',
+                width: '18px', height: '18px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.9)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                transition: 'left 0.2s ease'
+              }} />
             </div>
           </div>
-          <span className="ml-3 text-sm font-medium text-gray-700 group-hover:text-gray-900">
+          <span style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-on-glass-muted)', fontFamily: 'Inter, sans-serif' }}>
             3D Terrain
           </span>
         </label>
       </div>
 
-      {/* Camera Bearing Slider - Always visible */}
-      <div className="mb-4 pb-4 border-b border-gray-200">
-        <label
-          htmlFor="bearing-slider"
-          className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2"
-        >
-          Camera Bearing: <span className="text-teal-600 font-bold">{currentBearing}° ({getCardinalDirection(currentBearing)})</span>
+      {/* Camera Bearing Slider */}
+      <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid var(--glass-border-light)' }}>
+        <label htmlFor="bearing-slider" style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', fontFamily: 'Inter, sans-serif' }}>
+          Bearing: <span style={{ color: 'var(--accent-text)', fontWeight: '700' }}>{currentBearing}° ({getCardinalDirection(currentBearing)})</span>
         </label>
-        
-        <div className="space-y-1">
-          <input
-            id="bearing-slider"
-            type="range"
-            min="0"
-            max="360"
-            step="1"
-            value={currentBearing}
-            onChange={(e) => onBearingChange(Number(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-            style={{
-              background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${(currentBearing / 360) * 100}%, #e5e7eb ${(currentBearing / 360) * 100}%, #e5e7eb 100%)`
-            }}
-            aria-label="Camera bearing angle"
-            aria-valuemin="0"
-            aria-valuemax="360"
-            aria-valuenow={currentBearing}
-            aria-valuetext={`${currentBearing} degrees ${getCardinalDirection(currentBearing)}`}
-          />
-        </div>
+        <input
+          id="bearing-slider"
+          type="range" min="0" max="360" step="1"
+          value={currentBearing}
+          onChange={(e) => onBearingChange(Number(e.target.value))}
+          className="glass-range-input"
+          style={{
+            width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none',
+            background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentBearing / 360) * 100}%, rgba(255,255,255,0.15) ${(currentBearing / 360) * 100}%, rgba(255,255,255,0.15) 100%)`
+          }}
+          aria-label="Camera bearing angle"
+        />
       </div>
 
-      {/* Camera Pitch Slider - Only visible when terrain is enabled */}
+      {/* Camera Pitch Slider */}
       {terrainEnabled && (
-        <div className="transition-all duration-200">
-          <label
-            htmlFor="pitch-slider"
-            className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2"
-          >
-            Camera Pitch: <span className="text-teal-600 font-bold">{currentPitch}°</span>
+        <div style={{ transition: 'all 0.2s ease' }}>
+          <label htmlFor="pitch-slider" style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', fontFamily: 'Inter, sans-serif' }}>
+            Pitch: <span style={{ color: 'var(--accent-text)', fontWeight: '700' }}>{currentPitch}°</span>
           </label>
-          
-          <div className="space-y-1">
-            <input
-              id="pitch-slider"
-              type="range"
-              min="0"
-              max="85"
-              step="1"
-              value={currentPitch}
-              onChange={(e) => onPitchChange(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-              style={{
-                background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${(currentPitch / 85) * 100}%, #e5e7eb ${(currentPitch / 85) * 100}%, #e5e7eb 100%)`
-              }}
-              aria-label="Camera pitch angle"
-              aria-valuemin="0"
-              aria-valuemax="85"
-              aria-valuenow={currentPitch}
-              aria-valuetext={`${currentPitch} degrees`}
-            />
-            
-            {/* Min/Max Labels */}
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>0°</span>
-              <span>85°</span>
-            </div>
+          <input
+            id="pitch-slider"
+            type="range" min="0" max="85" step="1"
+            value={currentPitch}
+            onChange={(e) => onPitchChange(Number(e.target.value))}
+            style={{
+              width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none',
+              background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentPitch / 85) * 100}%, rgba(255,255,255,0.15) ${(currentPitch / 85) * 100}%, rgba(255,255,255,0.15) 100%)`
+            }}
+            aria-label="Camera pitch angle"
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '11px', color: 'var(--text-on-glass-dim)', fontFamily: 'Inter, sans-serif' }}>
+            <span>0°</span>
+            <span>85°</span>
           </div>
         </div>
       )}
 
-      {/* Custom CSS for slider thumb */}
+      {/* Slider thumb CSS */}
       <style>{`
+        .glass-range-input::-webkit-slider-thumb,
         input[type='range']::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: #14b8a6;
+          background: var(--accent);
           cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
         }
-
+        .glass-range-input::-moz-range-thumb,
         input[type='range']::-moz-range-thumb {
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: #14b8a6;
+          background: var(--accent);
           cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
         }
       `}</style>
     </div>

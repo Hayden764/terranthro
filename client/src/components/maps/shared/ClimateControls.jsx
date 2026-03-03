@@ -35,75 +35,82 @@ const ClimateControls = ({
     : tempValues;
 
   return (
-    <div className="absolute bottom-4 left-4 z-40 bg-white/95 backdrop-blur-sm border border-gray-300 rounded-lg shadow-xl">
+    <div style={{
+      position: 'absolute',
+      bottom: '16px',
+      left: '16px',
+      zIndex: 40,
+      background: 'var(--glass-bg)',
+      backdropFilter: 'var(--glass-blur)',
+      WebkitBackdropFilter: 'var(--glass-blur)',
+      border: '1px solid var(--glass-border)',
+      borderRadius: '16px',
+      boxShadow: 'var(--glass-shadow)',
+    }}>
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200">
-        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wide">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--glass-border-light)' }}>
+        <h3 style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-on-glass)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0, fontFamily: 'Montserrat, sans-serif' }}>
           Climate Data (PRISM)
         </h3>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-500 hover:text-gray-700 transition-colors p-1"
+          style={{ background: 'none', border: 'none', color: 'var(--text-on-glass-muted)', cursor: 'pointer', padding: '4px', lineHeight: 1 }}
           aria-label={isExpanded ? 'Collapse' : 'Expand'}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d={isExpanded ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} 
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"} />
           </svg>
         </button>
       </div>
 
       {isExpanded && (
-        <div className="p-3 space-y-3" style={{ minWidth: '280px' }}>
+        <div style={{ padding: '12px 16px', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Toggle Switch */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-on-glass-muted)', fontFamily: 'Inter, sans-serif' }}>
               Show Temperature
             </span>
-            <label className="relative inline-block">
+            <label style={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 checked={isVisible}
                 onChange={(e) => onToggle(e.target.checked)}
-                className="sr-only"
+                style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
               />
-              <div
-                className={`w-11 h-6 rounded-full transition-colors duration-200 ${
-                  isVisible ? 'bg-teal-500' : 'bg-gray-300'
-                }`}
-              >
-                <div
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                    isVisible ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
+              <div style={{
+                width: '44px', height: '24px', borderRadius: '12px',
+                background: isVisible ? 'var(--accent-medium)' : 'rgba(255,255,255,0.15)',
+                border: isVisible ? '1px solid var(--accent-border)' : '1px solid var(--glass-border)',
+                transition: 'all 0.2s ease', position: 'relative'
+              }}>
+                <div style={{
+                  position: 'absolute', top: '2px',
+                  left: isVisible ? '22px' : '2px',
+                  width: '18px', height: '18px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.9)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  transition: 'left 0.2s ease'
+                }} />
               </div>
             </label>
           </div>
 
           {/* Month Slider */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
-              Month: <span className="text-teal-600 font-bold">{MONTH_NAMES[currentMonth - 1]}</span>
+            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', fontFamily: 'Inter, sans-serif' }}>
+              Month: <span style={{ color: 'var(--accent-text)', fontWeight: '700' }}>{MONTH_NAMES[currentMonth - 1]}</span>
             </label>
             <input
-              type="range"
-              min="1"
-              max="12"
-              step="1"
+              type="range" min="1" max="12" step="1"
               value={currentMonth}
               onChange={(e) => onMonthChange(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               style={{
-                background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${((currentMonth - 1) / 11) * 100}%, #e5e7eb ${((currentMonth - 1) / 11) * 100}%, #e5e7eb 100%)`
+                width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none',
+                background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) 100%)`
               }}
               disabled={!isVisible}
             />
-            <div className="flex justify-between mt-1 text-xs text-gray-500">
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '11px', color: 'var(--text-on-glass-dim)', fontFamily: 'Inter, sans-serif' }}>
               <span>{MONTH_ABBR[0]}</span>
               <span>{MONTH_ABBR[3]}</span>
               <span>{MONTH_ABBR[6]}</span>
@@ -114,43 +121,33 @@ const ClimateControls = ({
 
           {/* Legend */}
           {isVisible && (
-            <div className="pt-3 border-t border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--glass-border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Inter, sans-serif' }}>
                   Temperature
                 </div>
-                {/* Celsius/Fahrenheit Toggle */}
-                <div className="flex items-center gap-1 text-xs">
+                {/* °C / °F toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
                   <button
                     onClick={() => setIsFahrenheit(false)}
-                    className={`px-2 py-0.5 rounded transition-colors ${
-                      !isFahrenheit 
-                        ? 'bg-teal-500 text-white font-medium' 
-                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                    }`}
-                  >
-                    °C
-                  </button>
+                    style={{
+                      padding: '2px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '500', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
+                      background: !isFahrenheit ? 'var(--accent-medium)' : 'rgba(255,255,255,0.12)',
+                      color: !isFahrenheit ? '#fff' : 'var(--text-on-glass-muted)',
+                    }}
+                  >°C</button>
                   <button
                     onClick={() => setIsFahrenheit(true)}
-                    className={`px-2 py-0.5 rounded transition-colors ${
-                      isFahrenheit 
-                        ? 'bg-teal-500 text-white font-medium' 
-                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                    }`}
-                  >
-                    °F
-                  </button>
+                    style={{
+                      padding: '2px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '500', fontFamily: 'Inter, sans-serif', transition: 'all 0.15s ease',
+                      background: isFahrenheit ? 'var(--accent-medium)' : 'rgba(255,255,255,0.12)',
+                      color: isFahrenheit ? '#fff' : 'var(--text-on-glass-muted)',
+                    }}
+                  >°F</button>
                 </div>
               </div>
-              {/* Continuous gradient bar with new color scheme */}
-              <div 
-                className="w-full h-6 rounded-sm mb-1"
-                style={{
-                  background: 'linear-gradient(to right, #2813ED 0%, #13EDED 25%, #18B445 50%, #EDED13 75%, #ED1313 100%)'
-                }}
-              />
-              <div className="flex justify-between text-xs text-gray-600">
+              <div style={{ width: '100%', height: '24px', borderRadius: '4px', marginBottom: '4px', background: 'linear-gradient(to right, #2813ED 0%, #13EDED 25%, #18B445 50%, #EDED13 75%, #ED1313 100%)' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-on-glass-dim)', fontFamily: 'Inter, sans-serif' }}>
                 {displayTemps.map((temp, idx) => (
                   <span key={idx}>{temp}°</span>
                 ))}
@@ -160,7 +157,7 @@ const ClimateControls = ({
         </div>
       )}
 
-      {/* Custom slider thumb CSS */}
+      {/* Slider thumb CSS */}
       <style>{`
         input[type='range']::-webkit-slider-thumb {
           -webkit-appearance: none;
@@ -168,24 +165,22 @@ const ClimateControls = ({
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: #14b8a6;
+          background: var(--accent);
           cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
         }
-
         input[type='range']::-moz-range-thumb {
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: #14b8a6;
+          background: var(--accent);
           cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          border: 2px solid rgba(255,255,255,0.8);
+          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
         }
-
         input[type='range']:disabled {
-          opacity: 0.5;
+          opacity: 0.4;
           cursor: not-allowed;
         }
       `}</style>

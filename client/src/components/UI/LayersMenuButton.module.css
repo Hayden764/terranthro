@@ -1,7 +1,6 @@
 /* Layers Menu Hamburger Button */
 
 .hamburgerButton {
-  /* position switched to fixed to mirror ProjectionInfo button */
   position: fixed;
   bottom: var(--space-8);
   left: var(--space-8);
@@ -13,21 +12,24 @@
   align-items: center;
   justify-content: center;
   
-  background: var(--base-white);
-  border: 1px solid var(--border-gray);
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border) !important;
   border-radius: 50%;
   
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow-hud);
   
   cursor: pointer;
   z-index: 100;
   
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .hamburgerButton:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--glass-bg-heavy);
+  box-shadow: var(--glow-burgundy-sm), var(--glass-shadow-hud);
 }
 
 .hamburgerButton:active {
@@ -49,7 +51,7 @@
   display: block;
   width: 18px;
   height: 2px;
-  background: var(--primary-burgundy);
+  background: rgba(255, 255, 255, 0.85);
   border-radius: 1px;
   transition: all 0.3s ease;
 }

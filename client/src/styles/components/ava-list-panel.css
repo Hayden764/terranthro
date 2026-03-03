@@ -1,6 +1,5 @@
 /* ================================================
-   AVA LIST PANEL STYLES
-   Clickable list of AVAs for navigation
+   AVA LIST PANEL STYLES — Glassmorphism
    ================================================ */
 
 /* Panel Container */
@@ -10,9 +9,261 @@
   left: 24px;
   width: 320px;
   max-height: 400px;
-  background: #FFFEF7; /* Cream background */
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-medium);
+  -webkit-backdrop-filter: var(--glass-blur-medium);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: var(--glass-shadow);
+  z-index: 1000;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  color: var(--text-on-glass);
+}
+
+.ava-list-panel.collapsed {
+  max-height: 56px;
+}
+
+/* Header */
+.ava-list-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--glass-border-light);
+  background: transparent;
+}
+
+.ava-list-toggle {
+  background: var(--glass-bg-input);
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.ava-list-toggle:hover {
+  background: var(--glass-bg-medium);
+}
+
+.toggle-arrow {
+  font-size: 10px;
+  color: var(--text-on-glass-muted);
+  transition: transform 0.2s ease;
+  display: block;
+  width: 12px;
+  text-align: center;
+}
+
+.toggle-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.ava-list-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-on-glass);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ava-count {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Content */
+.ava-list-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 344px;
+}
+
+/* Search */
+.ava-search {
+  position: relative;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--glass-border-light);
+  flex-shrink: 0;
+}
+
+.ava-search-input {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-on-glass);
+  background: var(--glass-bg-input);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.15s ease, background 0.15s ease;
+  outline: none;
+}
+
+.ava-search-input:focus {
+  border-color: var(--accent-border);
+  background: var(--glass-bg-medium);
+}
+
+.ava-search-input::placeholder {
+  color: var(--text-on-glass-dim);
+}
+
+.ava-search-clear {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: var(--text-on-glass-dim);
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s ease;
+}
+
+.ava-search-clear:hover {
+  color: var(--text-on-glass);
+}
+
+/* AVA Items */
+.ava-list-items {
+  overflow-y: auto;
+  padding: 8px 0;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+.ava-list-items::-webkit-scrollbar { width: 4px; }
+.ava-list-items::-webkit-scrollbar-track { background: transparent; }
+.ava-list-items::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+.ava-list-items::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+.ava-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: var(--text-on-glass-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+
+.ava-list-item:hover {
+  background-color: var(--glass-bg-medium);
+  color: var(--text-on-glass);
+}
+
+.ava-list-item-name {
+  flex: 1;
+}
+
+.ava-list-item-arrow {
+  font-size: 16px;
+  color: var(--accent-text);
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.ava-list-item:hover .ava-list-item-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+/* Empty State */
+.ava-list-empty {
+  padding: 24px 20px;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-on-glass-dim);
+  font-style: italic;
+}
+
+/* ================================================
+   RESPONSIVE STYLES
+   ================================================ */
+
+@media (max-width: 1024px) {
+  .ava-list-panel {
+    width: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ava-list-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 50vh;
+  }
+
+  .ava-list-panel.collapsed {
+    max-height: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ava-list-panel {
+    max-height: 60vh;
+  }
+
+  .ava-list-panel.collapsed {
+    max-height: 52px;
+  }
+
+  .ava-list-content {
+    max-height: calc(60vh - 52px);
+  }
+
+  .ava-list-header {
+    padding: 14px;
+  }
+
+  .ava-list-title {
+    font-size: 13px;
+  }
+
+  .ava-count {
+    font-size: 12px;
+  }
+}
+
+/* Panel Container */
+.ava-list-panel {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  width: 320px;
+  max-height: 400px;
+  background: var(--glass-bg-medium);
+  backdrop-filter: var(--glass-blur-medium);
+  -webkit-backdrop-filter: var(--glass-blur-medium);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: var(--glass-shadow);
   z-index: 1000;
   overflow: hidden;
   transition: max-height 0.3s ease;
@@ -28,8 +279,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  border-bottom: 2px solid #E5E5E5;
-  background: #FFFEF7;
+  border-bottom: 1px solid var(--glass-border-light);
+  background: transparent;
 }
 
 .ava-list-toggle {
@@ -48,7 +299,7 @@
 
 .toggle-arrow {
   font-size: 10px;
-  color: #6B6B6B;
+  color: var(--text-on-glass-muted);
   transition: transform 0.2s ease;
   display: block;
   width: 12px;
@@ -63,7 +314,7 @@
   font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #2B2B2B;
+  color: var(--text-on-glass);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0;
@@ -76,7 +327,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #C41E3A;
+  color: var(--accent-text);
   text-transform: none;
   letter-spacing: normal;
 }
@@ -92,7 +343,7 @@
 .ava-search {
   position: relative;
   padding: 12px 16px;
-  border-bottom: 1px solid #E5E5E5;
+  border-bottom: 1px solid var(--glass-border-light);
   flex-shrink: 0;
 }
 
@@ -101,20 +352,20 @@
   padding: 8px 32px 8px 12px;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: #2B2B2B;
-  background: white;
-  border: 1px solid #D0D0D0;
-  border-radius: 4px;
+  color: var(--text-on-glass);
+  background: var(--glass-bg-input);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
   transition: border-color 0.15s ease;
 }
 
 .ava-search-input:focus {
   outline: none;
-  border-color: #C41E3A;
+  border-color: var(--accent-border);
 }
 
 .ava-search-input::placeholder {
-  color: #999;
+  color: var(--text-on-glass-dim);
 }
 
 .ava-search-clear {
@@ -125,14 +376,14 @@
   background: transparent;
   border: none;
   font-size: 14px;
-  color: #999;
+  color: var(--text-on-glass-muted);
   cursor: pointer;
   padding: 4px 8px;
   transition: color 0.15s ease;
 }
 
 .ava-search-clear:hover {
-  color: #C41E3A;
+  color: var(--accent-text);
 }
 
 /* AVA Items */
@@ -148,7 +399,7 @@
   justify-content: space-between;
   padding: 10px 20px;
   text-decoration: none;
-  color: #2B2B2B;
+  color: var(--text-on-glass-muted);
   font-family: 'Inter', sans-serif;
   font-size: 14px;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -156,8 +407,8 @@
 }
 
 .ava-list-item:hover {
-  background-color: rgba(196, 30, 58, 0.05);
-  color: #C41E3A;
+  background-color: var(--glass-bg-medium);
+  color: var(--text-on-glass);
 }
 
 .ava-list-item-name {
@@ -166,7 +417,7 @@
 
 .ava-list-item-arrow {
   font-size: 16px;
-  color: #C41E3A;
+  color: var(--accent-text);
   opacity: 0;
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
@@ -182,7 +433,7 @@
   text-align: center;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
-  color: #6B6B6B;
+  color: var(--text-on-glass-muted);
   font-style: italic;
 }
 
@@ -196,12 +447,12 @@
 }
 
 .ava-list-items::-webkit-scrollbar-thumb {
-  background: #d0d0d0;
+  background: rgba(255,255,255,0.15);
   border-radius: 3px;
 }
 
 .ava-list-items::-webkit-scrollbar-thumb:hover {
-  background: #b0b0b0;
+  background: rgba(255,255,255,0.25);
 }
 
 /* ================================================
