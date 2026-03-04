@@ -5,7 +5,6 @@ import { LayerProvider } from './context/LayerContext';
 import MapLibreNationalMap from './components/maps/MapLibreNationalMap';
 import LayersMenuButton from './components/ui/LayersMenuButton';
 import LayersModal from './components/layers/LayersModal';
-import ProjectionInfoModal from './components/ui/ProjectionInfoModal';
 import WelcomeModal from './components/ui/WelcomeModal';
 import About from './pages/About';
 import StatePage from './pages/StatePage';
@@ -28,7 +27,6 @@ function HomePage({ welcomeDone, onWelcomeDone }) {
           isOpen={isLayersOpen}
           onClose={() => setIsLayersOpen(false)}
         />
-        <ProjectionInfoModal />
         {!welcomeDone && <WelcomeModal onClose={onWelcomeDone} />}
       </div>
     </div>

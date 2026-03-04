@@ -4,8 +4,12 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import TerrainControlsPanel from "./shared/TerrainControls";
 import ClimateLayer from "./shared/ClimateLayer";
+import ClimateScaleModal from "./shared/ClimateScaleModal";
 import TopographyLayer from "./shared/TopographyLayer";
 import DataLayerPanel from "./shared/DataLayerPanel";
+import useClimateScale from "../../hooks/useClimateScale";
+import { CLIMATE_LAYER_TYPES } from "./shared/climateConfig";
+import { TOPO_LAYER_TYPES } from "./shared/topographyConfig";
 
 /**
  * MapLibre AVA Viewer Component
@@ -27,11 +31,40 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   
   // Climate layer state
-  const [climateVisible, setClimateVisible] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
 
-  // Topography layer state
-  const [activeTopoLayer, setActiveTopoLayer] = useState(null);
+  // Unified layer selection — one active layer (climate or topo) at a time
+  const [activeLayer, setActiveLayer] = useState(null);
+
+  // Derived values from activeLayer
+  const activeClimateConfig = CLIMATE_LAYER_TYPES[activeLayer] || null;
+  const climateVisible = activeClimateConfig !== null;
+  const activeTopoLayer = TOPO_LAYER_TYPES[activeLayer] ? activeLayer : null;
+  const prismVar = activeClimateConfig?.prismVar || 'tdmean';
+  const colormap = activeClimateConfig?.colormap || 'plasma';
+
+  // Adaptive climate scale
+  const {
+    rescale,
+    displayMin,
+    displayMax,
+    isLoading: scaleLoading,
+    error: scaleError,
+    autoAdjust,
+    onActivate: onScaleActivate,
+    onDeactivate: onScaleDeactivate,
+  } = useClimateScale(mapRef.current, 'dundee-hills', prismVar, currentMonth, climateVisible);
+
+  // Fire auto-adjust on first toggle-on; reset on toggle-off
+  const prevClimateVisibleRef = useRef(false);
+  useEffect(() => {
+    if (climateVisible && !prevClimateVisibleRef.current) {
+      onScaleActivate();
+    } else if (!climateVisible && prevClimateVisibleRef.current) {
+      onScaleDeactivate();
+    }
+    prevClimateVisibleRef.current = climateVisible;
+  }, [climateVisible, onScaleActivate, onScaleDeactivate]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -295,6 +328,9 @@ const MapLibreAVAViewer = ({ avaData }) => {
           avaName="dundee-hills"
           isVisible={climateVisible}
           currentMonth={currentMonth}
+          rescale={rescale}
+          prismVar={prismVar}
+          colormap={colormap}
         />
       )}
 
@@ -322,14 +358,24 @@ const MapLibreAVAViewer = ({ avaData }) => {
         />
       </div>
 
+      {/* Climate Scale Modal - bottom right, above attribution */}
+      <ClimateScaleModal
+        climateVisible={climateVisible}
+        layerLabel={activeClimateConfig?.label || 'Temperature'}
+        displayMin={displayMin}
+        displayMax={displayMax}
+        isLoading={scaleLoading}
+        error={scaleError}
+        onAutoAdjust={autoAdjust}
+        unit={activeClimateConfig?.unit || '°C'}
+      />
+
       {/* Unified Data Layer Panel - bottom left */}
       <DataLayerPanel
-        climateVisible={climateVisible}
-        onClimateToggle={setClimateVisible}
+        activeLayer={activeLayer}
+        onLayerChange={setActiveLayer}
         currentMonth={currentMonth}
         onMonthChange={setCurrentMonth}
-        activeTopoLayer={activeTopoLayer}
-        onTopoLayerChange={setActiveTopoLayer}
         avaSlug={avaSlug || ''}
       />
 

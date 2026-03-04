@@ -56,13 +56,54 @@ export const CLIMATE_SOURCE_ID = 'prism-climate';
 export const CLIMATE_LAYER_ID = 'prism-climate-layer';
 
 /**
- * Get the COG file URL for a given AVA and month
- * http-server is running from project root, serving /climate-data/ directory
+ * Climate layer type definitions — mirrors TOPO_LAYER_TYPES structure
+ * Each entry describes one selectable PRISM variable.
  */
-export const getCogFileUrl = (avaName, month) => {
+export const CLIMATE_LAYER_TYPES = {
+  tdmean: {
+    id: 'tdmean',
+    label: 'Mean Temperature',
+    unit: '°C',
+    colormap: 'plasma',
+    prismVar: 'tdmean',
+    description: 'Average daily mean temperature',
+    hasMonthSlider: true,
+  },
+  tmax: {
+    id: 'tmax',
+    label: 'Max Temperature',
+    unit: '°C',
+    colormap: 'inferno',
+    prismVar: 'tmax',
+    description: 'Average daily maximum temperature',
+    hasMonthSlider: true,
+  },
+  tmin: {
+    id: 'tmin',
+    label: 'Min Temperature',
+    unit: '°C',
+    colormap: 'cool',
+    prismVar: 'tmin',
+    description: 'Average daily minimum temperature',
+    hasMonthSlider: true,
+  },
+  ppt: {
+    id: 'ppt',
+    label: 'Precipitation',
+    unit: 'mm',
+    colormap: 'blues',
+    prismVar: 'ppt',
+    description: 'Total monthly precipitation',
+    hasMonthSlider: true,
+  },
+};
+
+/**
+ * Get the COG file URL for a given AVA, variable, and month
+ */
+export const getCogFileUrl = (avaName, prismVar, month) => {
   const monthStr = String(month).padStart(2, '0');
-  // Correct path: /climate-data/{avaName}/prism_tdmean_{avaName}_2020{month}_cog.tif
-  return `${COG_SERVER_URL}/climate-data/${avaName}/prism_tdmean_${avaName}_2020${monthStr}_cog.tif`;
+  return `${COG_SERVER_URL}/climate-data/${avaName}/prism_${prismVar}_${avaName}_2020${monthStr}_cog.tif`;
 };
 
 /**
@@ -79,6 +120,34 @@ export const getTitilerTileUrl = (avaName, month) => {
   // Standard Titiler tiles endpoint with PNG format
   // Let Titiler auto-detect the data range instead of forcing rescale
   return `${TITILER_URL}/cog/tiles/{z}/{x}/{y}.png?url=${encodedCogUrl}&colormap_name=plasma`;
+};
+
+/**
+ * Get Titiler tile URL with an explicit rescale range
+ * Used by the adaptive scale system to re-tile with viewport-derived bounds
+ */
+export const getTitilerTileUrlWithRescale = (cogUrl, rescaleMin, rescaleMax) => {
+  const encodedCogUrl = encodeURIComponent(cogUrl);
+  return `${TITILER_URL}/cog/tiles/{z}/{x}/{y}.png?url=${encodedCogUrl}&rescale=${rescaleMin},${rescaleMax}&colormap_name=plasma`;
+};
+
+/**
+ * Get Titiler statistics URL for a bounding box
+ * IMPORTANT: The url param must use host.docker.internal because Titiler
+ * fetches the COG server-side from inside Docker — localhost won't work.
+ * bbox format: "minLng,minLat,maxLng,maxLat"
+ */
+export const getTitilerStatsUrl = (avaName, prismVar, month, bbox) => {
+  const monthStr = String(month).padStart(2, '0');
+  const cogUrl = `http://host.docker.internal:8080/climate-data/${avaName}/prism_${prismVar}_${avaName}_2020${monthStr}_cog.tif`;
+  const params = new URLSearchParams({
+    url: cogUrl,
+    bbox: bbox,
+    max_size: '256',
+    resampling: 'bilinear',
+    coord_crs: 'epsg:4326'
+  });
+  return `${TITILER_URL}/cog/statistics?${params.toString()}`;
 };
 
 /**

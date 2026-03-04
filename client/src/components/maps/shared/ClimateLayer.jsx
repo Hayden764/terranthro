@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { 
   getTitilerTileUrl,
+  getTitilerTileUrlWithRescale,
   getCogFileUrl,
   CLIMATE_SOURCE_ID,
   CLIMATE_LAYER_ID,
@@ -14,14 +15,20 @@ import {
  * @param {Object} props
  * @param {Object} props.map - MapLibre map instance
  * @param {string} props.avaName - AVA name (slug format, e.g., "dundee-hills")
+ * @param {string} props.prismVar - PRISM variable id e.g. "tdmean", "ppt", "tmax", "tmin"
+ * @param {string} props.colormap - Titiler colormap name e.g. "plasma", "blues"
  * @param {boolean} props.isVisible - Whether layer should be visible
  * @param {number} props.currentMonth - Current month (1-12)
+ * @param {string|null} props.rescale - Titiler rescale string e.g. "3.5,14.2", or null for auto
  */
 const ClimateLayer = ({ 
   map, 
   avaName, 
+  prismVar = 'tdmean',
+  colormap = 'plasma',
   isVisible = false, 
-  currentMonth = 1 
+  currentMonth = 1,
+  rescale = null
 }) => {
   const [isSourceAdded, setIsSourceAdded] = useState(false);
   const mapRef = useRef(map);
@@ -55,12 +62,14 @@ const ClimateLayer = ({
         console.warn('Error removing existing climate layer:', e);
       }
 
-      // Get Titiler tile URL for current month (national PRISM COG)
+      // Build COG URL using the selected PRISM variable
       const year = 2020;
       const monthStr = String(currentMonth).padStart(2, '0');
-      const cogUrl = `http://host.docker.internal:8080/climate-data/dundee-hills/prism_tdmean_us_30s_${year}${monthStr}_avg_30y_cog.tif`;
+      const cogUrl = `http://host.docker.internal:8080/climate-data/${avaName}/prism_${prismVar}_${avaName}_2020${monthStr}_cog.tif`;
       const encodedCogUrl = encodeURIComponent(cogUrl);
-      const tileUrl = `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=${encodedCogUrl}&rescale=-22,26&colormap_name=plasma`;
+
+      const rescaleParam = rescale ? rescale : '-22,26';
+      const tileUrl = `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=${encodedCogUrl}&rescale=${rescaleParam}&colormap_name=${colormap}`;
       console.log('✅ Adding climate layer with Titiler URL:', tileUrl);
 
       try {
@@ -110,7 +119,7 @@ const ClimateLayer = ({
       // Don't remove the layer on cleanup during month changes
       // Only remove when component unmounts for real
     };
-  }, [map, avaName, currentMonth, isVisible]);
+  }, [map, avaName, prismVar, colormap, currentMonth, isVisible, rescale]);
 
   // Update layer visibility
   useEffect(() => {
