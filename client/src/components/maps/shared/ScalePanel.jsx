@@ -81,13 +81,16 @@ const ScalePanel = ({
         borderRadius: '12px',
         boxShadow: 'var(--glass-shadow)',
         fontFamily: 'Inter, sans-serif',
+        // Cap upward growth so ramp picker never hides behind MapToolkit (top:80px)
+        maxHeight: 'calc(100vh - 80px - 52px - 32px)',
+        display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
         opacity: disabled ? 0.38 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
         transition: 'opacity 0.3s ease',
       }}
     >
-      {/* ── Header ── */}
+      {/* ── Header (pinned) ── */}
       <div
         onClick={() => setIsExpanded(p => !p)}
         style={{
@@ -130,9 +133,9 @@ const ScalePanel = ({
         </svg>
       </div>
 
-      {/* ── Body ── */}
+      {/* ── Body (scrollable) ── */}
       {isExpanded && (
-        <div style={{ padding: '10px 12px 12px' }}>
+        <div style={{ overflowY: 'auto', flex: 1, padding: '10px 12px 12px' }}>
 
           {/* ── Continuous mode ── */}
           {!isClassified && (
