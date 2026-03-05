@@ -211,6 +211,9 @@ const ScalePanel = ({
                   background: 'var(--glass-bg-light)',
                   borderRadius: '8px',
                   border: '1px solid var(--glass-border-light)',
+                  // Scroll within the panel — never pushes layout taller
+                  maxHeight: '180px',
+                  overflowY: 'auto',
                 }}>
                   {CONTINUOUS_COLORMAPS.map(cmap => (
                     <button
