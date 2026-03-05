@@ -111,7 +111,11 @@ const DataLayerPanel = ({
       backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)',
       border: '1px solid var(--glass-border)', borderRadius: '12px',
       boxShadow: 'var(--glass-shadow)', fontFamily: 'Inter, sans-serif',
-      maxWidth: '300px', minWidth: '270px', overflow: 'hidden', transition: 'all 0.2s ease',
+      maxWidth: '300px', minWidth: '270px',
+      // Cap height so it never overlaps the Back button (~74px from top)
+      maxHeight: 'calc(100vh - 106px)',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden', transition: 'all 0.2s ease',
     }}>
 
       {/* ── Header ───────────────────────────────────────────── */}
@@ -134,7 +138,7 @@ const DataLayerPanel = ({
       </div>
 
       {isPanelOpen && (
-        <div>
+        <div style={{ overflowY: 'auto', flex: 1 }}>
           {/* ══ CLIMATE — PRISM NORMALS ════════════════════════ */}
           <div style={{ borderBottom: '1px solid var(--glass-border-light)' }}>
             <div

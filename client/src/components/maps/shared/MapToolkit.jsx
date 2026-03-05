@@ -128,11 +128,15 @@ const MapToolkit = ({
         border: '1px solid var(--glass-border)',
         borderRadius: '16px',
         boxShadow: 'var(--glass-shadow)',
-        padding: '14px 16px 16px',
         fontFamily: 'Inter, sans-serif',
+        // Cap height so toolkit never overlaps ScalePanel below it
+        maxHeight: 'calc(100vh - 80px - 300px)',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
-      {/* ── Panel header ── */}
+      {/* ── Panel header (pinned, never scrolls) ── */}
+      <div style={{ padding: '14px 16px 0', flexShrink: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border-light)' }}>
         <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-on-glass)', letterSpacing: '0.05em', margin: 0, fontFamily: 'Montserrat, sans-serif', textTransform: 'uppercase' }}>
           Map Toolkit
@@ -146,6 +150,10 @@ const MapToolkit = ({
           </svg>
         </button>
       </div>
+      </div>{/* end pinned header wrapper */}
+
+      {/* ── Scrollable body ── */}
+      <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px 16px' }}>
 
       {/* ── TOOLS section ── */}
       <div style={{ marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid var(--glass-border-light)' }}>
@@ -343,6 +351,7 @@ const MapToolkit = ({
           box-shadow: 0 2px 6px rgba(56,189,248,0.4);
         }
       `}</style>
+      </div>{/* end scrollable body */}
     </div>
   );
 };
