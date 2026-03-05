@@ -2,13 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import TerrainControlsPanel from "./shared/TerrainControls";
+import TerrainControlsPanel from "./shared/MapToolkit";
 import ClimateLayer from "./shared/ClimateLayer";
-import ClimateScaleModal from "./shared/ClimateScaleModal";
+import ScalePanel from "./shared/ScalePanel";
+import ClimateProbeTooltip from "./shared/ClimateProbeTooltip";
+import ClimatePointModal from "./shared/ClimatePointModal";
+import IndexLayer from "./shared/IndexLayer";
 import TopographyLayer from "./shared/TopographyLayer";
 import DataLayerPanel from "./shared/DataLayerPanel";
 import useClimateScale from "../../hooks/useClimateScale";
-import { CLIMATE_LAYER_TYPES } from "./shared/climateConfig";
+import useClimateProbe from "../../hooks/useClimateProbe";
+import useMapMeasure from "../../hooks/useMapMeasure";
+import { CLIMATE_LAYER_TYPES, INDEX_LAYER_TYPES } from "./shared/climateConfig";
 import { TOPO_LAYER_TYPES } from "./shared/topographyConfig";
 
 /**
@@ -32,39 +37,143 @@ const MapLibreAVAViewer = ({ avaData }) => {
   
   // Climate layer state
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+  const [activeYear, setActiveYear] = useState(2025);
 
-  // Unified layer selection — one active layer (climate or topo) at a time
+  // Active map tool — 'pan' | 'probe' | 'measure'
+  const [activeTool, setActiveTool] = useState('pan');
+
+  // When layer changes, reset tool to pan
+  const handleLayerChange = (layer) => {
+    setActiveLayer(layer);
+    setActiveTool('pan');
+  };
+
+  // Unified layer selection — one active layer (climate / index / topo) at a time
   const [activeLayer, setActiveLayer] = useState(null);
+
+  // Per-layer-type colormap overrides (user-selectable)
+  const [climateColormap, setClimateColormap] = useState('plasma');
+  const [indexColormap, setIndexColormap] = useState('plasma');
 
   // Derived values from activeLayer
   const activeClimateConfig = CLIMATE_LAYER_TYPES[activeLayer] || null;
-  const climateVisible = activeClimateConfig !== null;
-  const activeTopoLayer = TOPO_LAYER_TYPES[activeLayer] ? activeLayer : null;
-  const prismVar = activeClimateConfig?.prismVar || 'tdmean';
-  const colormap = activeClimateConfig?.colormap || 'plasma';
+  const activeIndexConfig   = INDEX_LAYER_TYPES[activeLayer]   || null;
+  const climateVisible      = activeClimateConfig !== null;
+  const indexVisible        = activeIndexConfig   !== null;
+  const activeTopoLayer     = TOPO_LAYER_TYPES[activeLayer] ? activeLayer : null;
+  const prismVar            = activeClimateConfig?.prismVar || 'tdmean';
 
-  // Adaptive climate scale
+  // Effective colormaps — user override takes precedence, fallback to config default
+  const effectiveClimateColormap = climateColormap;
+  const effectiveIndexColormap   = activeIndexConfig?.isClassified
+    ? null   // classified layers use JSON colormapData, no user colormap
+    : indexColormap;
+
+  // Active layer info for ScalePanel
+  const anyLayerVisible = climateVisible || indexVisible;
+  const activePanelConfig = activeClimateConfig || activeIndexConfig || null;
+
+  // Adaptive scale for PRISM layers
   const {
-    rescale,
-    displayMin,
-    displayMax,
-    isLoading: scaleLoading,
-    error: scaleError,
-    autoAdjust,
-    onActivate: onScaleActivate,
-    onDeactivate: onScaleDeactivate,
-  } = useClimateScale(mapRef.current, 'dundee-hills', prismVar, currentMonth, climateVisible);
+    rescale: climateRescale,
+    displayMin: climateMin,
+    displayMax: climateMax,
+    isLoading: climateScaleLoading,
+    error: climateScaleError,
+    autoAdjust: climateAutoAdjust,
+    onActivate: onClimateScaleActivate,
+    onDeactivate: onClimateScaleDeactivate,
+  } = useClimateScale(mapRef.current, prismVar, currentMonth, climateVisible);
 
-  // Fire auto-adjust on first toggle-on; reset on toggle-off
+  // Adaptive scale for index layers (continuous only)
+  const {
+    rescale: indexRescale,
+    displayMin: indexMin,
+    displayMax: indexMax,
+    isLoading: indexScaleLoading,
+    error: indexScaleError,
+    autoAdjust: indexAutoAdjust,
+    onActivate: onIndexScaleActivate,
+    onDeactivate: onIndexScaleDeactivate,
+  } = useClimateScale(
+    mapRef.current,
+    null,
+    null,
+    indexVisible && !activeIndexConfig?.isClassified,
+    activeIndexConfig,
+    activeYear,
+  );
+
+  // Unified scale state for ScalePanel
+  const rescale       = climateVisible ? climateRescale : indexRescale;
+  const displayMin    = climateVisible ? climateMin     : indexMin;
+  const displayMax    = climateVisible ? climateMax     : indexMax;
+  const scaleLoading  = climateVisible ? climateScaleLoading : indexScaleLoading;
+  const scaleError    = climateVisible ? climateScaleError   : indexScaleError;
+  const autoAdjust    = climateVisible ? climateAutoAdjust   : indexAutoAdjust;
+
+  // Fire auto-adjust on first toggle-on; reset on toggle-off — PRISM
   const prevClimateVisibleRef = useRef(false);
   useEffect(() => {
     if (climateVisible && !prevClimateVisibleRef.current) {
-      onScaleActivate();
+      onClimateScaleActivate();
     } else if (!climateVisible && prevClimateVisibleRef.current) {
-      onScaleDeactivate();
+      onClimateScaleDeactivate();
     }
     prevClimateVisibleRef.current = climateVisible;
-  }, [climateVisible, onScaleActivate, onScaleDeactivate]);
+  }, [climateVisible, onClimateScaleActivate, onClimateScaleDeactivate]);
+
+  // Fire auto-adjust on first toggle-on; reset on toggle-off — Index (continuous only)
+  const prevIndexVisibleRef = useRef(false);
+  useEffect(() => {
+    const isContinuousIndex = indexVisible && !activeIndexConfig?.isClassified;
+    if (isContinuousIndex && !prevIndexVisibleRef.current) {
+      onIndexScaleActivate();
+    } else if (!isContinuousIndex && prevIndexVisibleRef.current) {
+      onIndexScaleDeactivate();
+    }
+    prevIndexVisibleRef.current = isContinuousIndex;
+  }, [indexVisible, activeIndexConfig, onIndexScaleActivate, onIndexScaleDeactivate]);
+
+  // Probe tool — works on PRISM and all index layers
+  const probeEnabled = activeTool === 'probe' && anyLayerVisible;
+  const {
+    hoverValue,
+    hoverLabel,
+    hoverScreenPos,
+    pinnedValue,
+    pinnedLabel,
+    pinnedCoords,
+    isPinModalOpen,
+    clearPin,
+  } = useClimateProbe(
+    mapRef.current,
+    probeEnabled,
+    climateVisible ? prismVar : null,
+    climateVisible ? currentMonth : null,
+    indexVisible ? activeIndexConfig : null,
+    activeYear,
+  );
+
+  // Measure tool
+  const measureEnabled = activeTool === 'measure' && anyLayerVisible;
+  const { points: measurePoints, totalDistance, fmtKm, clearMeasure } = useMapMeasure(
+    mapRef.current,
+    measureEnabled,
+  );
+
+  // Disable map drag when probe or measure is active
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (activeTool === 'pan') {
+      map.dragPan.enable();
+      map.scrollZoom.enable();
+    } else {
+      map.dragPan.disable();
+      // keep scroll zoom so user can still zoom
+    }
+  }, [activeTool]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -321,16 +430,30 @@ const MapLibreAVAViewer = ({ avaData }) => {
         </div>
       )}
 
-      {/* Climate Layer - manages PRISM data on map */}
+      {/* Climate Layer - PRISM monthly normals */}
       {mapLoaded && mapRef.current && (
         <ClimateLayer
           map={mapRef.current}
-          avaName="dundee-hills"
           isVisible={climateVisible}
           currentMonth={currentMonth}
-          rescale={rescale}
+          rescale={climateRescale}
           prismVar={prismVar}
-          colormap={colormap}
+          colormap={effectiveClimateColormap}
+        />
+      )}
+
+      {/* Index Layer - growing season indices */}
+      {mapLoaded && mapRef.current && (
+        <IndexLayer
+          map={mapRef.current}
+          isVisible={indexVisible}
+          fileSlug={activeIndexConfig?.fileSlug}
+          year={activeYear}
+          isClassified={activeIndexConfig?.isClassified || false}
+          colormapData={activeIndexConfig?.colormapData || null}
+          colormap={effectiveIndexColormap || 'plasma'}
+          rescaleDefault={activeIndexConfig?.rescaleDefault || '0,5000'}
+          rescale={indexRescale}
         />
       )}
 
@@ -343,7 +466,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
         />
       )}
 
-      {/* Terrain Controls Panel - top right */}
+      {/* Map Toolkit - top right (pan/probe/measure + terrain controls) */}
       <div style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
         <TerrainControlsPanel
           onZoomIn={handleZoomIn}
@@ -355,27 +478,63 @@ const MapLibreAVAViewer = ({ avaData }) => {
           terrainEnabled={terrainEnabled}
           currentBearing={currentBearing}
           currentPitch={currentPitch}
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+          anyLayerVisible={anyLayerVisible}
+          totalDistance={totalDistance}
+          onClearMeasure={clearMeasure}
+          fmtKm={fmtKm}
+          measurePointCount={measurePoints.length}
         />
       </div>
 
-      {/* Climate Scale Modal - bottom right, above attribution */}
-      <ClimateScaleModal
-        climateVisible={climateVisible}
-        layerLabel={activeClimateConfig?.label || 'Temperature'}
+      {/* Scale Panel - bottom right, above attribution */}
+      <ScalePanel
+        isVisible={anyLayerVisible}
+        layerLabel={activePanelConfig?.label || ''}
+        unit={activePanelConfig?.unit || ''}
+        isClassified={activeIndexConfig?.isClassified || false}
+        colormapData={activeIndexConfig?.colormapData || null}
+        colormap={climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
+        onColormapChange={climateVisible ? setClimateColormap : setIndexColormap}
         displayMin={displayMin}
         displayMax={displayMax}
         isLoading={scaleLoading}
         error={scaleError}
         onAutoAdjust={autoAdjust}
-        unit={activeClimateConfig?.unit || '°C'}
+        showAutoAdjust={!activeIndexConfig?.isClassified}
+      />
+
+      {/* Probe tooltip — follows cursor */}
+      <ClimateProbeTooltip
+        isActive={probeEnabled}
+        value={hoverValue}
+        screenPos={hoverScreenPos}
+        unit={activePanelConfig?.unit || ''}
+        label={hoverLabel || activePanelConfig?.label || ''}
+      />
+
+      {/* Pinned point modal — right side below toolkit */}
+      <ClimatePointModal
+        isOpen={isPinModalOpen}
+        onClose={clearPin}
+        value={pinnedValue}
+        valueLabel={pinnedLabel}
+        coords={pinnedCoords}
+        unit={activePanelConfig?.unit || ''}
+        label={activePanelConfig?.label || ''}
+        currentMonth={currentMonth}
+        isClassified={activeIndexConfig?.isClassified || false}
       />
 
       {/* Unified Data Layer Panel - bottom left */}
       <DataLayerPanel
         activeLayer={activeLayer}
-        onLayerChange={setActiveLayer}
+        onLayerChange={handleLayerChange}
         currentMonth={currentMonth}
         onMonthChange={setCurrentMonth}
+        activeYear={activeYear}
+        onYearChange={setActiveYear}
         avaSlug={avaSlug || ''}
       />
 

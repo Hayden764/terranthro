@@ -1,20 +1,19 @@
 import { useState, useCallback, useRef } from 'react';
-import { getTitilerStatsUrl } from '../components/maps/shared/climateConfig';
+import { getTitilerStatsUrl, getIndexTitilerStatsUrl } from '../components/maps/shared/climateConfig';
 
 /**
- * useClimateScale
- * Manages adaptive rescale state for a climate COG layer.
+ * useLayerScale  (exported as useClimateScale for backwards compatibility)
+ * Manages adaptive rescale state for any continuous COG layer.
+ * Works for both PRISM normals and growing-season index layers.
  *
- * - On first activation, auto-adjusts to viewport percentiles (p2/p98)
- * - "Auto Adjust" button re-fires the same fetch on demand
- * - Returns the current rescale string + display min/max for the legend
- *
- * @param {Object} map        - MapLibre map instance (or null)
- * @param {string} avaName    - AVA slug e.g. "dundee-hills"
- * @param {number} month      - Current month (1-12)
- * @param {boolean} isActive  - Whether the climate layer is currently on
+ * @param {Object}       map        - MapLibre map instance (or null)
+ * @param {string|null}  prismVar   - PRISM variable e.g. "tdmean" (null for index layers)
+ * @param {number|null}  month      - Current month (1-12), null for index layers
+ * @param {boolean}      isActive   - Whether the layer is currently visible
+ * @param {Object|null}  indexConfig - INDEX_LAYER_TYPES entry (null for PRISM layers)
+ * @param {number}       year        - Vintage year for index layers
  */
-const useClimateScale = (map, avaName, prismVar, month, isActive) => {
+const useClimateScale = (map, prismVar, month, isActive, indexConfig = null, year = 2025) => {
   const [rescale, setRescale] = useState(null);
   const [displayMin, setDisplayMin] = useState(null);
   const [displayMax, setDisplayMax] = useState(null);
@@ -24,14 +23,17 @@ const useClimateScale = (map, avaName, prismVar, month, isActive) => {
   const hasAutoAdjustedRef = useRef(false);
 
   const fetchAndApplyScale = useCallback(async () => {
-    if (!map || !avaName || !prismVar || !month) return;
+    // For PRISM layers we need prismVar + month; for index layers we need indexConfig
+    const isIndex = indexConfig !== null;
+    if (!map) return;
+    if (!isIndex && (!prismVar || !month)) return;
+    if (isIndex && indexConfig.isClassified) return; // no auto-adjust for discrete maps
 
     setIsLoading(true);
     setError(null);
 
     try {
       const bounds = map.getBounds();
-      // Use numeric values — URLSearchParams will stringify them cleanly
       const bbox = [
         parseFloat(bounds.getWest().toFixed(6)),
         parseFloat(bounds.getSouth().toFixed(6)),
@@ -39,7 +41,10 @@ const useClimateScale = (map, avaName, prismVar, month, isActive) => {
         parseFloat(bounds.getNorth().toFixed(6))
       ].join(',');
 
-      const statsUrl = getTitilerStatsUrl(avaName, prismVar, month, bbox);
+      const statsUrl = isIndex
+        ? getIndexTitilerStatsUrl(indexConfig.fileSlug, year, bbox)
+        : getTitilerStatsUrl(prismVar, month, bbox);
+
       console.log('🔍 Fetching Titiler stats:', statsUrl);
       console.log('🗺️  Viewport bbox:', bbox);
 
@@ -83,7 +88,7 @@ const useClimateScale = (map, avaName, prismVar, month, isActive) => {
     } finally {
       setIsLoading(false);
     }
-  }, [map, avaName, prismVar, month]);
+  }, [map, prismVar, month, indexConfig, year]);
 
   const onActivate = useCallback(() => {
     if (!hasAutoAdjustedRef.current) {

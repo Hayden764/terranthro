@@ -14,7 +14,6 @@ import {
  * 
  * @param {Object} props
  * @param {Object} props.map - MapLibre map instance
- * @param {string} props.avaName - AVA name (slug format, e.g., "dundee-hills")
  * @param {string} props.prismVar - PRISM variable id e.g. "tdmean", "ppt", "tmax", "tmin"
  * @param {string} props.colormap - Titiler colormap name e.g. "plasma", "blues"
  * @param {boolean} props.isVisible - Whether layer should be visible
@@ -23,7 +22,6 @@ import {
  */
 const ClimateLayer = ({ 
   map, 
-  avaName, 
   prismVar = 'tdmean',
   colormap = 'plasma',
   isVisible = false, 
@@ -40,9 +38,9 @@ const ClimateLayer = ({
 
   // Add/remove climate source and layer
   useEffect(() => {
-    if (!map || !avaName) return;
+    if (!map) return;
 
-    console.log(`🌡️ ClimateLayer effect triggered - Month: ${currentMonth}, AVA: ${avaName}`);
+    console.log(`🌡️ ClimateLayer effect triggered - Month: ${currentMonth}, var: ${prismVar}`);
 
     const addClimateLayer = () => {
       // Check if map is still valid
@@ -62,10 +60,9 @@ const ClimateLayer = ({
         console.warn('Error removing existing climate layer:', e);
       }
 
-      // Build COG URL using the selected PRISM variable
-      const year = 2020;
+      // Build national COG URL — one file covers all AVAs
       const monthStr = String(currentMonth).padStart(2, '0');
-      const cogUrl = `http://host.docker.internal:8080/climate-data/${avaName}/prism_${prismVar}_${avaName}_2020${monthStr}_cog.tif`;
+      const cogUrl = `http://host.docker.internal:8080/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
       const encodedCogUrl = encodeURIComponent(cogUrl);
 
       const rescaleParam = rescale ? rescale : '-22,26';
@@ -99,7 +96,7 @@ const ClimateLayer = ({
         }, beforeLayerId);
 
         setIsSourceAdded(true);
-        console.log(`✅ Climate layer added for ${avaName}, month ${currentMonth}`);
+        console.log(`✅ Climate layer added for var:${prismVar}, month:${currentMonth}`);
       } catch (error) {
         console.error('Error adding climate layer:', error);
       }
@@ -119,7 +116,7 @@ const ClimateLayer = ({
       // Don't remove the layer on cleanup during month changes
       // Only remove when component unmounts for real
     };
-  }, [map, avaName, prismVar, colormap, currentMonth, isVisible, rescale]);
+  }, [map, prismVar, colormap, currentMonth, isVisible, rescale]);
 
   // Update layer visibility
   useEffect(() => {
