@@ -81,8 +81,8 @@ const ScalePanel = ({
         borderRadius: '12px',
         boxShadow: 'var(--glass-shadow)',
         fontFamily: 'Inter, sans-serif',
-        // Cap upward growth so ramp picker never hides behind MapToolkit (top:80px)
-        maxHeight: 'calc(100vh - 80px - 52px - 32px)',
+        // Cap upward growth so ramp picker never hides behind MapToolkit (top:16px)
+        maxHeight: 'calc(100vh - 16px - 52px - 32px)',
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
         opacity: disabled ? 0.38 : 1,
@@ -212,7 +212,7 @@ const ScalePanel = ({
                   borderRadius: '8px',
                   border: '1px solid var(--glass-border-light)',
                   // Scroll within the panel — never pushes layout taller
-                  maxHeight: '180px',
+                  maxHeight: '120px',
                   overflowY: 'auto',
                 }}>
                   {CONTINUOUS_COLORMAPS.map(cmap => (

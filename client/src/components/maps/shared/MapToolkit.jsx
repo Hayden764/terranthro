@@ -99,7 +99,7 @@ const MapToolkit = ({
       <button
         onClick={() => setIsExpanded(true)}
         style={{
-          position: 'absolute', top: '80px', right: '16px', zIndex: 50,
+          position: 'absolute', top: '16px', right: '16px', zIndex: 50,
           width: '48px', height: '48px',
           background: 'var(--glass-bg-medium)',
           backdropFilter: 'var(--glass-blur-light)',
@@ -120,7 +120,7 @@ const MapToolkit = ({
   return (
     <div
       style={{
-        position: 'absolute', top: '80px', right: '16px', zIndex: 50,
+        position: 'absolute', top: '16px', right: '16px', zIndex: 50,
         width: '256px',
         background: 'var(--glass-bg)',
         backdropFilter: 'var(--glass-blur)',
@@ -130,7 +130,7 @@ const MapToolkit = ({
         boxShadow: 'var(--glass-shadow)',
         fontFamily: 'Inter, sans-serif',
         // Cap height so toolkit never overlaps ScalePanel below it
-        maxHeight: 'calc(100vh - 80px - 300px)',
+        maxHeight: 'calc(90vh - 16px - 300px)',
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
       }}
