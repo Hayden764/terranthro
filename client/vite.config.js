@@ -22,7 +22,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'map-vendor': ['maplibre-gl', 'topojson-client']
+          'map-vendor': ['maplibre-gl']
         }
       }
     },
