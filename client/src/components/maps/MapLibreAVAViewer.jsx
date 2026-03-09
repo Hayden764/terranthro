@@ -13,6 +13,7 @@ import DataLayerPanel from "./shared/DataLayerPanel";
 import useClimateScale from "../../hooks/useClimateScale";
 import useClimateProbe from "../../hooks/useClimateProbe";
 import useMapMeasure from "../../hooks/useMapMeasure";
+import useTopoScale from "../../hooks/useTopoScale";
 import { CLIMATE_LAYER_TYPES, INDEX_LAYER_TYPES } from "./shared/climateConfig";
 import { TOPO_LAYER_TYPES } from "./shared/topographyConfig";
 
@@ -69,9 +70,13 @@ const MapLibreAVAViewer = ({ avaData }) => {
     ? null   // classified layers use JSON colormapData, no user colormap
     : indexColormap;
 
+  // Topo layer visibility
+  const topoVisible = activeTopoLayer !== null;
+
   // Active layer info for ScalePanel
-  const anyLayerVisible = climateVisible || indexVisible;
-  const activePanelConfig = activeClimateConfig || activeIndexConfig || null;
+  const anyLayerVisible = climateVisible || indexVisible || topoVisible;
+  const activeTopoConfig  = topoVisible ? TOPO_LAYER_TYPES[activeTopoLayer] : null;
+  const activePanelConfig = activeClimateConfig || activeIndexConfig || activeTopoConfig || null;
 
   // Adaptive scale for PRISM layers
   const {
@@ -104,13 +109,25 @@ const MapLibreAVAViewer = ({ avaData }) => {
     activeYear,
   );
 
+  // Adaptive scale for topo layers
+  const {
+    rescale: topoRescale,
+    displayMin: topoMin,
+    displayMax: topoMax,
+    isLoading: topoScaleLoading,
+    error: topoScaleError,
+    autoAdjust: topoAutoAdjust,
+    onActivate: onTopoScaleActivate,
+    onDeactivate: onTopoScaleDeactivate,
+  } = useTopoScale(avaSlug, activeTopoLayer);
+
   // Unified scale state for ScalePanel
-  const rescale       = climateVisible ? climateRescale : indexRescale;
-  const displayMin    = climateVisible ? climateMin     : indexMin;
-  const displayMax    = climateVisible ? climateMax     : indexMax;
-  const scaleLoading  = climateVisible ? climateScaleLoading : indexScaleLoading;
-  const scaleError    = climateVisible ? climateScaleError   : indexScaleError;
-  const autoAdjust    = climateVisible ? climateAutoAdjust   : indexAutoAdjust;
+  const rescale       = climateVisible ? climateRescale      : topoVisible ? topoRescale      : indexRescale;
+  const displayMin    = climateVisible ? climateMin          : topoVisible ? topoMin          : indexMin;
+  const displayMax    = climateVisible ? climateMax          : topoVisible ? topoMax          : indexMax;
+  const scaleLoading  = climateVisible ? climateScaleLoading : topoVisible ? topoScaleLoading : indexScaleLoading;
+  const scaleError    = climateVisible ? climateScaleError   : topoVisible ? topoScaleError   : indexScaleError;
+  const autoAdjust    = climateVisible ? climateAutoAdjust   : topoVisible ? topoAutoAdjust   : indexAutoAdjust;
 
   // Fire auto-adjust on first toggle-on; reset on toggle-off — PRISM
   const prevClimateVisibleRef = useRef(false);
@@ -134,6 +151,17 @@ const MapLibreAVAViewer = ({ avaData }) => {
     }
     prevIndexVisibleRef.current = isContinuousIndex;
   }, [indexVisible, activeIndexConfig, onIndexScaleActivate, onIndexScaleDeactivate]);
+
+  // Fire activate/deactivate when topo layer changes
+  const prevTopoLayerRef = useRef(null);
+  useEffect(() => {
+    if (activeTopoLayer && activeTopoLayer !== prevTopoLayerRef.current) {
+      onTopoScaleActivate(avaSlug, activeTopoLayer);
+    } else if (!activeTopoLayer && prevTopoLayerRef.current) {
+      onTopoScaleDeactivate();
+    }
+    prevTopoLayerRef.current = activeTopoLayer;
+  }, [activeTopoLayer, avaSlug, onTopoScaleActivate, onTopoScaleDeactivate]);
 
   // Probe tool — works on PRISM and all index layers
   const probeEnabled = activeTool === 'probe' && anyLayerVisible;
@@ -463,6 +491,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
           map={mapRef.current}
           avaSlug={avaSlug}
           activeLayer={activeTopoLayer}
+          rescale={topoRescale}
         />
       )}
 
@@ -495,14 +524,15 @@ const MapLibreAVAViewer = ({ avaData }) => {
         unit={activePanelConfig?.unit || ''}
         isClassified={activeIndexConfig?.isClassified || false}
         colormapData={activeIndexConfig?.colormapData || null}
-        colormap={climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
-        onColormapChange={climateVisible ? setClimateColormap : setIndexColormap}
+        colormap={topoVisible ? (activeTopoConfig?.colormap || 'terrain') : climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
+        onColormapChange={topoVisible ? () => {} : climateVisible ? setClimateColormap : setIndexColormap}
+        readOnlyColormap={topoVisible}
         displayMin={displayMin}
         displayMax={displayMax}
         isLoading={scaleLoading}
         error={scaleError}
         onAutoAdjust={autoAdjust}
-        showAutoAdjust={!activeIndexConfig?.isClassified}
+        showAutoAdjust={topoVisible ? true : !activeIndexConfig?.isClassified}
       />
 
       {/* Probe tooltip — follows cursor */}

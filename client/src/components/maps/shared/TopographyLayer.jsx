@@ -3,7 +3,8 @@ import {
   getTopoTileUrl,
   getTopoSourceId,
   getTopoLayerId,
-  TOPO_LAYER_OPACITY
+  TOPO_LAYER_OPACITY,
+  hasTopographyData,
 } from './topographyConfig';
 
 /**
@@ -11,97 +12,95 @@ import {
  * Manages adding/removing topography raster tile layers on the MapLibre map.
  * Renders nothing visually — controls map sources/layers imperatively.
  *
- * @param {Object} props
- * @param {Object} props.map - MapLibre map instance
- * @param {string} props.avaSlug - AVA URL slug (e.g. "dundee-hills")
- * @param {string|null} props.activeLayer - Currently active layer type ('elevation'|'slope'|'aspect') or null
+ * @param {Object}      props
+ * @param {Object}      props.map         - MapLibre map instance
+ * @param {string}      props.avaSlug     - AVA URL slug (e.g. "dundee-hills")
+ * @param {string|null} props.activeLayer - Active layer type: 'elevation'|'slope'|'aspect', or null
+ * @param {string|null} props.rescale     - Titiler rescale string e.g. "12.5,850.0", or null for colormap default
  */
-const TopographyLayer = ({ map, avaSlug, activeLayer }) => {
+const TopographyLayer = ({ map, avaSlug, activeLayer, rescale = null }) => {
   const prevLayerRef = useRef(null);
 
   useEffect(() => {
-    if (!map || !activeLayer || !avaSlug) return;
+    if (!map) return;
 
-    const sourceId = `topo-${activeLayer}-source`;
-    const layerId = `topo-${activeLayer}-layer`;
-
-    // Remove existing layer/source if present
-    if (map.getLayer(layerId)) {
-      map.removeLayer(layerId);
-    }
-    if (map.getSource(sourceId)) {
-      map.removeSource(sourceId);
-    }
-
-    // Determine which file and colormap to use
-    let layerFile = '';
-    let colormap = 'terrain';
-
-    if (activeLayer === 'elevation') {
-      layerFile = 'elevation.tif';
-      colormap = 'terrain';
-    } else if (activeLayer === 'slope') {
-      layerFile = 'slope.tif';
-      colormap = 'viridis';
-    } else if (activeLayer === 'aspect') {
-      layerFile = 'aspect.tif';
-      colormap = 'twilight';
+    // ── Remove previous layer/source when switching layers ──────────────
+    const prev = prevLayerRef.current;
+    if (prev && prev !== activeLayer) {
+      try {
+        const lid = getTopoLayerId(prev);
+        const sid = getTopoSourceId(prev);
+        if (map.getLayer(lid)) map.removeLayer(lid);
+        if (map.getSource(sid)) map.removeSource(sid);
+      } catch (e) {
+        console.warn('TopographyLayer: error removing previous layer', e);
+      }
+      prevLayerRef.current = null;
     }
 
-    // Determine state from AVA slug (for now, hardcode to OR for Oregon AVAs)
-    // TODO: Add state mapping or pass state as prop
-    const state = 'OR';
+    if (!activeLayer || !avaSlug) return;
 
-    // Generate the COG URL based on the layer type
-    // Use your Mac's local IP address (10.0.0.204) so Titiler in Docker can reach http-server
-    // NOTE: Update this IP if your network changes
-    const cogUrl = `http://10.0.0.204:8080/topography-data/${state}/${avaSlug}/${layerFile}`;
-    console.log(`🗺️ TopographyLayer: Loading ${activeLayer} for AVA slug: "${avaSlug}"`);
-    console.log(`🗺️ TopographyLayer: COG URL: ${cogUrl}`);
+    if (!hasTopographyData(avaSlug)) {
+      console.warn(`TopographyLayer: no topo data registered for slug "${avaSlug}"`);
+      return;
+    }
 
-    // Generate the Titiler tile URL
-    const tileUrl = `http://localhost:8000/cog/tiles/{z}/{x}/{y}.png?url=${encodeURIComponent(cogUrl)}&colormap_name=${colormap}`;
-    console.log(`🗺️ TopographyLayer: Tile URL: ${tileUrl}`);
+    const tileUrl = getTopoTileUrl(avaSlug, activeLayer, rescale);
+    if (!tileUrl) {
+      console.warn(`TopographyLayer: could not build tile URL for "${avaSlug}" / "${activeLayer}"`);
+      return;
+    }
 
-    // Add the raster source
+    const sourceId = getTopoSourceId(activeLayer);
+    const layerId  = getTopoLayerId(activeLayer);
+
+    console.log(`🗺️ TopographyLayer: loading ${activeLayer} for "${avaSlug}"`);
+    console.log(`🗺️ TopographyLayer: tile URL → ${tileUrl}`);
+
+    // Remove any stale source/layer with the same IDs (e.g. after hot-reload)
+    try {
+      if (map.getLayer(layerId))  map.removeLayer(layerId);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+    } catch (e) { /* ignore */ }
+
+    // Add raster source
     map.addSource(sourceId, {
       type: 'raster',
       tiles: [tileUrl],
       tileSize: 256,
       minzoom: 0,
-      maxzoom: 18
+      maxzoom: 18,
     });
 
-    // Add the raster layer
+    // Insert below AVA boundary so it doesn't cover the outline
+    let beforeLayerId;
+    if (map.getLayer('ava-boundary-fill')) beforeLayerId = 'ava-boundary-fill';
+
     map.addLayer({
       id: layerId,
       type: 'raster',
       source: sourceId,
       paint: {
-        'raster-opacity': 0.7
-      }
-    });
+        'raster-opacity': TOPO_LAYER_OPACITY,
+        'raster-fade-duration': 300,
+      },
+    }, beforeLayerId);
 
     prevLayerRef.current = activeLayer;
 
     // Cleanup on unmount
     return () => {
       if (!map) return;
-      const current = prevLayerRef.current;
-      if (current) {
-        try {
-          const lid = getTopoLayerId(current);
-          const sid = getTopoSourceId(current);
-          if (map.getLayer(lid)) map.removeLayer(lid);
-          if (map.getSource(sid)) map.removeSource(sid);
-        } catch (e) {
-          // Map may already be removed
-        }
+      try {
+        if (map.getLayer(layerId))  map.removeLayer(layerId);
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
+      } catch (e) {
+        // Map may already be removed/destroyed
       }
     };
-  }, [map, avaSlug, activeLayer]);
+  }, [map, avaSlug, activeLayer, rescale]);
 
-  return null; // This component manages map layers imperatively
+  return null;
 };
 
 export default TopographyLayer;

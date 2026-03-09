@@ -27,6 +27,7 @@ import {
  *   error            {string|null}
  *   onAutoAdjust     {Function}
  *   showAutoAdjust   {boolean}      false for classified layers
+ *   readOnlyColormap {boolean}      true = hide picker (colormap is fixed, e.g. topo layers)
  */
 const ScalePanel = ({
   isVisible = false,
@@ -42,6 +43,7 @@ const ScalePanel = ({
   error = null,
   onAutoAdjust,
   showAutoAdjust = true,
+  readOnlyColormap = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showRampPicker, setShowRampPicker] = useState(false);
@@ -157,7 +159,7 @@ const ScalePanel = ({
                   <>
                     <span>{displayMin.toFixed(1)}{unit}</span>
                     <span style={{ color: 'var(--text-on-glass-label)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      p2 – p98
+                      {readOnlyColormap ? 'min – max' : 'p2 – p98'}
                     </span>
                     <span>{displayMax.toFixed(1)}{unit}</span>
                   </>
@@ -172,7 +174,8 @@ const ScalePanel = ({
                 )}
               </div>
 
-              {/* Color ramp picker toggle */}
+              {/* Color ramp picker toggle — hidden for layers with a fixed colormap */}
+              {!readOnlyColormap && (
               <button
                 onClick={() => setShowRampPicker(p => !p)}
                 style={{
@@ -201,9 +204,10 @@ const ScalePanel = ({
                   <path d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
+              )}
 
               {/* Ramp picker grid */}
-              {showRampPicker && (
+              {!readOnlyColormap && showRampPicker && (
                 <div style={{
                   display: 'grid', gridTemplateColumns: '1fr 1fr',
                   gap: '4px', marginBottom: '8px',

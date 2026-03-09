@@ -7,11 +7,11 @@
  * Served via http-server from /topography-data/
  */
 
-import { TITILER_URL, COG_SERVER_URL } from './climateConfig';
+import { TITILER_URL } from './climateConfig';
 
-// Use the same COG server URL as climate config
-// This is the URL that Titiler (inside Docker) uses to reach http-server on the host
-export const TOPO_COG_SERVER_URL = COG_SERVER_URL;
+// Docker-internal URL — Titiler fetches COGs from inside Docker using host.docker.internal
+// This is required because Titiler runs in a Docker container; it cannot use localhost:8080
+export const TOPO_COG_DOCKER_URL = 'http://host.docker.internal:8080';
 
 // ── Layer type definitions ─────────────────────────────────────────────
 export const TOPO_LAYER_TYPES = {
@@ -21,6 +21,7 @@ export const TOPO_LAYER_TYPES = {
     unit: 'm',
     colormap: 'terrain',
     description: 'Height above sea level',
+    available: true,
     legend: {
       colors: ['#0B6623', '#90EE90', '#F5F5DC', '#D2B48C', '#8B4513', '#FFFFFF'],
       labels: ['0m', '200m', '500m', '1000m', '2000m', '3000m+']
@@ -32,6 +33,7 @@ export const TOPO_LAYER_TYPES = {
     unit: '°',
     colormap: 'rdylgn_r',
     description: 'Steepness of terrain',
+    available: true,
     legend: {
       colors: ['#1A9850', '#91CF60', '#D9EF8B', '#FEE08B', '#FC8D59', '#D73027'],
       labels: ['0°', '5°', '10°', '20°', '35°', '45°+']
@@ -43,6 +45,7 @@ export const TOPO_LAYER_TYPES = {
     unit: '°',
     colormap: 'hsv',
     description: 'Direction slope faces (0°=N, 90°=E, 180°=S, 270°=W)',
+    available: true,
     legend: {
       colors: ['#FF0000', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#FF00FF', '#FF0000'],
       labels: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
@@ -95,23 +98,41 @@ export const hasTopographyData = (avaSlug) => {
 export const getTopoCogUrl = (avaSlug, layerType) => {
   const entry = AVA_TOPO_REGISTRY[avaSlug];
   if (!entry) return null;
-  return `${TOPO_COG_SERVER_URL}/topography-data/${entry.state}/${entry.folder}/${layerType}.tif`;
+  // Use host.docker.internal so Titiler (inside Docker) can reach http-server on the host
+  return `${TOPO_COG_DOCKER_URL}/topography-data/${entry.state}/${entry.folder}/${layerType}.tif`;
 };
 
 /**
  * Get Titiler tile URL template for a topography layer
- * @param {string} avaSlug - URL slug
- * @param {string} layerType - 'elevation' | 'slope' | 'aspect'
+ * @param {string}      avaSlug   - URL slug
+ * @param {string}      layerType - 'elevation' | 'slope' | 'aspect'
+ * @param {string|null} rescale   - Optional "min,max" rescale string for dynamic range
  * @returns {string|null} Tile URL with {z}/{x}/{y} placeholders
  */
-export const getTopoTileUrl = (avaSlug, layerType) => {
+export const getTopoTileUrl = (avaSlug, layerType, rescale = null) => {
   const cogUrl = getTopoCogUrl(avaSlug, layerType);
   if (!cogUrl) return null;
 
   const config = TOPO_LAYER_TYPES[layerType];
   const encodedCogUrl = encodeURIComponent(cogUrl);
 
-  return `${TITILER_URL}/cog/tiles/{z}/{x}/{y}.png?url=${encodedCogUrl}&colormap_name=${config.colormap}`;
+  const rescaleParam = rescale ? `&rescale=${rescale}` : '';
+  return `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=${encodedCogUrl}${rescaleParam}&colormap_name=${config.colormap}`;
+};
+
+/**
+ * Get Titiler statistics URL for a topography COG
+ * Used to fetch min/max for dynamic scale bar
+ * @param {string} avaSlug   - URL slug
+ * @param {string} layerType - 'elevation' | 'slope' | 'aspect'
+ * @returns {string|null}
+ */
+export const getTopoStatsUrl = (avaSlug, layerType) => {
+  const cogUrl = getTopoCogUrl(avaSlug, layerType);
+  if (!cogUrl) return null;
+  const encodedCogUrl = encodeURIComponent(cogUrl);
+  // Use percentile_2/98 over the full raster (no bbox) for true AVA-wide range
+  return `${TITILER_URL}/cog/statistics?url=${encodedCogUrl}&max_size=512&resampling=bilinear`;
 };
 
 /**

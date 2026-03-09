@@ -111,6 +111,22 @@ export const CONTINUOUS_COLORMAPS = [
     label: 'Cool',
     gradient: 'linear-gradient(to right, #00ffff, #a020f0)',
   },
+  // ── Topo-specific colormaps (fixed, not user-selectable in picker) ──
+  {
+    id: 'terrain',
+    label: 'Terrain',
+    gradient: 'linear-gradient(to right, #333399, #1199ee, #33aacc, #44cc88, #aadd55, #eedd99, #ccaa77, #ffffff)',
+  },
+  {
+    id: 'rdylgn_r',
+    label: 'Red → Green (Rev)',
+    gradient: 'linear-gradient(to right, #006837, #d9ef8b, #fee08b, #f46d43, #a50026)',
+  },
+  {
+    id: 'hsv',
+    label: 'HSV',
+    gradient: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+  },
 ];
 
 /**

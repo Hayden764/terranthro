@@ -270,17 +270,6 @@ const DataLayerPanel = ({
                         <RadioRow key={layer.id} layer={layer} />
                       ))}
                     </div>
-                    {activeTopoConfig && (
-                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--glass-border-light)' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-on-glass-label)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.08em', marginBottom: '4px' }}>
-                          {activeTopoConfig.label} ({activeTopoConfig.unit})
-                        </div>
-                        <div style={{ width: '100%', height: '14px', borderRadius: '3px', background: `linear-gradient(to right, ${activeTopoConfig.legend.colors.join(', ')})` }} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '3px' }}>
-                          {activeTopoConfig.legend.labels.map((label, i) => <span key={i}>{label}</span>)}
-                        </div>
-                      </div>
-                    )}
                   </>
                 )}
               </div>
