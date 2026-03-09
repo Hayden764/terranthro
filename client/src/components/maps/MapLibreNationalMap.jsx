@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useNavigate } from 'react-router-dom';
 import { useMapContext } from '../../context/MapContext';
 import usStatesGeoJson from "../../data/us-states.json";
 import { getConfiguredStateNames, getAllStateConfigs } from '../../config/stateConfig';
+import StateListPanel from '../layers/StateListPanel';
 
 /**
  * MapLibre National Map Component
@@ -17,6 +18,9 @@ const MapLibreNationalMap = () => {
   const navigate = useNavigate();
   const hoveredStateIdRef = useRef(null);
   const isTouchRef = useRef(false);
+  const panelHoverHandlerRef = useRef(null);
+  const [hoveredStateName, setHoveredStateName] = useState(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   // Draw diagonal hatch pattern on a canvas and return the format MapLibre expects
   const createHatchPattern = () => {
@@ -226,6 +230,7 @@ const MapLibreNationalMap = () => {
         map.setFilter('states-fill-hover', ['==', ['id'], -1]);
         hoveredStateIdRef.current = null;
         map.getCanvas().style.cursor = '';
+        setHoveredStateName(null);
       };
 
       // Hover interaction — pure setFilter, no feature-state
@@ -246,6 +251,7 @@ const MapLibreNationalMap = () => {
             map.setFilter('states-outline-hover', ['==', ['id'], currentFeatureId]);
             map.setFilter('states-outline-hover-glow', ['==', ['id'], currentFeatureId]);
             map.setFilter('states-fill-hover', ['==', ['id'], currentFeatureId]);
+            setHoveredStateName(stateName);
           }
           map.getCanvas().style.cursor = 'pointer';
         } else {
@@ -254,6 +260,27 @@ const MapLibreNationalMap = () => {
       });
 
       map.on('mouseleave', 'states-fill', clearHover);
+
+      // Register panel → map hover handler
+      panelHoverHandlerRef.current = (stateName, isHovering) => {
+        const feature = usStatesGeoJson.features.find(
+          f => f.properties.name === stateName
+        );
+        if (!feature) return;
+        // usStatesGeoJson features don't have stable ids until generateId assigns them
+        // so we drive the filter by name instead
+        if (isHovering) {
+          map.setFilter('states-outline-hover', ['==', ['get', 'name'], stateName]);
+          map.setFilter('states-outline-hover-glow', ['==', ['get', 'name'], stateName]);
+          map.setFilter('states-fill-hover', ['==', ['get', 'name'], stateName]);
+          setHoveredStateName(stateName);
+        } else {
+          map.setFilter('states-outline-hover', ['==', ['id'], -1]);
+          map.setFilter('states-outline-hover-glow', ['==', ['id'], -1]);
+          map.setFilter('states-fill-hover', ['==', ['id'], -1]);
+          setHoveredStateName(null);
+        }
+      };
 
       // Touch: tap wine state → navigate directly; non-wine states do nothing
       map.on('click', 'states-fill', (e) => {
@@ -296,12 +323,51 @@ const MapLibreNationalMap = () => {
   }, [navigate]);
 
   return (
-    <div style={{ width: '100%', height: '100vh', position: 'absolute', top: 0, left: 0 }}>
-      <div
-        ref={mapContainerRef}
-        style={{ width: '100%', height: '100%' }}
+    <>
+      <div style={{ width: '100%', height: '100vh', position: 'absolute', top: 0, left: 0 }}>
+        <div
+          ref={mapContainerRef}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+
+      {/* Hover name tooltip — mirrors MapLibreStateMap */}
+      {hoveredStateName && (
+        <div
+          style={{
+            position: 'absolute',
+            ...(isMobile
+              ? { bottom: '80px', left: '50%', transform: 'translateX(-50%)', top: 'auto' }
+              : { top: '20px', left: '50%', transform: 'translateX(-50%)' }
+            ),
+            background: 'var(--glass-bg-medium)',
+            backdropFilter: 'var(--glass-blur-light)',
+            WebkitBackdropFilter: 'var(--glass-blur-light)',
+            border: '1px solid var(--glass-border-hover)',
+            color: 'var(--text-on-glass)',
+            padding: isMobile ? '10px 20px' : '12px 28px',
+            borderRadius: '12px',
+            zIndex: 1000,
+            fontFamily: 'Montserrat, sans-serif',
+            fontSize: isMobile ? '13px' : '15px',
+            fontWeight: '600',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            pointerEvents: 'none',
+            boxShadow: 'var(--glass-shadow-sm)',
+            maxWidth: '90vw',
+            textAlign: 'center',
+          }}
+        >
+          {hoveredStateName}
+        </div>
+      )}
+
+      {/* State list panel — mirrors AVAListPanel on state page */}
+      <StateListPanel
+        onStateHover={(name, isHovering) => panelHoverHandlerRef.current?.(name, isHovering)}
       />
-    </div>
+    </>
   );
 };
 
