@@ -12,12 +12,12 @@ import {
 } from './topographyConfig';
 
 /**
- * DataLayerPanel
+ * DataLayerPanel — "Map Visualizations"
  * Unified collapsible panel — single radio selection across all sections.
  *
- * Climate section has two sub-groups:
- *   • PRISM Normals  — month slider
- *   • Indices        — year dropdown
+ * Climate section uses pill toggles:
+ *   • [Monthly]  — PRISM normals with month slider
+ *   • [2025] … — Growing-season index layers, one pill per year
  *
  * @param {string|null} activeLayer    - active layer id or null
  * @param {Function}    onLayerChange  - (id | null) => void
@@ -36,21 +36,33 @@ const DataLayerPanel = ({
   onYearChange,
   avaSlug = '',
 }) => {
-  const [isPanelOpen,      setIsPanelOpen]      = useState(true);
-  const [climateExpanded,  setClimateExpanded]  = useState(true);
-  const [indicesExpanded,  setIndicesExpanded]  = useState(true);
-  const [topoExpanded,     setTopoExpanded]     = useState(true);
+  const [isPanelOpen,    setIsPanelOpen]    = useState(true);
+  const [climateExpanded, setClimateExpanded] = useState(true);
+  // 'monthly' | year number — which climate sub-mode is active
+  const [climateMode,    setClimateMode]    = useState('monthly');
+  const [topoExpanded,   setTopoExpanded]   = useState(true);
 
-  const topoAvailable      = hasTopographyData(avaSlug);
-  const isPrismLayer       = activeLayer && !!CLIMATE_LAYER_TYPES[activeLayer];
-  const isIndexLayer       = activeLayer && !!INDEX_LAYER_TYPES[activeLayer];
-  const isTopoLayer        = activeLayer && !!TOPO_LAYER_TYPES[activeLayer];
-  const activeTopoConfig   = isTopoLayer ? TOPO_LAYER_TYPES[activeLayer] : null;
+  const topoAvailable    = hasTopographyData(avaSlug);
+  const isPrismLayer     = activeLayer && !!CLIMATE_LAYER_TYPES[activeLayer];
+  const isIndexLayer     = activeLayer && !!INDEX_LAYER_TYPES[activeLayer];
+  const isTopoLayer      = activeLayer && !!TOPO_LAYER_TYPES[activeLayer];
+  const activeTopoConfig = isTopoLayer ? TOPO_LAYER_TYPES[activeLayer] : null;
+
+  // Switching climate mode clears the active layer if it belongs to the old mode
+  const handleClimateMode = (mode) => {
+    setClimateMode(mode);
+    if (mode === 'monthly' && isIndexLayer)  onLayerChange(null);
+    if (mode === 'vintages' && isPrismLayer) onLayerChange(null);
+  };
 
   const handleSelect = (layer) => {
     if (!layer.available) return;
     onLayerChange(activeLayer === layer.id ? null : layer.id);
   };
+
+  // ── Climate mode pill toggle ──────────────────────────────────
+  // Pills: 'monthly' | 'vintages'
+  const climatePills = ['monthly', 'vintages'];
 
   // ── Shared radio row ─────────────────────────────────────────
   const RadioRow = ({ layer }) => {
@@ -128,7 +140,7 @@ const DataLayerPanel = ({
         }}
       >
         <h3 style={{ margin: 0, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-on-glass)' }}>
-          🗺️ Data Layers
+          � Map Visualizations
         </h3>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
           stroke="var(--text-on-glass-dim)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -139,101 +151,139 @@ const DataLayerPanel = ({
 
       {isPanelOpen && (
         <div style={{ overflowY: 'auto', flex: 1 }}>
-          {/* ══ CLIMATE — PRISM NORMALS ════════════════════════ */}
+          {/* ══ CLIMATE ══════════════════════════════════════ */}
           <div style={{ borderBottom: '1px solid var(--glass-border-light)' }}>
             <div
               onClick={() => setClimateExpanded(!climateExpanded)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }}
             >
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-on-glass)' }}>🌡️ Climate Normals</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-on-glass)' }}>🌡️ Climate</span>
               <Chevron open={climateExpanded} />
             </div>
 
             {climateExpanded && (
               <div style={{ padding: '0 14px 12px 14px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {Object.values(CLIMATE_LAYER_TYPES).map(layer => (
-                    <RadioRow key={layer.id} layer={layer} />
-                  ))}
+
+                {/* ── Mode pills: Monthly | Vintages ── */}
+                <div style={{
+                  display: 'flex', gap: '6px',
+                  marginBottom: '10px',
+                }}>
+                  {climatePills.map((pill) => {
+                    const isActive = climateMode === pill;
+                    const label    = pill === 'monthly' ? 'Monthly' : 'Vintages';
+                    return (
+                      <button
+                        key={pill}
+                        onClick={() => handleClimateMode(pill)}
+                        style={{
+                          flex: 1,
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          letterSpacing: '0.3px',
+                          cursor: 'pointer',
+                          border: isActive
+                            ? '1px solid var(--accent)'
+                            : '1px solid rgba(255,255,255,0.18)',
+                          background: isActive
+                            ? 'var(--accent-dim)'
+                            : 'rgba(255,255,255,0.06)',
+                          color: isActive
+                            ? 'var(--accent-text)'
+                            : 'var(--text-on-glass-dim)',
+                          transition: 'all 0.15s',
+                          outline: 'none',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Month slider — PRISM layers only */}
-                {isPrismLayer && (
-                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--glass-border-light)' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-on-glass-label)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-                      Month: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{MONTH_NAMES[currentMonth - 1]}</span>
-                    </div>
-                    <input
-                      type="range" min="1" max="12" step="1"
-                      value={currentMonth}
-                      onChange={(e) => onMonthChange(Number(e.target.value))}
-                      className="data-layer-range"
-                      style={{
-                        width: '100%', height: '4px', borderRadius: '2px',
-                        appearance: 'none', WebkitAppearance: 'none', outline: 'none',
-                        background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) 100%)`,
-                        cursor: 'pointer',
-                      }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '4px' }}>
-                      <span>{MONTH_ABBR[0]}</span><span>{MONTH_ABBR[3]}</span>
-                      <span>{MONTH_ABBR[6]}</span><span>{MONTH_ABBR[9]}</span>
-                      <span>{MONTH_ABBR[11]}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ══ CLIMATE — GROWING SEASON INDICES ══════════════ */}
-          <div style={{ borderBottom: '1px solid var(--glass-border-light)' }}>
-            <div
-              onClick={() => setIndicesExpanded(!indicesExpanded)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-on-glass)' }}>🌱 Indices</span>
-              <Chevron open={indicesExpanded} />
-            </div>
-
-            {indicesExpanded && (
-              <div style={{ padding: '0 14px 12px 14px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {Object.values(INDEX_LAYER_TYPES).map(layer => (
-                    <RadioRow key={layer.id} layer={layer} />
-                  ))}
-                </div>
-
-                {/* Year dropdown — index layers only */}
-                {isIndexLayer && (
-                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--glass-border-light)' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-on-glass-label)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-                      Vintage Year
-                    </div>
-                    <select
-                      value={activeYear}
-                      onChange={(e) => onYearChange(Number(e.target.value))}
-                      style={{
-                        width: '100%', padding: '5px 8px', borderRadius: '6px',
-                        background: 'rgba(255,255,255,0.08)',
-                        border: '1px solid var(--glass-border)',
-                        color: 'var(--text-on-glass)', fontSize: '12px', fontWeight: 600,
-                        cursor: 'pointer', outline: 'none', appearance: 'none',
-                        WebkitAppearance: 'none',
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'right 8px center',
-                        paddingRight: '28px',
-                      }}
-                    >
-                      {INDEX_YEARS.map(y => (
-                        <option key={y} value={y} style={{ background: '#1a1a2e', color: '#fff' }}>{y}</option>
+                {/* ── Monthly mode: PRISM layers + month slider ── */}
+                {climateMode === 'monthly' && (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {Object.values(CLIMATE_LAYER_TYPES).map(layer => (
+                        <RadioRow key={layer.id} layer={layer} />
                       ))}
-                    </select>
-                    <div style={{ fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '4px' }}>
+                    </div>
+
+                    {isPrismLayer && (
+                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--glass-border-light)' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-on-glass-label)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                          Month: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{MONTH_NAMES[currentMonth - 1]}</span>
+                        </div>
+                        <input
+                          type="range" min="1" max="12" step="1"
+                          value={currentMonth}
+                          onChange={(e) => onMonthChange(Number(e.target.value))}
+                          className="data-layer-range"
+                          style={{
+                            width: '100%', height: '4px', borderRadius: '2px',
+                            appearance: 'none', WebkitAppearance: 'none', outline: 'none',
+                            background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) 100%)`,
+                            cursor: 'pointer',
+                          }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '4px' }}>
+                          <span>{MONTH_ABBR[0]}</span><span>{MONTH_ABBR[3]}</span>
+                          <span>{MONTH_ABBR[6]}</span><span>{MONTH_ABBR[9]}</span>
+                          <span>{MONTH_ABBR[11]}</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* ── Vintages mode: year selector + index layers ── */}
+                {climateMode === 'vintages' && (
+                  <>
+                    {/* Year pills */}
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                      {INDEX_YEARS.map(y => {
+                        const isYearActive = activeYear === y;
+                        return (
+                          <button
+                            key={y}
+                            onClick={() => onYearChange(y)}
+                            style={{
+                              padding: '3px 10px',
+                              borderRadius: '12px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              border: isYearActive
+                                ? '1px solid var(--accent)'
+                                : '1px solid rgba(255,255,255,0.15)',
+                              background: isYearActive
+                                ? 'var(--accent-dim)'
+                                : 'rgba(255,255,255,0.05)',
+                              color: isYearActive
+                                ? 'var(--accent-text)'
+                                : 'var(--text-on-glass-dim)',
+                              transition: 'all 0.15s',
+                              outline: 'none',
+                            }}
+                          >
+                            {y}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {Object.values(INDEX_LAYER_TYPES).map(layer => (
+                        <RadioRow key={layer.id} layer={layer} />
+                      ))}
+                    </div>
+                    <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-on-glass-dim)', lineHeight: '1.4' }}>
                       Growing season Apr–Oct
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             )}
