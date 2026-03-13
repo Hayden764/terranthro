@@ -13,6 +13,8 @@ const AVAPage = () => {
   const [error, setError] = useState(null);
   const [avaName, setAvaName] = useState('');
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   const { setSelectedAVA, setCurrentLevel } = useMapContext();
 
   const stateConfig = getStateConfig(stateName);
@@ -98,19 +100,25 @@ const AVAPage = () => {
             backdropFilter: 'var(--glass-blur-light)',
             WebkitBackdropFilter: 'var(--glass-blur-light)',
             color: 'var(--text-on-glass)',
-            padding: '10px 16px',
-            borderRadius: '10px',
+            padding: isMobile ? '0' : '10px 16px',
+            width: isMobile ? '40px' : 'auto',
+            height: isMobile ? '40px' : 'auto',
+            borderRadius: isMobile ? '50%' : '10px',
             textDecoration: 'none',
             fontFamily: 'Inter, sans-serif',
-            fontSize: '14px',
+            fontSize: isMobile ? '20px' : '14px',
             fontWeight: '500',
             border: '1px solid var(--glass-border)',
             boxShadow: 'var(--glass-shadow-sm)',
             zIndex: 1000,
-            transition: 'background 0.2s ease'
+            transition: 'background 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
+          title={`Back to ${stateName.charAt(0).toUpperCase() + stateName.slice(1)}`}
         >
-          ← Back to {stateName.charAt(0).toUpperCase() + stateName.slice(1)}
+          {isMobile ? '←' : `← Back to ${stateName.charAt(0).toUpperCase() + stateName.slice(1)}`}
         </Link>
 
         <div 
@@ -123,17 +131,20 @@ const AVAPage = () => {
             backdropFilter: 'var(--glass-blur-light)',
             WebkitBackdropFilter: 'var(--glass-blur-light)',
             color: 'var(--text-on-glass)',
-            padding: '12px 24px',
+            padding: isMobile ? '8px 16px' : '12px 24px',
             borderRadius: '10px',
             fontFamily: 'Montserrat, sans-serif',
-            fontSize: '18px',
+            fontSize: isMobile ? '13px' : '18px',
             fontWeight: '700',
             border: '1px solid var(--glass-border)',
             boxShadow: 'var(--glass-shadow-sm)',
             zIndex: 1000,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            maxWidth: isMobile ? 'calc(100vw - 120px)' : 'none',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           {avaName}

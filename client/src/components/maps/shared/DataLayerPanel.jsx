@@ -13,19 +13,8 @@ import {
 
 /**
  * DataLayerPanel — "Map Visualizations"
- * Unified collapsible panel — single radio selection across all sections.
- *
- * Climate section uses pill toggles:
- *   • [Monthly]  — PRISM normals with month slider
- *   • [2025] … — Growing-season index layers, one pill per year
- *
- * @param {string|null} activeLayer    - active layer id or null
- * @param {Function}    onLayerChange  - (id | null) => void
- * @param {number}      currentMonth   - 1-12
- * @param {Function}    onMonthChange
- * @param {number}      activeYear     - vintage year for indices
- * @param {Function}    onYearChange
- * @param {string}      avaSlug
+ * mobileSheetMode=true  → bare content sections (MobileDock provides shell)
+ * mobileSheetMode=false → full absolute floating panel (desktop)
  */
 const DataLayerPanel = ({
   activeLayer = null,
@@ -35,23 +24,20 @@ const DataLayerPanel = ({
   activeYear = 2025,
   onYearChange,
   avaSlug = '',
+  mobileSheetMode = false,
 }) => {
-  const [isPanelOpen,    setIsPanelOpen]    = useState(true);
+  const [isPanelOpen,     setIsPanelOpen]     = useState(true);
   const [climateExpanded, setClimateExpanded] = useState(true);
-  // 'monthly' | year number — which climate sub-mode is active
-  const [climateMode,    setClimateMode]    = useState('monthly');
-  const [topoExpanded,   setTopoExpanded]   = useState(true);
+  const [climateMode,     setClimateMode]     = useState('monthly');
+  const [topoExpanded,    setTopoExpanded]    = useState(true);
 
-  const topoAvailable    = hasTopographyData(avaSlug);
-  const isPrismLayer     = activeLayer && !!CLIMATE_LAYER_TYPES[activeLayer];
-  const isIndexLayer     = activeLayer && !!INDEX_LAYER_TYPES[activeLayer];
-  const isTopoLayer      = activeLayer && !!TOPO_LAYER_TYPES[activeLayer];
-  const activeTopoConfig = isTopoLayer ? TOPO_LAYER_TYPES[activeLayer] : null;
+  const topoAvailable = hasTopographyData(avaSlug);
+  const isPrismLayer  = activeLayer && !!CLIMATE_LAYER_TYPES[activeLayer];
+  const isIndexLayer  = activeLayer && !!INDEX_LAYER_TYPES[activeLayer];
 
-  // Switching climate mode clears the active layer if it belongs to the old mode
   const handleClimateMode = (mode) => {
     setClimateMode(mode);
-    if (mode === 'monthly' && isIndexLayer)  onLayerChange(null);
+    if (mode === 'monthly'  && isIndexLayer) onLayerChange(null);
     if (mode === 'vintages' && isPrismLayer) onLayerChange(null);
   };
 
@@ -60,27 +46,19 @@ const DataLayerPanel = ({
     onLayerChange(activeLayer === layer.id ? null : layer.id);
   };
 
-  // ── Climate mode pill toggle ──────────────────────────────────
-  // Pills: 'monthly' | 'vintages'
-  const climatePills = ['monthly', 'vintages'];
-
-  // ── Shared radio row ─────────────────────────────────────────
   const RadioRow = ({ layer }) => {
     const isActive    = activeLayer === layer.id;
     const unavailable = !layer.available;
     return (
-      <div
-        onClick={() => handleSelect(layer)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '6px 8px', borderRadius: '6px',
-          cursor: unavailable ? 'not-allowed' : 'pointer',
-          background: isActive ? 'var(--accent-dim)' : 'transparent',
-          border:     isActive ? '1px solid var(--accent-border)' : '1px solid transparent',
-          opacity:    unavailable ? 0.45 : 1,
-          transition: 'all 0.15s',
-        }}
-      >
+      <div onClick={() => handleSelect(layer)} style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '6px 8px', borderRadius: '6px',
+        cursor: unavailable ? 'not-allowed' : 'pointer',
+        background: isActive ? 'var(--accent-dim)' : 'transparent',
+        border:     isActive ? '1px solid var(--accent-border)' : '1px solid transparent',
+        opacity:    unavailable ? 0.45 : 1,
+        transition: 'all 0.15s',
+      }}>
         <div style={{
           width: '16px', height: '16px', borderRadius: '50%', flexShrink: 0,
           border: `2px solid ${isActive ? 'var(--accent)' : 'rgba(255,255,255,0.3)'}`,
@@ -107,7 +85,6 @@ const DataLayerPanel = ({
     );
   };
 
-  // ── Section chevron ──────────────────────────────────────────
   const Chevron = ({ open }) => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="var(--text-on-glass-dim)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -116,6 +93,161 @@ const DataLayerPanel = ({
     </svg>
   );
 
+  const rangeThumbCss = `
+    .data-layer-range::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.8);
+      box-shadow: 0 2px 6px rgba(56,189,248,0.4);
+    }
+    .data-layer-range::-moz-range-thumb {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.8);
+      box-shadow: 0 2px 6px rgba(56,189,248,0.4);
+    }
+  `;
+
+  const Sections = () => (
+    <>
+      {/* CLIMATE */}
+      <div style={{ borderBottom: '1px solid var(--glass-border-light)' }}>
+        <div onClick={() => setClimateExpanded(!climateExpanded)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-on-glass)' }}>🌡️ Climate</span>
+          <Chevron open={climateExpanded} />
+        </div>
+
+        {climateExpanded && (
+          <div style={{ padding: '0 14px 12px 14px' }}>
+            {/* Mode pills */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+              {['monthly', 'vintages'].map((pill) => {
+                const isActive = climateMode === pill;
+                return (
+                  <button key={pill} onClick={() => handleClimateMode(pill)} style={{
+                    flex: 1, padding: '4px 10px', borderRadius: '20px',
+                    fontSize: '11px', fontWeight: 600, letterSpacing: '0.3px', cursor: 'pointer',
+                    border: isActive ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.18)',
+                    background: isActive ? 'var(--accent-dim)' : 'rgba(255,255,255,0.06)',
+                    color: isActive ? 'var(--accent-text)' : 'var(--text-on-glass-dim)',
+                    transition: 'all 0.15s', outline: 'none',
+                  }}>
+                    {pill === 'monthly' ? 'Monthly' : 'Vintages'}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Monthly */}
+            {climateMode === 'monthly' && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {Object.values(CLIMATE_LAYER_TYPES).map(layer => <RadioRow key={layer.id} layer={layer} />)}
+                </div>
+                {isPrismLayer && (
+                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--glass-border-light)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-on-glass-label)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                      Month: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{MONTH_NAMES[currentMonth - 1]}</span>
+                    </div>
+                    <input type="range" min="1" max="12" step="1"
+                      value={currentMonth}
+                      onChange={(e) => onMonthChange(Number(e.target.value))}
+                      className="data-layer-range"
+                      style={{
+                        width: '100%', height: '4px', borderRadius: '2px',
+                        appearance: 'none', WebkitAppearance: 'none', outline: 'none',
+                        background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) 100%)`,
+                        cursor: 'pointer',
+                      }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '4px' }}>
+                      <span>{MONTH_ABBR[0]}</span><span>{MONTH_ABBR[3]}</span>
+                      <span>{MONTH_ABBR[6]}</span><span>{MONTH_ABBR[9]}</span>
+                      <span>{MONTH_ABBR[11]}</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Vintages */}
+            {climateMode === 'vintages' && (
+              <>
+                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  {INDEX_YEARS.map(y => {
+                    const ya = activeYear === y;
+                    return (
+                      <button key={y} onClick={() => onYearChange(y)} style={{
+                        padding: '3px 10px', borderRadius: '12px',
+                        fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                        border: ya ? '1px solid var(--accent)' : '1px solid rgba(255,255,255,0.15)',
+                        background: ya ? 'var(--accent-dim)' : 'rgba(255,255,255,0.05)',
+                        color: ya ? 'var(--accent-text)' : 'var(--text-on-glass-dim)',
+                        transition: 'all 0.15s', outline: 'none',
+                      }}>
+                        {y}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {Object.values(INDEX_LAYER_TYPES).map(layer => <RadioRow key={layer.id} layer={layer} />)}
+                </div>
+                <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-on-glass-dim)', lineHeight: '1.4' }}>
+                  Growing season Apr–Oct
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* TOPOGRAPHY */}
+      <div>
+        <div onClick={() => setTopoExpanded(!topoExpanded)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-on-glass)' }}>⛰️ Topography</span>
+            {!topoAvailable && (
+              <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--accent-text)', background: 'var(--accent-dim)', padding: '1px 6px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                No Data
+              </span>
+            )}
+          </div>
+          <Chevron open={topoExpanded} />
+        </div>
+
+        {topoExpanded && (
+          <div style={{ padding: '0 14px 12px 14px' }}>
+            {!topoAvailable ? (
+              <div style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', borderRadius: '6px', padding: '10px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '11px', color: 'var(--accent-text)', fontWeight: 600, marginBottom: '4px' }}>Topography data not available</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-on-glass-dim)', lineHeight: '1.4' }}>Slope, aspect, and elevation data has not yet been processed for this AVA.</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {Object.values(TOPO_LAYER_TYPES).map(layer => <RadioRow key={layer.id} layer={layer} />)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  // Mobile sheet mode — bare content, MobileDock owns the shell
+  if (mobileSheetMode) {
+    return (
+      <div style={{ fontFamily: 'Inter, sans-serif' }}>
+        <Sections />
+        <style>{rangeThumbCss}</style>
+      </div>
+    );
+  }
+
+  // Desktop — full absolute floating panel
   return (
     <div style={{
       position: 'absolute', bottom: '16px', left: '16px', zIndex: 40,
@@ -124,23 +256,18 @@ const DataLayerPanel = ({
       border: '1px solid var(--glass-border)', borderRadius: '12px',
       boxShadow: 'var(--glass-shadow)', fontFamily: 'Inter, sans-serif',
       maxWidth: '300px', minWidth: '270px',
-      // Cap height so it never overlaps the Back button (~74px from top)
       maxHeight: 'calc(100vh - 106px)',
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden', transition: 'all 0.2s ease',
     }}>
-
-      {/* ── Header ───────────────────────────────────────────── */}
-      <div
-        onClick={() => setIsPanelOpen(!isPanelOpen)}
+      <div onClick={() => setIsPanelOpen(!isPanelOpen)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '10px 14px', cursor: 'pointer', userSelect: 'none',
           borderBottom: isPanelOpen ? '1px solid var(--glass-border-light)' : 'none',
-        }}
-      >
+        }}>
         <h3 style={{ margin: 0, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-on-glass)' }}>
-          � Map Visualizations
+          📊 Map Visualizations
         </h3>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
           stroke="var(--text-on-glass-dim)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -151,198 +278,11 @@ const DataLayerPanel = ({
 
       {isPanelOpen && (
         <div style={{ overflowY: 'auto', flex: 1 }}>
-          {/* ══ CLIMATE ══════════════════════════════════════ */}
-          <div style={{ borderBottom: '1px solid var(--glass-border-light)' }}>
-            <div
-              onClick={() => setClimateExpanded(!climateExpanded)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-on-glass)' }}>🌡️ Climate</span>
-              <Chevron open={climateExpanded} />
-            </div>
-
-            {climateExpanded && (
-              <div style={{ padding: '0 14px 12px 14px' }}>
-
-                {/* ── Mode pills: Monthly | Vintages ── */}
-                <div style={{
-                  display: 'flex', gap: '6px',
-                  marginBottom: '10px',
-                }}>
-                  {climatePills.map((pill) => {
-                    const isActive = climateMode === pill;
-                    const label    = pill === 'monthly' ? 'Monthly' : 'Vintages';
-                    return (
-                      <button
-                        key={pill}
-                        onClick={() => handleClimateMode(pill)}
-                        style={{
-                          flex: 1,
-                          padding: '4px 10px',
-                          borderRadius: '20px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          letterSpacing: '0.3px',
-                          cursor: 'pointer',
-                          border: isActive
-                            ? '1px solid var(--accent)'
-                            : '1px solid rgba(255,255,255,0.18)',
-                          background: isActive
-                            ? 'var(--accent-dim)'
-                            : 'rgba(255,255,255,0.06)',
-                          color: isActive
-                            ? 'var(--accent-text)'
-                            : 'var(--text-on-glass-dim)',
-                          transition: 'all 0.15s',
-                          outline: 'none',
-                        }}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* ── Monthly mode: PRISM layers + month slider ── */}
-                {climateMode === 'monthly' && (
-                  <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {Object.values(CLIMATE_LAYER_TYPES).map(layer => (
-                        <RadioRow key={layer.id} layer={layer} />
-                      ))}
-                    </div>
-
-                    {isPrismLayer && (
-                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--glass-border-light)' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-on-glass-label)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-                          Month: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{MONTH_NAMES[currentMonth - 1]}</span>
-                        </div>
-                        <input
-                          type="range" min="1" max="12" step="1"
-                          value={currentMonth}
-                          onChange={(e) => onMonthChange(Number(e.target.value))}
-                          className="data-layer-range"
-                          style={{
-                            width: '100%', height: '4px', borderRadius: '2px',
-                            appearance: 'none', WebkitAppearance: 'none', outline: 'none',
-                            background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) ${((currentMonth - 1) / 11) * 100}%, rgba(255,255,255,0.15) 100%)`,
-                            cursor: 'pointer',
-                          }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '4px' }}>
-                          <span>{MONTH_ABBR[0]}</span><span>{MONTH_ABBR[3]}</span>
-                          <span>{MONTH_ABBR[6]}</span><span>{MONTH_ABBR[9]}</span>
-                          <span>{MONTH_ABBR[11]}</span>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* ── Vintages mode: year selector + index layers ── */}
-                {climateMode === 'vintages' && (
-                  <>
-                    {/* Year pills */}
-                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                      {INDEX_YEARS.map(y => {
-                        const isYearActive = activeYear === y;
-                        return (
-                          <button
-                            key={y}
-                            onClick={() => onYearChange(y)}
-                            style={{
-                              padding: '3px 10px',
-                              borderRadius: '12px',
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              border: isYearActive
-                                ? '1px solid var(--accent)'
-                                : '1px solid rgba(255,255,255,0.15)',
-                              background: isYearActive
-                                ? 'var(--accent-dim)'
-                                : 'rgba(255,255,255,0.05)',
-                              color: isYearActive
-                                ? 'var(--accent-text)'
-                                : 'var(--text-on-glass-dim)',
-                              transition: 'all 0.15s',
-                              outline: 'none',
-                            }}
-                          >
-                            {y}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {Object.values(INDEX_LAYER_TYPES).map(layer => (
-                        <RadioRow key={layer.id} layer={layer} />
-                      ))}
-                    </div>
-                    <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-on-glass-dim)', lineHeight: '1.4' }}>
-                      Growing season Apr–Oct
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ══ TOPOGRAPHY ════════════════════════════════════ */}
-          <div>
-            <div
-              onClick={() => setTopoExpanded(!topoExpanded)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-on-glass)' }}>⛰️ Topography</span>
-                {!topoAvailable && (
-                  <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--accent-text)', background: 'var(--accent-dim)', padding: '1px 6px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                    No Data
-                  </span>
-                )}
-              </div>
-              <Chevron open={topoExpanded} />
-            </div>
-
-            {topoExpanded && (
-              <div style={{ padding: '0 14px 12px 14px' }}>
-                {!topoAvailable ? (
-                  <div style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', borderRadius: '6px', padding: '10px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--accent-text)', fontWeight: 600, marginBottom: '4px' }}>Topography data not available</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-on-glass-dim)', lineHeight: '1.4' }}>Slope, aspect, and elevation data has not yet been processed for this AVA.</div>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {Object.values(TOPO_LAYER_TYPES).map(layer => (
-                        <RadioRow key={layer.id} layer={layer} />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          <Sections />
         </div>
       )}
 
-      <style>{`
-        .data-layer-range::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none;
-          width: 16px; height: 16px; border-radius: 50%;
-          background: var(--accent); cursor: pointer;
-          border: 2px solid rgba(255,255,255,0.8);
-          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
-        }
-        .data-layer-range::-moz-range-thumb {
-          width: 16px; height: 16px; border-radius: 50%;
-          background: var(--accent); cursor: pointer;
-          border: 2px solid rgba(255,255,255,0.8);
-          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
-        }
-      `}</style>
+      <style>{rangeThumbCss}</style>
     </div>
   );
 };
