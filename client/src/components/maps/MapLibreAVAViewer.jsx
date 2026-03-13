@@ -11,6 +11,7 @@ import IndexLayer from "./shared/IndexLayer";
 import TopographyLayer from "./shared/TopographyLayer";
 import DataLayerPanel from "./shared/DataLayerPanel";
 import MobileDock from "./shared/MobileDock";
+import DesktopDock from "./shared/DesktopDock";
 import useClimateScale from "../../hooks/useClimateScale";
 import useClimateProbe from "../../hooks/useClimateProbe";
 import useMapMeasure from "../../hooks/useMapMeasure";
@@ -498,60 +499,64 @@ const MapLibreAVAViewer = ({ avaData }) => {
         />
       )}
 
-      {/* Map Toolkit - top right (pan/probe/measure + terrain controls) */}
+      {/* Desktop Dock — right-edge vertical strip + centered modal */}
       {!isMobile && (
-        <div style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
-          <TerrainControlsPanel
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onResetView={handleResetView}
-            onToggleTerrain={handleToggleTerrain}
-            onBearingChange={handleBearingChange}
-            onPitchChange={handlePitchChange}
-            terrainEnabled={terrainEnabled}
-            currentBearing={currentBearing}
-            currentPitch={currentPitch}
-            activeTool={activeTool}
-            onToolChange={setActiveTool}
-            anyLayerVisible={anyLayerVisible}
-            totalDistance={totalDistance}
-            onClearMeasure={clearMeasure}
-            fmtKm={fmtKm}
-            measurePointCount={measurePoints.length}
-          />
-        </div>
-      )}
-
-      {/* Scale Panel - bottom right, above attribution (desktop only) */}
-      {!isMobile && (
-        <ScalePanel
-          isVisible={anyLayerVisible}
-          layerLabel={activePanelConfig?.label || ''}
-          unit={activePanelConfig?.unit || ''}
-          isClassified={activeIndexConfig?.isClassified || false}
-          colormapData={activeIndexConfig?.colormapData || null}
+        <DesktopDock
+          anyLayerVisible={anyLayerVisible}
           colormap={topoVisible ? (activeTopoConfig?.colormap || 'terrain') : climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
-          onColormapChange={topoVisible ? () => {} : climateVisible ? setClimateColormap : setIndexColormap}
-          readOnlyColormap={topoVisible}
-          displayMin={displayMin}
-          displayMax={displayMax}
-          isLoading={scaleLoading}
-          error={scaleError}
-          onAutoAdjust={autoAdjust}
-          showAutoAdjust={topoVisible ? true : !activeIndexConfig?.isClassified}
-        />
-      )}
-
-      {/* Unified Data Layer Panel - bottom left (desktop only) */}
-      {!isMobile && (
-        <DataLayerPanel
-          activeLayer={activeLayer}
-          onLayerChange={handleLayerChange}
-          currentMonth={currentMonth}
-          onMonthChange={setCurrentMonth}
-          activeYear={activeYear}
-          onYearChange={setActiveYear}
-          avaSlug={avaSlug || ''}
+          isClassified={activeIndexConfig?.isClassified || false}
+          toolkit={
+            <TerrainControlsPanel
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onResetView={handleResetView}
+              onToggleTerrain={handleToggleTerrain}
+              onBearingChange={handleBearingChange}
+              onPitchChange={handlePitchChange}
+              terrainEnabled={terrainEnabled}
+              currentBearing={currentBearing}
+              currentPitch={currentPitch}
+              activeTool={activeTool}
+              onToolChange={setActiveTool}
+              anyLayerVisible={anyLayerVisible}
+              totalDistance={totalDistance}
+              onClearMeasure={clearMeasure}
+              fmtKm={fmtKm}
+              measurePointCount={measurePoints.length}
+              mobileSheetMode={true}
+            />
+          }
+          dataLayer={
+            <DataLayerPanel
+              activeLayer={activeLayer}
+              onLayerChange={handleLayerChange}
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
+              activeYear={activeYear}
+              onYearChange={setActiveYear}
+              avaSlug={avaSlug || ''}
+              mobileSheetMode={true}
+            />
+          }
+          scale={
+            <ScalePanel
+              isVisible={anyLayerVisible}
+              layerLabel={activePanelConfig?.label || ''}
+              unit={activePanelConfig?.unit || ''}
+              isClassified={activeIndexConfig?.isClassified || false}
+              colormapData={activeIndexConfig?.colormapData || null}
+              colormap={topoVisible ? (activeTopoConfig?.colormap || 'terrain') : climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
+              onColormapChange={topoVisible ? () => {} : climateVisible ? setClimateColormap : setIndexColormap}
+              readOnlyColormap={topoVisible}
+              displayMin={displayMin}
+              displayMax={displayMax}
+              isLoading={scaleLoading}
+              error={scaleError}
+              onAutoAdjust={autoAdjust}
+              showAutoAdjust={topoVisible ? true : !activeIndexConfig?.isClassified}
+              mobileSheetMode={true}
+            />
+          }
         />
       )}
 
