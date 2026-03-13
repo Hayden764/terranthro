@@ -499,7 +499,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
         />
       )}
 
-      {/* Desktop Dock — right-edge vertical strip + centered modal */}
+      {/* Desktop Dock — left-edge vertical strip + floating modal */}
       {!isMobile && (
         <DesktopDock
           anyLayerVisible={anyLayerVisible}

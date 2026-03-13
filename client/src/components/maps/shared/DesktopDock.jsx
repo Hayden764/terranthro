@@ -3,7 +3,7 @@ import { CONTINUOUS_COLORMAPS } from './climateConfig';
 
 /**
  * DesktopDock
- * Right-edge vertical icon strip for desktop AVA view.
+ * Left-edge vertical icon strip for desktop AVA view.
  * Three buttons (View / Layers / Scale) each open a single centered
  * floating modal. No backdrop — map stays fully interactable.
  * Single-open rule: only one modal visible at a time.
@@ -80,10 +80,11 @@ const DesktopDock = ({
       {/* ── Right-anchored floating panel ─────────────────────── */}
       {activePanel && (
         <div
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
             position: 'absolute',
-            // Sit just to the left of the dock strip
-            right: `${DOCK_W + 8}px`,
+            // Sit just to the right of the dock strip
+            left: `${DOCK_W + 8}px`,
             top: '50%',
             transform: 'translateY(-50%)',
             zIndex: 200,
@@ -161,10 +162,10 @@ const DesktopDock = ({
         </div>
       )}
 
-      {/* ── Vertical dock strip ────────────────────────────────── */}
+      {/* ── Left-anchored vertical dock strip ─────────────────── */}
       <div style={{
         position: 'absolute',
-        right: 0,
+        left: 0,
         top: '50%',
         transform: 'translateY(-50%)',
         width: `${DOCK_W}px`,
@@ -177,11 +178,11 @@ const DesktopDock = ({
         background: 'var(--glass-bg-medium)',
         backdropFilter: 'var(--glass-blur)',
         WebkitBackdropFilter: 'var(--glass-blur)',
-        borderLeft: '1px solid var(--glass-border)',
+        borderRight: '1px solid var(--glass-border)',
         borderTop: '1px solid var(--glass-border)',
         borderBottom: '1px solid var(--glass-border)',
-        borderRadius: '12px 0 0 12px',
-        boxShadow: '-4px 0 20px rgba(0,0,0,0.3)',
+        borderRadius: '0 12px 12px 0',
+        boxShadow: '4px 0 20px rgba(0,0,0,0.3)',
       }}>
 
         {/* View / Toolkit button */}
@@ -254,8 +255,8 @@ const DesktopDock = ({
       {/* Slide-in animation */}
       <style>{`
         @keyframes ddock-in {
-          from { opacity: 0; transform: translateY(-50%) translateX(12px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(-50%) translateX(0)     scale(1); }
+          from { opacity: 0; transform: translateY(-50%) translateX(-12px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(-50%) translateX(0)      scale(1); }
         }
       `}</style>
     </>

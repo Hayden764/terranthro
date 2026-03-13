@@ -5,8 +5,8 @@
 /* Panel Container */
 .ava-list-panel {
   position: absolute;
-  /* Right-side vertical center on desktop */
-  right: 24px;
+  /* Left-side vertical center on desktop */
+  left: 24px;
   top: 50%;
   transform: translateY(-50%);
   width: 300px;
@@ -72,8 +72,8 @@
   text-align: center;
 }
 
-/* Arrow points left (◀) when expanded — click to collapse toward right edge */
-/* Arrow points right (▶) when collapsed — click to expand toward center */
+/* Arrow points right (▶) when collapsed — click to expand away from left edge */
+/* Arrow points left (◀) when expanded — click to collapse toward left edge */
 .toggle-arrow.expanded {
   transform: rotate(180deg); /* ▶ becomes ◀ */
 }
