@@ -36,6 +36,38 @@ const CameraControls = ({
   useEffect(() => { setLocalBearing(bearing); }, [bearing]);
   useEffect(() => { setLocalPitch(pitch);     }, [pitch]);
 
+  // Keep sliders in sync with map when user ctrl+drags or otherwise
+  // changes bearing/pitch directly on the map (outside the sliders).
+  // 'rotate'/'pitch'     → update local slider display (every frame)
+  // 'rotateend'/'pitchend' → notify parent once the gesture finishes
+  useEffect(() => {
+    if (!map) return;
+
+    const onRotate    = () => setLocalBearing(Math.round(((map.getBearing() % 360) + 360) % 360));
+    const onRotateEnd = () => {
+      const b = Math.round(((map.getBearing() % 360) + 360) % 360);
+      setLocalBearing(b);
+      onBearingChange?.(b);
+    };
+    const onPitch    = () => setLocalPitch(Math.round(map.getPitch()));
+    const onPitchEnd = () => {
+      const p = Math.round(map.getPitch());
+      setLocalPitch(p);
+      onPitchChange?.(p);
+    };
+
+    map.on('rotate',    onRotate);
+    map.on('rotateend', onRotateEnd);
+    map.on('pitch',     onPitch);
+    map.on('pitchend',  onPitchEnd);
+    return () => {
+      map.off('rotate',    onRotate);
+      map.off('rotateend', onRotateEnd);
+      map.off('pitch',     onPitch);
+      map.off('pitchend',  onPitchEnd);
+    };
+  }, [map, onBearingChange, onPitchChange]);
+
   const DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   const cardinal = (b) => DIRS[Math.round(b / 22.5) % 16];
 
