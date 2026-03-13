@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * CameraControls
@@ -32,49 +32,9 @@ const CameraControls = ({
   const [localBearing, setLocalBearing] = useState(bearing);
   const [localPitch,   setLocalPitch]   = useState(pitch);
 
-  // Stable refs so event listeners never need to be re-attached when
-  // parent re-renders and passes new callback references
-  const onBearingChangeRef = useRef(onBearingChange);
-  const onPitchChangeRef   = useRef(onPitchChange);
-  useEffect(() => { onBearingChangeRef.current = onBearingChange; }, [onBearingChange]);
-  useEffect(() => { onPitchChangeRef.current   = onPitchChange;   }, [onPitchChange]);
-
   // Sync when parent resets externally (Reset View, terrain toggle off)
   useEffect(() => { setLocalBearing(bearing); }, [bearing]);
   useEffect(() => { setLocalPitch(pitch);     }, [pitch]);
-
-  // Keep sliders in sync when user ctrl+drags the map directly.
-  // Attached once (on mount / map change) — never re-subscribed due to
-  // callback churn, because we read callbacks via stable refs.
-  // 'rotate'/'pitch'       → update slider display every frame (smooth)
-  // 'rotateend'/'pitchend' → notify parent once gesture finishes
-  useEffect(() => {
-    if (!map) return;
-
-    const onRotate    = () => setLocalBearing(Math.round(((map.getBearing() % 360) + 360) % 360));
-    const onRotateEnd = () => {
-      const b = Math.round(((map.getBearing() % 360) + 360) % 360);
-      setLocalBearing(b);
-      onBearingChangeRef.current?.(b);
-    };
-    const onPitch    = () => setLocalPitch(Math.round(map.getPitch()));
-    const onPitchEnd = () => {
-      const p = Math.round(map.getPitch());
-      setLocalPitch(p);
-      onPitchChangeRef.current?.(p);
-    };
-
-    map.on('rotate',    onRotate);
-    map.on('rotateend', onRotateEnd);
-    map.on('pitch',     onPitch);
-    map.on('pitchend',  onPitchEnd);
-    return () => {
-      map.off('rotate',    onRotate);
-      map.off('rotateend', onRotateEnd);
-      map.off('pitch',     onPitch);
-      map.off('pitchend',  onPitchEnd);
-    };
-  }, [map]); // ← only re-subscribe when the map instance itself changes
 
   const DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   const cardinal = (b) => DIRS[Math.round(b / 22.5) % 16];
