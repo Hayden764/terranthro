@@ -182,9 +182,10 @@ const TerrainControlsPanel = ({
           type="range" min="0" max="360" step="1"
           value={currentBearing}
           onChange={(e) => onBearingChange(Number(e.target.value))}
+          onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
           className="glass-range-input"
           style={{
-            width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none',
+            width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', touchAction: 'none',
             background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentBearing / 360) * 100}%, rgba(255,255,255,0.15) ${(currentBearing / 360) * 100}%, rgba(255,255,255,0.15) 100%)`
           }}
           aria-label="Camera bearing angle"
@@ -202,8 +203,9 @@ const TerrainControlsPanel = ({
             type="range" min="0" max="85" step="1"
             value={currentPitch}
             onChange={(e) => onPitchChange(Number(e.target.value))}
+            onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
             style={{
-              width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none',
+              width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', touchAction: 'none',
               background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentPitch / 85) * 100}%, rgba(255,255,255,0.15) ${(currentPitch / 85) * 100}%, rgba(255,255,255,0.15) 100%)`
             }}
             aria-label="Camera pitch angle"

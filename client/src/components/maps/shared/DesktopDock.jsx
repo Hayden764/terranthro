@@ -77,15 +77,15 @@ const DesktopDock = ({
 
   return (
     <>
-      {/* ── Centered floating modal ────────────────────────────── */}
+      {/* ── Right-anchored floating panel ─────────────────────── */}
       {activePanel && (
         <div
           style={{
             position: 'absolute',
-            // Centered horizontally, but shifted left of the dock strip
-            left: '50%',
+            // Sit just to the left of the dock strip
+            right: `${DOCK_W + 8}px`,
             top: '50%',
-            transform: 'translate(-50%, -50%)',
+            transform: 'translateY(-50%)',
             zIndex: 200,
             width: '320px',
             maxHeight: 'calc(100vh - 80px)',
@@ -98,10 +98,9 @@ const DesktopDock = ({
             borderRadius: '16px',
             boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
             fontFamily: 'Inter, sans-serif',
-            // Slide-in from right
             animation: 'ddock-in 0.22s cubic-bezier(0.32,0.72,0,1)',
-            overflow: 'hidden',
-            // Map is NOT blocked — no pointer-events override needed
+            // No overflow:hidden here — let the body handle scroll
+            // so slider pointer-events are never clipped by the container
           }}
         >
           {/* Modal header */}
@@ -112,6 +111,9 @@ const DesktopDock = ({
             padding: '14px 16px 12px',
             borderBottom: '1px solid var(--glass-border-light)',
             flexShrink: 0,
+            borderRadius: '16px 16px 0 0',
+            // Clip header corners without clipping the body
+            overflow: 'hidden',
           }}>
             <span style={{
               fontSize: '11px',
@@ -147,8 +149,13 @@ const DesktopDock = ({
             </button>
           </div>
 
-          {/* Modal body — scrollable */}
-          <div style={{ overflowY: 'auto', flex: 1 }}>
+          {/* Modal body — scrollable, no overflow clipping on parent */}
+          <div style={{
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            flex: 1,
+            borderRadius: '0 0 16px 16px',
+          }}>
             {activePanel.content}
           </div>
         </div>
@@ -247,8 +254,8 @@ const DesktopDock = ({
       {/* Slide-in animation */}
       <style>{`
         @keyframes ddock-in {
-          from { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
-          to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          from { opacity: 0; transform: translateY(-50%) translateX(12px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(-50%) translateX(0)     scale(1); }
         }
       `}</style>
     </>

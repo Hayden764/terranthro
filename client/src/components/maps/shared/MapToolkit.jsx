@@ -167,14 +167,14 @@ const MapToolkit = ({
           <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
             Bearing: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{currentBearing}° ({getCardinalDirection(currentBearing)})</span>
           </label>
-          <input type="range" min="0" max="360" step="1" value={currentBearing} onChange={(e) => onBearingChange(Number(e.target.value))} style={{ width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentBearing/360)*100}%, rgba(255,255,255,0.15) ${(currentBearing/360)*100}%, rgba(255,255,255,0.15) 100%)` }} />
+          <input type="range" min="0" max="360" step="1" value={currentBearing} onChange={(e) => onBearingChange(Number(e.target.value))} onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} style={{ width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', touchAction: 'none', background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentBearing/360)*100}%, rgba(255,255,255,0.15) ${(currentBearing/360)*100}%, rgba(255,255,255,0.15) 100%)` }} />
         </div>
         {terrainEnabled && (
           <div>
             <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
               Pitch: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{currentPitch}°</span>
             </label>
-            <input type="range" min="0" max="85" step="1" value={currentPitch} onChange={(e) => onPitchChange(Number(e.target.value))} style={{ width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentPitch/85)*100}%, rgba(255,255,255,0.15) ${(currentPitch/85)*100}%, rgba(255,255,255,0.15) 100%)` }} />
+            <input type="range" min="0" max="85" step="1" value={currentPitch} onChange={(e) => onPitchChange(Number(e.target.value))} onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} style={{ width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', touchAction: 'none', background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentPitch/85)*100}%, rgba(255,255,255,0.15) ${(currentPitch/85)*100}%, rgba(255,255,255,0.15) 100%)` }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '11px', color: 'var(--text-on-glass-dim)' }}>
               <span>0°</span><span>85°</span>
             </div>
