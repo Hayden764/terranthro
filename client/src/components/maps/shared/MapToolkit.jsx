@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CameraControls from './CameraControls';
 
 /**
  * MapToolkit
@@ -40,7 +41,8 @@ const MapToolkit = ({
   onClearMeasure,
   fmtKm,
   measurePointCount = 0,
-  mobileSheetMode = false,  // true = bare body content, MobileDock provides shell
+  mobileSheetMode = false,
+  map = null,  // maplibregl Map instance for direct camera control
 }) => {
   const [isExpanded, setIsExpanded] = useState(() => {
     const stored = localStorage.getItem('mapToolkitExpanded');
@@ -163,40 +165,17 @@ const MapToolkit = ({
             <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-on-glass-muted)' }}>3D Terrain</span>
           </label>
         </div>
-        <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid var(--glass-border-light)' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-            Bearing: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{currentBearing}° ({getCardinalDirection(currentBearing)})</span>
-          </label>
-          <input type="range" min="0" max="360" step="1" value={currentBearing} onChange={(e) => onBearingChange(Number(e.target.value))} onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} style={{ width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', touchAction: 'none', background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentBearing/360)*100}%, rgba(255,255,255,0.15) ${(currentBearing/360)*100}%, rgba(255,255,255,0.15) 100%)` }} />
-        </div>
-        {terrainEnabled && (
-          <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-              Pitch: <span style={{ color: 'var(--accent-text)', fontWeight: 700 }}>{currentPitch}°</span>
-            </label>
-            <input type="range" min="0" max="85" step="1" value={currentPitch} onChange={(e) => onPitchChange(Number(e.target.value))} onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} style={{ width: '100%', height: '4px', borderRadius: '2px', appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', outline: 'none', touchAction: 'none', background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${(currentPitch/85)*100}%, rgba(255,255,255,0.15) ${(currentPitch/85)*100}%, rgba(255,255,255,0.15) 100%)` }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '11px', color: 'var(--text-on-glass-dim)' }}>
-              <span>0°</span><span>85°</span>
-            </div>
-          </div>
-        )}
-      </div>
 
-      <style>{`
-        input[type='range']::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none;
-          width: 16px; height: 16px; border-radius: 50%;
-          background: var(--accent); cursor: pointer;
-          border: 2px solid rgba(255,255,255,0.8);
-          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
-        }
-        input[type='range']::-moz-range-thumb {
-          width: 16px; height: 16px; border-radius: 50%;
-          background: var(--accent); cursor: pointer;
-          border: 2px solid rgba(255,255,255,0.8);
-          box-shadow: 0 2px 6px rgba(56,189,248,0.4);
-        }
-      `}</style>
+        {/* Camera bearing + pitch sliders — stable standalone component, never remounts */}
+        <CameraControls
+          map={map}
+          bearing={currentBearing}
+          pitch={currentPitch}
+          terrainEnabled={terrainEnabled}
+          onBearingChange={onBearingChange}
+          onPitchChange={onPitchChange}
+        />
+      </div>
     </div>
   );
 

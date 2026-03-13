@@ -507,6 +507,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
           isClassified={activeIndexConfig?.isClassified || false}
           toolkit={
             <TerrainControlsPanel
+              map={mapRef.current}
               onZoomIn={handleZoomIn}
               onZoomOut={handleZoomOut}
               onResetView={handleResetView}
@@ -568,6 +569,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
           isClassified={activeIndexConfig?.isClassified || false}
           toolkit={
             <TerrainControlsPanel
+              map={mapRef.current}
               onZoomIn={handleZoomIn}
               onZoomOut={handleZoomOut}
               onResetView={handleResetView}
