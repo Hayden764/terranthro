@@ -83,7 +83,7 @@ const MapLibreNationalMap = () => {
         }
       },
       center: [-98, 39],
-      zoom: 3.5,
+      zoom: isMobile ? 2.8 : 3.5,
       minZoom: 1.5,
       maxZoom: 18
     });
