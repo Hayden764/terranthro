@@ -331,32 +331,33 @@ const MapLibreNationalMap = () => {
         />
       </div>
 
-      {/* Hover name tooltip — mirrors MapLibreStateMap */}
+      {/* Hover name tooltip */}
       {hoveredStateName && (
         <div
           style={{
             position: 'absolute',
             ...(isMobile
               ? { bottom: '80px', left: '50%', transform: 'translateX(-50%)', top: 'auto' }
-              : { top: '20px', left: '50%', transform: 'translateX(-50%)' }
+              : { top: '24px', left: '50%', transform: 'translateX(-50%)' }
             ),
             background: 'var(--glass-bg-medium)',
             backdropFilter: 'var(--glass-blur-light)',
             WebkitBackdropFilter: 'var(--glass-blur-light)',
             border: '1px solid var(--glass-border-hover)',
             color: 'var(--text-on-glass)',
-            padding: isMobile ? '10px 20px' : '12px 28px',
+            padding: isMobile ? '10px 20px' : '10px 24px',
             borderRadius: '12px',
-            zIndex: 1000,
+            zIndex: 900,
             fontFamily: 'Montserrat, sans-serif',
-            fontSize: isMobile ? '13px' : '15px',
+            fontSize: isMobile ? '13px' : '14px',
             fontWeight: '600',
             letterSpacing: '0.5px',
             textTransform: 'uppercase',
             pointerEvents: 'none',
             boxShadow: 'var(--glass-shadow-sm)',
-            maxWidth: '90vw',
+            maxWidth: isMobile ? '90vw' : 'calc(100vw - 380px)',
             textAlign: 'center',
+            whiteSpace: 'nowrap',
           }}
         >
           {hoveredStateName}

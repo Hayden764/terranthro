@@ -40,12 +40,13 @@ const StateListPanel = ({ onStateHover }) => {
 
   return (
     <div className={`ava-list-panel ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="ava-list-header">
+      <div className="ava-list-header" onClick={() => setIsCollapsed(!isCollapsed)}>
         <button
           className="ava-list-toggle"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={(e) => { e.stopPropagation(); setIsCollapsed(!isCollapsed); }}
           aria-label={isCollapsed ? 'Expand state list' : 'Collapse state list'}
         >
+          {/* ▶ points right by default; rotates 180° (◀) when expanded */}
           <span className={`toggle-arrow ${isCollapsed ? '' : 'expanded'}`}>
             ▶
           </span>
