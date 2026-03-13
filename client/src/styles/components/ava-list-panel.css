@@ -247,7 +247,7 @@
     transform: none;
     width: 100%;
     border-radius: 16px 16px 0 0;
-    max-height: 50vh;
+    max-height: 35vh;
     /* Only the header intercepts touches when collapsed */
     pointer-events: none;
   }
@@ -279,7 +279,7 @@
 
 @media (max-width: 480px) {
   .ava-list-panel {
-    max-height: 60vh;
+    max-height: 35vh;
   }
 
   .ava-list-panel.collapsed {
@@ -287,7 +287,7 @@
   }
 
   .ava-list-content {
-    max-height: calc(60vh - 52px);
+    max-height: calc(35vh - 52px);
   }
 
   .ava-list-header {
@@ -529,7 +529,7 @@
     right: 0;
     width: 100%;
     border-radius: 16px 16px 0 0;
-    max-height: 50vh;
+    max-height: 35vh;
   }
 
   .ava-list-panel.collapsed {
@@ -540,7 +540,7 @@
 /* Small Mobile */
 @media (max-width: 480px) {
   .ava-list-panel {
-    max-height: 60vh;
+    max-height: 35vh;
   }
 
   .ava-list-panel.collapsed {

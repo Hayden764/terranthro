@@ -7,7 +7,8 @@ import '../../styles/components/ava-list-panel.css';
  * Displays searchable list of AVAs with bi-directional hover interaction with map
  */
 const AVAListPanel = ({ avaData, stateName, onAVAHover }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isCollapsed, setIsCollapsed] = useState(isMobile);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 

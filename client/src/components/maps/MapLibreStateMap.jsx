@@ -25,7 +25,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
 
     const previousCamera = location.state?.previousCamera;
     const initialCenter = previousCamera?.center || stateConfig.center || [-98, 39];
-    const zoomOffset = isMobile ? 1.5 : 0.5;
+    const zoomOffset = isMobile ? 2.5 : 0.5;
     const initialZoom = previousCamera?.zoom || (stateConfig.zoom ? stateConfig.zoom - zoomOffset : 4);
 
     const map = new maplibregl.Map({
@@ -106,7 +106,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
         setTimeout(() => {
           map.flyTo({
             center: stateConfig.center || [-98, 39],
-            zoom: stateConfig.zoom ? stateConfig.zoom - 0.5 : 6,
+            zoom: stateConfig.zoom ? stateConfig.zoom - zoomOffset : 6,
             duration: 1500,
             essential: true
           });

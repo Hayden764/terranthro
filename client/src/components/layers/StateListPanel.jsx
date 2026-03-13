@@ -10,7 +10,8 @@ import '../../styles/components/ava-list-panel.css';
  * Mirrors AVAListPanel structure exactly.
  */
 const StateListPanel = ({ onStateHover }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isCollapsed, setIsCollapsed] = useState(isMobile);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
