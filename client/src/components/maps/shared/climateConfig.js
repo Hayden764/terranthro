@@ -5,7 +5,7 @@
  */
 
 // Titiler and COG server URLs
-export const TITILER_URL = 'http://localhost:8000';
+export const TITILER_URL = 'https://titiler-latest-0cem.onrender.com';
 export const COG_SERVER_URL = 'https://cogs.terranthro.com';
 
 // R2 public URL — Titiler fetches COGs from Cloudflare R2
