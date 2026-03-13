@@ -54,7 +54,7 @@ const IndexLayer = ({
       }
 
       // Docker-internal COG URL for Titiler
-      const cogUrl = `http://host.docker.internal:8080/climate-data/indices/${fileSlug}_${year}_cog.tif`;
+      const cogUrl = `https://cogs.terranthro.com/climate-data/indices/${fileSlug}_${year}_cog.tif`;
       const encodedCogUrl = encodeURIComponent(cogUrl);
 
       let tileUrl;

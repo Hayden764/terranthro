@@ -62,7 +62,7 @@ const ClimateLayer = ({
 
       // Build national COG URL — one file covers all AVAs
       const monthStr = String(currentMonth).padStart(2, '0');
-      const cogUrl = `http://host.docker.internal:8080/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
+      const cogUrl = `https://cogs.terranthro.com/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
       const encodedCogUrl = encodeURIComponent(cogUrl);
 
       const rescaleParam = rescale ? rescale : '-22,26';

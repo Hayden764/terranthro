@@ -9,9 +9,8 @@
 
 import { TITILER_URL } from './climateConfig';
 
-// Docker-internal URL — Titiler fetches COGs from inside Docker using host.docker.internal
-// This is required because Titiler runs in a Docker container; it cannot use localhost:8080
-export const TOPO_COG_DOCKER_URL = 'http://host.docker.internal:8080';
+// R2 public URL for Cloudflare-hosted topography COGs
+export const TOPO_COG_DOCKER_URL = 'https://cogs.terranthro.com';
 
 // ── Layer type definitions ─────────────────────────────────────────────
 export const TOPO_LAYER_TYPES = {
@@ -65,17 +64,25 @@ export const AVA_TOPO_REGISTRY = {
   'elkton-oregon':          { state: 'OR', folder: 'elkton_oregon' },
   'eola-amity-hills':       { state: 'OR', folder: 'eola_amity_hills' },
   'laurelwood-district':    { state: 'OR', folder: 'laurelwood_district' },
-  'lower-long-tom':         { state: 'OR', folder: 'lower_long_tom' },
   'mcminnville':            { state: 'OR', folder: 'mcminnville' },
-  'mount-pisgah':           { state: 'OR', folder: 'mount_pisgah__polk_county__oregon' },
-  'red-hill-douglas-county':{ state: 'OR', folder: 'red_hill_douglas_county__oregon' },
+  'mount-pisgah--polk-county--oregon': { state: 'OR', folder: 'mount_pisgah__polk_county__oregon' },
+  'red-hill-douglas-county--oregon': { state: 'OR', folder: 'red_hill_douglas_county__oregon' },
   'ribbon-ridge':           { state: 'OR', folder: 'ribbon_ridge' },
+  'rogue-valley':           { state: 'OR', folder: 'rogue_valley' },
   'the-rocks-district-of-milton-freewater': { state: 'OR', folder: 'the_rocks_district_of_milton_freewater' },
-  'umpqua-valley':          { state: 'OR', folder: 'umpqua_valley' },
   'van-duzer-corridor':     { state: 'OR', folder: 'van_duzer_corridor' },
   'walla-walla-valley':     { state: 'OR', folder: 'walla_walla_valley' },
   'yamhill-carlton':        { state: 'OR', folder: 'yamhill_carlton' },
-  
+
+  // New York AVAs
+  'cayuga-lake':                { state: 'NY', folder: 'cayuga_lake' },
+  'hudson-river-region':        { state: 'NY', folder: 'hudson_river_region' },
+  'long-island':                { state: 'NY', folder: 'long_island' },
+  'niagara-escarpment':         { state: 'NY', folder: 'niagara_escarpment' },
+  'north-fork-of-long-island':  { state: 'NY', folder: 'north_fork_of_long_island' },
+  'the-hamptons-long-island':   { state: 'NY', folder: 'the_hamptons_long_island' },
+  'upper-hudson':               { state: 'NY', folder: 'upper_hudson' },
+
   // California AVAs
   'alisos-canyon':           { state: 'CA', folder: 'alisos_canyon' },
 };

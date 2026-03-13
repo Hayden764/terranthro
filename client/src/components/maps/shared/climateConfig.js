@@ -6,10 +6,10 @@
 
 // Titiler and COG server URLs
 export const TITILER_URL = 'http://localhost:8000';
-export const COG_SERVER_URL = 'http://localhost:8080';
+export const COG_SERVER_URL = 'https://cogs.terranthro.com';
 
-// Docker-internal URL — Titiler fetches COGs server-side from inside Docker
-const COG_DOCKER_URL = 'http://host.docker.internal:8080';
+// R2 public URL — Titiler fetches COGs from Cloudflare R2
+const COG_DOCKER_URL = 'https://cogs.terranthro.com';
 
 // If ports 8000/8080 are in use, try these alternative ports:
 // export const TITILER_URL = 'http://localhost:8001';
@@ -342,12 +342,10 @@ export const getTitilerTileUrlWithRescale = (cogUrl, rescaleMin, rescaleMax) => 
 /**
  * Get Titiler statistics URL for a bounding box.
  * Uses the national COG — Titiler reads only the bbox window server-side.
- * IMPORTANT: url param uses host.docker.internal — Titiler fetches COG
- * from inside Docker, so localhost won't reach the host http-server.
  */
 export const getTitilerStatsUrl = (prismVar, month, bbox) => {
   const monthStr = String(month).padStart(2, '0');
-  const cogUrl = `http://host.docker.internal:8080/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
+  const cogUrl = `https://cogs.terranthro.com/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
   const params = new URLSearchParams({
     url: cogUrl,
     bbox: bbox,
@@ -361,11 +359,10 @@ export const getTitilerStatsUrl = (prismVar, month, bbox) => {
 /**
  * Get Titiler point-query URL for a specific lng/lat.
  * Returns the raw pixel value at that coordinate from the national COG.
- * IMPORTANT: url uses host.docker.internal for Docker-side fetch.
  */
 export const getTitilerPointUrl = (prismVar, month, lng, lat) => {
   const monthStr = String(month).padStart(2, '0');
-  const cogUrl = `http://host.docker.internal:8080/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
+  const cogUrl = `https://cogs.terranthro.com/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
   const encodedCogUrl = encodeURIComponent(cogUrl);
   return `${TITILER_URL}/cog/point/${lng}/${lat}?url=${encodedCogUrl}`;
 };
