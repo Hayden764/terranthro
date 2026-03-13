@@ -356,15 +356,15 @@ const MapLibreAVAViewer = ({ avaData }) => {
     }
   };
 
-  // Handler: Reset view to initial state
+  // Handler: Reset view to initial state (bearing 0, pitch 60 — matches load state)
   const handleResetView = () => {
     if (mapRef.current) {
       mapRef.current.easeTo({
         bearing: 0,
-        pitch: 0,
+        pitch: 60,
         duration: 800
       });
-      setCurrentPitch(0);
+      setCurrentPitch(60);
       setCurrentBearing(0);
 
       // Fit to AVA bounds
