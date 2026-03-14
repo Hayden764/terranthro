@@ -43,7 +43,7 @@ const InfoPanel = ({
   // ── Design tokens local to InfoPanel ─────────────────────────────────────
   // Coloured accents kept; neutral text pushed to bright whites for contrast.
   const T = {
-    // Text
+    // Text — bright whites, matching --text-on-glass but pushed higher
     textPrimary:  '#ffffff',                 // pure white — body text
     textSecondary:'rgba(255,255,255,0.82)',  // bright white, slightly stepped back
     textMuted:    'rgba(255,255,255,0.55)',  // clearly muted but still legible
@@ -51,14 +51,14 @@ const InfoPanel = ({
     textGreen:    '#6ee7b7',                 // parent-AVA badge
     textCode:     '#bfdbfe',                 // formula block — light blue
 
-    // Surfaces — frosted glass tiles
-    surfaceRow:      'rgba(255,255,255,0.07)',
-    surfaceCode:     'rgba(255,255,255,0.06)',
-    surfaceStatCard: 'rgba(255,255,255,0.09)',
+    // Surfaces — match site glass tokens exactly
+    surfaceRow:      'var(--glass-bg)',
+    surfaceCode:     'var(--glass-bg-input)',
+    surfaceStatCard: 'var(--glass-bg-medium)',
 
-    // Borders
-    divider:      'rgba(255,255,255,0.10)',
-    borderCard:   'rgba(255,255,255,0.13)',
+    // Borders — match site glass tokens
+    divider:      'var(--glass-border-light)',
+    borderCard:   'var(--glass-border)',
     borderCode:   'rgba(139,92,246,0.30)',
     borderGreen:  'rgba(52,211,153,0.35)',
     borderViolet: 'rgba(139,92,246,0.35)',

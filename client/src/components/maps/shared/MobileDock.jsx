@@ -63,11 +63,8 @@ const MobileDock = ({
   // Info sheet — stronger opaque background for readability
   const infoSheetStyle = (isOpen) => ({
     ...sheetStyle(isOpen),
-    background: 'rgba(10,6,20,0.65)',
-    backdropFilter: 'blur(40px) saturate(1.2)',
-    WebkitBackdropFilter: 'blur(40px) saturate(1.2)',
-    borderTop: '1px solid rgba(255,255,255,0.12)',
-    boxShadow: '0 -8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10)',
+    backdropFilter: 'blur(40px) saturate(1.1)',
+    WebkitBackdropFilter: 'blur(40px) saturate(1.1)',
   });
 
   const iconBtnStyle = (id) => ({
