@@ -41,25 +41,24 @@ const InfoPanel = ({
   };
 
   // ── Design tokens local to InfoPanel ─────────────────────────────────────
-  // These are deliberately stronger than the global glass tokens so that
-  // text is readable regardless of what map tile is behind the panel.
+  // Coloured accents kept; neutral text pushed to bright whites for contrast.
   const T = {
     // Text
-    textPrimary:  '#f0ecff',          // near-white with a hint of violet
-    textSecondary:'#c4bbd8',          // readable mid-tone lavender
-    textMuted:    '#8c82a0',          // clearly muted but still legible
-    textAccent:   '#a78bfa',          // violet accent (labels)
-    textGreen:    '#6ee7b7',          // parent-AVA badge
-    textCode:     '#bfdbfe',          // formula block — light blue
+    textPrimary:  '#ffffff',                 // pure white — body text
+    textSecondary:'rgba(255,255,255,0.82)',  // bright white, slightly stepped back
+    textMuted:    'rgba(255,255,255,0.55)',  // clearly muted but still legible
+    textAccent:   '#a78bfa',                 // violet accent (UPPERCASE labels)
+    textGreen:    '#6ee7b7',                 // parent-AVA badge
+    textCode:     '#bfdbfe',                 // formula block — light blue
 
-    // Surfaces
-    surfaceRow:   'rgba(255,255,255,0.06)',   // row / card background
-    surfaceCode:  'rgba(30,20,50,0.75)',      // formula block — dark tinted
-    surfaceStatCard: 'rgba(255,255,255,0.08)',
+    // Surfaces — frosted glass tiles
+    surfaceRow:      'rgba(255,255,255,0.07)',
+    surfaceCode:     'rgba(255,255,255,0.06)',
+    surfaceStatCard: 'rgba(255,255,255,0.09)',
 
     // Borders
     divider:      'rgba(255,255,255,0.10)',
-    borderCard:   'rgba(255,255,255,0.12)',
+    borderCard:   'rgba(255,255,255,0.13)',
     borderCode:   'rgba(139,92,246,0.30)',
     borderGreen:  'rgba(52,211,153,0.35)',
     borderViolet: 'rgba(139,92,246,0.35)',

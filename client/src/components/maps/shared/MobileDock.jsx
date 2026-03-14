@@ -63,9 +63,9 @@ const MobileDock = ({
   // Info sheet — stronger opaque background for readability
   const infoSheetStyle = (isOpen) => ({
     ...sheetStyle(isOpen),
-    background: 'rgba(18,12,32,0.94)',
-    backdropFilter: 'blur(28px) saturate(1.6)',
-    WebkitBackdropFilter: 'blur(28px) saturate(1.6)',
+    background: 'rgba(10,6,20,0.65)',
+    backdropFilter: 'blur(40px) saturate(1.2)',
+    WebkitBackdropFilter: 'blur(40px) saturate(1.2)',
     borderTop: '1px solid rgba(255,255,255,0.12)',
     boxShadow: '0 -8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10)',
   });
@@ -174,7 +174,7 @@ const MobileDock = ({
 
       {/* ── Info sheet ── */}
       <div onMouseDown={(e) => e.stopPropagation()} style={infoSheetStyle(openSheet === 'info')}>
-        <SheetHeader title="Info" onClose={close} titleStyle={{ color: 'rgba(200,185,255,0.95)' }} />
+        <SheetHeader title="Info" onClose={close} titleStyle={{ color: '#ffffff' }} />
         <div style={{ padding: '0 0 8px' }}>
           {info}
         </div>

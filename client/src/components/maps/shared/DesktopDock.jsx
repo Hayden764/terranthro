@@ -177,9 +177,9 @@ const DesktopDock = ({
             maxHeight: 'calc(100vh - 80px)',
             display: 'flex',
             flexDirection: 'column',
-            background: 'rgba(18,12,32,0.88)',
-            backdropFilter: 'blur(28px) saturate(1.6)',
-            WebkitBackdropFilter: 'blur(28px) saturate(1.6)',
+            background: 'rgba(10,6,20,0.65)',
+            backdropFilter: 'blur(40px) saturate(1.2)',
+            WebkitBackdropFilter: 'blur(40px) saturate(1.2)',
             border: '1px solid rgba(255,255,255,0.13)',
             borderRight: 'none',
             borderRadius: '16px 0 0 16px',
@@ -203,7 +203,7 @@ const DesktopDock = ({
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.9px',
-              color: 'rgba(200,185,255,0.95)',
+              color: '#ffffff',
             }}>
               Info
             </span>
