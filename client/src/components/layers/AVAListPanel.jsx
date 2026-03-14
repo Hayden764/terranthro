@@ -32,7 +32,7 @@ const AVAListPanel = ({ avaData, stateName, onAVAHover }) => {
 
   const handleAVAClick = (avaName) => {
     const avaSlug = avaName.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/states/${stateName}/avas/${avaSlug}`);
+    navigate(`/${stateName}/${avaSlug}`);
   };
 
   const handleMouseEnter = (avaName) => {

@@ -77,7 +77,7 @@ const AVAPage = () => {
       <div className="ava-page error" style={{ background: 'var(--scene-bg)', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', color: 'var(--text-on-glass)' }}>
         <h1>AVA Not Found</h1>
         <p style={{ color: 'var(--text-on-glass-muted)' }}>{error || 'The requested AVA could not be found.'}</p>
-        <Link to={`/states/${stateName}`} style={{ color: 'var(--primary-burgundy)' }}>← Back to {stateName}</Link>
+        <Link to={`/${stateName}`} style={{ color: 'var(--primary-burgundy)' }}>← Back to {stateName}</Link>
       </div>
     );
   }
@@ -91,7 +91,7 @@ const AVAPage = () => {
         />
 
         <Link 
-          to={`/states/${stateName}`}
+          to={`/${stateName}`}
           style={{
             position: 'absolute',
             top: '20px',

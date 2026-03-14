@@ -28,7 +28,7 @@ const StateListPanel = ({ onStateHover }) => {
 
   const handleStateClick = (stateName) => {
     const stateSlug = stateName.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/states/${stateSlug}`);
+    navigate(`/${stateSlug}`);
   };
 
   const handleMouseEnter = (stateName) => {

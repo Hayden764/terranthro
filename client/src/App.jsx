@@ -48,8 +48,8 @@ function App() {
         <LayerProvider>
           <Routes>
             <Route path="/" element={<HomePage welcomeDone={welcomeDone} onWelcomeDone={() => setWelcomeDone(true)} />} />
-            <Route path="/states/:stateName" element={<StatePage />} />
-            <Route path="/states/:stateName/avas/:avaSlug" element={<AVAPage />} />
+            <Route path="/:stateName" element={<StatePage />} />
+            <Route path="/:stateName/:avaSlug" element={<AVAPage />} />
             <Route path="/about" element={<About />} />
           </Routes>
         </LayerProvider>

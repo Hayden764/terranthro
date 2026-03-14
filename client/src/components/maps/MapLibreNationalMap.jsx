@@ -303,7 +303,7 @@ const MapLibreNationalMap = () => {
             pitch: map.getPitch()
           };
 
-          navigate(`/states/${stateSlug}`, {
+          navigate(`/${stateSlug}`, {
             state: { fromNational: true, previousCamera: cameraPosition }
           });
         }

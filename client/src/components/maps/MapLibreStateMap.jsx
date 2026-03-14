@@ -25,7 +25,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
 
     const previousCamera = location.state?.previousCamera;
     const initialCenter = previousCamera?.center || stateConfig.center || [-98, 39];
-    const zoomOffset = isMobile ? 2.5 : 0.5;
+    const zoomOffset = isMobile ? 2.0 : 0.5;
     const initialZoom = previousCamera?.zoom || (stateConfig.zoom ? stateConfig.zoom - zoomOffset : 4);
 
     const map = new maplibregl.Map({
@@ -252,7 +252,7 @@ const MapLibreStateMap = ({ stateConfig, avaData, onAVAHoverHandler }) => {
             }
             const avaSlug = name.toLowerCase().replace(/\s+/g, '-');
             const stateSlug = stateConfig.name.toLowerCase().replace(/\s+/g, '-');
-            navigate(`/states/${stateSlug}/avas/${avaSlug}`);
+            navigate(`/${stateSlug}/${avaSlug}`);
           }
         }
       });
