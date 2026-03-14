@@ -5,15 +5,6 @@ import { LAYER_INFO } from './layerInfoContent';
  * InfoPanel
  * Shows AVA metadata when no layer is active, or layer explanation/stats
  * when a data layer is selected.
- *
- * Props:
- *   avaData      {object|null}  — GeoJSON FeatureCollection with one feature
- *   activeLayer  {string|null}  — layer id key (e.g. 'tdmean', 'elevation')
- *   displayMin   {number|null}  — computed min stat for active layer
- *   displayMax   {number|null}  — computed max stat for active layer
- *   unit         {string}       — unit label for active layer
- *   currentMonth {number}       — 1–12, for PRISM monthly layers
- *   mobileSheetMode {boolean}   — when true, no outer wrapper (sheet handles it)
  */
 const InfoPanel = ({
   avaData,
@@ -30,14 +21,12 @@ const InfoPanel = ({
   const layerInfo = activeLayer ? LAYER_INFO[activeLayer] : null;
   const showLayer = !!layerInfo;
 
-  // Format a date string "2006-08-16" → "August 2006"
   const fmtDate = (str) => {
     if (!str) return null;
     const d = new Date(str + 'T12:00:00Z');
     return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   };
 
-  // Format county pipe-separated list → "Polk & Yamhill Counties"
   const fmtCounty = (str) => {
     if (!str) return null;
     const parts = str.split('|').map(s => s.trim());
@@ -46,49 +35,64 @@ const InfoPanel = ({
     return `${parts.join(', ')} & ${last} ${parts.length > 0 ? 'Counties' : 'County'}`;
   };
 
-  // Format stat value
   const fmtStat = (v) => {
     if (v == null || isNaN(v)) return '—';
     return Number(v).toFixed(1);
   };
 
-  // Pill/badge style
-  const badgeStyle = {
-    display: 'inline-block',
-    padding: '3px 10px',
-    borderRadius: '20px',
-    fontSize: '11px',
-    fontWeight: 600,
-    background: 'rgba(139,92,246,0.18)',
-    border: '1px solid rgba(139,92,246,0.35)',
-    color: 'rgba(200,180,255,0.95)',
-    letterSpacing: '0.3px',
+  // ── Design tokens local to InfoPanel ─────────────────────────────────────
+  // These are deliberately stronger than the global glass tokens so that
+  // text is readable regardless of what map tile is behind the panel.
+  const T = {
+    // Text
+    textPrimary:  '#f0ecff',          // near-white with a hint of violet
+    textSecondary:'#c4bbd8',          // readable mid-tone lavender
+    textMuted:    '#8c82a0',          // clearly muted but still legible
+    textAccent:   '#a78bfa',          // violet accent (labels)
+    textGreen:    '#6ee7b7',          // parent-AVA badge
+    textCode:     '#bfdbfe',          // formula block — light blue
+
+    // Surfaces
+    surfaceRow:   'rgba(255,255,255,0.06)',   // row / card background
+    surfaceCode:  'rgba(30,20,50,0.75)',      // formula block — dark tinted
+    surfaceStatCard: 'rgba(255,255,255,0.08)',
+
+    // Borders
+    divider:      'rgba(255,255,255,0.10)',
+    borderCard:   'rgba(255,255,255,0.12)',
+    borderCode:   'rgba(139,92,246,0.30)',
+    borderGreen:  'rgba(52,211,153,0.35)',
+    borderViolet: 'rgba(139,92,246,0.35)',
+
+    // Badge backgrounds
+    bgViolet:     'rgba(109,40,217,0.25)',
+    bgGreen:      'rgba(16,185,129,0.18)',
   };
 
   const labelStyle = {
     fontSize: '10px',
     fontWeight: 700,
     textTransform: 'uppercase',
-    letterSpacing: '0.8px',
-    color: 'var(--text-on-glass-dim)',
-    marginBottom: '4px',
+    letterSpacing: '1px',
+    color: T.textAccent,
+    marginBottom: '5px',
   };
 
   const valueStyle = {
     fontSize: '13px',
-    color: 'var(--text-on-glass)',
-    lineHeight: 1.5,
+    color: T.textPrimary,
+    lineHeight: 1.55,
   };
 
   const sectionStyle = {
-    borderBottom: '1px solid var(--glass-border-light)',
+    borderBottom: `1px solid ${T.divider}`,
     paddingBottom: '14px',
     marginBottom: '14px',
   };
 
-  const innerPad = mobileSheetMode ? '0 16px' : '0 16px';
+  const innerPad = '0 16px';
 
-  // ── AVA mode content ──────────────────────────────────────────────────────
+  // ── AVA mode ──────────────────────────────────────────────────────────────
   const AVAContent = () => {
     const established = fmtDate(props.created);
     const county = fmtCounty(props.county);
@@ -98,19 +102,27 @@ const InfoPanel = ({
     const petitioner = props.petitioner;
 
     return (
-      <div style={{ padding: '16px 0 8px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ padding: '16px 0 8px', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Header */}
+        {/* State badge + county */}
         <div style={{ ...sectionStyle, padding: innerPad, paddingBottom: '14px', marginBottom: '14px' }}>
-          {/* State badge */}
           {props.state && (
-            <div style={{ ...badgeStyle, marginBottom: '10px' }}>
+            <div style={{
+              display: 'inline-block',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              fontSize: '11px',
+              fontWeight: 600,
+              background: T.bgViolet,
+              border: `1px solid ${T.borderViolet}`,
+              color: T.textPrimary,
+              letterSpacing: '0.3px',
+              marginBottom: '10px',
+            }}>
               {props.state === 'OR' ? 'Oregon' : props.state === 'CA' ? 'California' :
                props.state === 'WA' ? 'Washington' : props.state} AVA
             </div>
           )}
-
-          {/* County */}
           {county && (
             <div>
               <div style={labelStyle}>Location</div>
@@ -119,7 +131,7 @@ const InfoPanel = ({
           )}
         </div>
 
-        {/* Meta row */}
+        {/* Established + CFR */}
         <div style={{ padding: innerPad, ...sectionStyle }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             {established && (
@@ -141,7 +153,16 @@ const InfoPanel = ({
         {parentAVA && (
           <div style={{ padding: innerPad, ...sectionStyle }}>
             <div style={labelStyle}>Part of</div>
-            <div style={{ ...badgeStyle, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: 'rgba(110,231,183,0.95)' }}>
+            <div style={{
+              display: 'inline-block',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              fontSize: '11px',
+              fontWeight: 600,
+              background: T.bgGreen,
+              border: `1px solid ${T.borderGreen}`,
+              color: T.textGreen,
+            }}>
               {parentAVA}
             </div>
           </div>
@@ -159,56 +180,50 @@ const InfoPanel = ({
         {petitioner && (
           <div style={{ padding: innerPad, paddingBottom: '8px' }}>
             <div style={labelStyle}>Petitioner</div>
-            <div style={{ ...valueStyle, fontSize: '12px', opacity: 0.75 }}>{petitioner}</div>
+            <div style={{ ...valueStyle, fontSize: '12px', color: T.textSecondary }}>{petitioner}</div>
           </div>
         )}
       </div>
     );
   };
 
-  // ── Layer mode content ────────────────────────────────────────────────────
+  // ── Layer mode ────────────────────────────────────────────────────────────
   const LayerContent = () => {
     const info = layerInfo;
     const hasStats = displayMin != null && displayMax != null && !isNaN(displayMin) && !isNaN(displayMax);
     const mean = hasStats ? ((displayMin + displayMax) / 2) : null;
 
     return (
-      <div style={{ padding: '16px 0 8px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ padding: '16px 0 8px', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Icon + description */}
+        {/* Icon + why */}
         <div style={{ padding: innerPad, ...sectionStyle }}>
-          <div style={{ fontSize: '28px', marginBottom: '8px' }}>{info.icon}</div>
-          <p style={{
-            fontSize: '13px',
-            color: 'var(--text-on-glass)',
-            lineHeight: 1.6,
-            margin: 0,
-            opacity: 0.9,
-          }}>
+          <div style={{ fontSize: '26px', marginBottom: '8px' }}>{info.icon}</div>
+          <p style={{ fontSize: '13px', color: T.textSecondary, lineHeight: 1.65, margin: 0 }}>
             {info.why}
           </p>
         </div>
 
-        {/* Stats row */}
+        {/* Stats — Min / Mean / Max */}
         {hasStats && (
           <div style={{ padding: innerPad, ...sectionStyle }}>
             <div style={labelStyle}>AVA Statistics</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '6px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '6px' }}>
               {[
                 { label: 'Min', val: fmtStat(displayMin) },
                 { label: 'Mean', val: fmtStat(mean) },
                 { label: 'Max', val: fmtStat(displayMax) },
               ].map(({ label, val }) => (
                 <div key={label} style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--glass-border-light)',
+                  background: T.surfaceStatCard,
+                  border: `1px solid ${T.borderCard}`,
                   borderRadius: '10px',
-                  padding: '8px 6px',
+                  padding: '8px 4px',
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-on-glass-dim)', marginBottom: '4px' }}>{label}</div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-on-glass)', letterSpacing: '-0.3px' }}>{val}</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '1px' }}>{unit}</div>
+                  <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: T.textAccent, marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.3px' }}>{val}</div>
+                  <div style={{ fontSize: '10px', color: T.textMuted, marginTop: '1px' }}>{unit}</div>
                 </div>
               ))}
             </div>
@@ -221,12 +236,12 @@ const InfoPanel = ({
           <div style={{
             fontFamily: 'monospace',
             fontSize: '11px',
-            color: 'rgba(200,200,255,0.85)',
-            lineHeight: 1.7,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid var(--glass-border-light)',
+            color: T.textCode,
+            lineHeight: 1.75,
+            background: T.surfaceCode,
+            border: `1px solid ${T.borderCode}`,
             borderRadius: '8px',
-            padding: '8px 10px',
+            padding: '10px 12px',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',
           }}>
@@ -243,7 +258,7 @@ const InfoPanel = ({
         {/* Data source */}
         <div style={{ padding: innerPad, ...sectionStyle }}>
           <div style={labelStyle}>Data Source</div>
-          <div style={{ ...valueStyle, fontSize: '12px', opacity: 0.8 }}>{info.source}</div>
+          <div style={{ ...valueStyle, fontSize: '12px', color: T.textSecondary }}>{info.source}</div>
         </div>
 
         {/* Reference ranges */}
@@ -255,14 +270,14 @@ const InfoPanel = ({
                 <div key={i} style={{
                   display: 'flex',
                   alignItems: 'flex-start',
-                  gap: '8px',
-                  padding: '6px 8px',
+                  gap: '10px',
+                  padding: '7px 10px',
                   borderRadius: '8px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--glass-border-light)',
+                  background: T.surfaceRow,
+                  border: `1px solid ${T.borderCard}`,
                 }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-on-glass)', minWidth: '90px', flexShrink: 0 }}>{r.label}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-on-glass-dim)', lineHeight: 1.4 }}>{r.desc}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: T.textPrimary, minWidth: '90px', flexShrink: 0 }}>{r.label}</span>
+                  <span style={{ fontSize: '11px', color: T.textSecondary, lineHeight: 1.45 }}>{r.desc}</span>
                 </div>
               ))}
             </div>
@@ -272,46 +287,14 @@ const InfoPanel = ({
     );
   };
 
-  // ── Mobile sheet mode — no wrapper, no collapse toggle ────────────────────
+  // ── Mobile sheet mode ─────────────────────────────────────────────────────
   if (mobileSheetMode) {
     return showLayer ? <LayerContent /> : <AVAContent />;
   }
 
-  // ── Desktop mode — collapsible side panel ─────────────────────────────────
+  // ── Desktop mode ──────────────────────────────────────────────────────────
   return (
     <div style={{ position: 'relative' }}>
-      {/* Collapse toggle — sits on left edge of panel */}
-      <button
-        onClick={() => setCollapsed(c => !c)}
-        style={{
-          position: 'absolute',
-          left: '-18px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '18px',
-          height: '36px',
-          background: 'var(--glass-bg-medium)',
-          border: '1px solid var(--glass-border)',
-          borderRight: 'none',
-          borderRadius: '6px 0 0 6px',
-          color: 'var(--text-on-glass-dim)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1,
-          padding: 0,
-        }}
-        aria-label={collapsed ? 'Expand info panel' : 'Collapse info panel'}
-        title={collapsed ? 'Expand' : 'Collapse'}
-      >
-        <svg width="8" height="12" viewBox="0 0 8 12" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-          style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-          <path d="M6 1L2 6l4 5" />
-        </svg>
-      </button>
-
       <div style={{
         overflowY: 'auto',
         maxHeight: 'calc(100vh - 80px)',

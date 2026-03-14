@@ -38,7 +38,7 @@ const MobileDock = ({
 
   const DOCK_H = 56; // px — height of the dock bar itself
 
-  // Shared sheet wrapper styles
+  // Shared sheet wrapper styles (toolkit / dataLayer / scale)
   const sheetStyle = (isOpen) => ({
     position: 'fixed',
     left: 0,
@@ -58,6 +58,16 @@ const MobileDock = ({
     pointerEvents: isOpen ? 'auto' : 'none',
     fontFamily: 'Inter, sans-serif',
     WebkitOverflowScrolling: 'touch',
+  });
+
+  // Info sheet — stronger opaque background for readability
+  const infoSheetStyle = (isOpen) => ({
+    ...sheetStyle(isOpen),
+    background: 'rgba(18,12,32,0.94)',
+    backdropFilter: 'blur(28px) saturate(1.6)',
+    WebkitBackdropFilter: 'blur(28px) saturate(1.6)',
+    borderTop: '1px solid rgba(255,255,255,0.12)',
+    boxShadow: '0 -8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10)',
   });
 
   const iconBtnStyle = (id) => ({
@@ -87,19 +97,20 @@ const MobileDock = ({
   });
 
   // Sheet header with title + close button
-  const SheetHeader = ({ title, onClose }) => (
+  const SheetHeader = ({ title, onClose, titleStyle }) => (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '12px 16px 10px',
       borderBottom: '1px solid var(--glass-border-light)',
       position: 'sticky', top: 0, zIndex: 1,
-      background: 'var(--glass-bg)',
+      background: 'inherit',
       backdropFilter: 'var(--glass-blur)',
       WebkitBackdropFilter: 'var(--glass-blur)',
     }}>
       <span style={{
         fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
         letterSpacing: '0.7px', color: 'var(--text-on-glass)',
+        ...titleStyle,
       }}>
         {title}
       </span>
@@ -162,8 +173,8 @@ const MobileDock = ({
       </div>
 
       {/* ── Info sheet ── */}
-      <div onMouseDown={(e) => e.stopPropagation()} style={sheetStyle(openSheet === 'info')}>
-        <SheetHeader title="Info" onClose={close} />
+      <div onMouseDown={(e) => e.stopPropagation()} style={infoSheetStyle(openSheet === 'info')}>
+        <SheetHeader title="Info" onClose={close} titleStyle={{ color: 'rgba(200,185,255,0.95)' }} />
         <div style={{ padding: '0 0 8px' }}>
           {info}
         </div>

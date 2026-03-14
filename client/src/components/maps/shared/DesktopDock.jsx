@@ -177,13 +177,13 @@ const DesktopDock = ({
             maxHeight: 'calc(100vh - 80px)',
             display: 'flex',
             flexDirection: 'column',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'var(--glass-blur)',
-            WebkitBackdropFilter: 'var(--glass-blur)',
-            border: '1px solid var(--glass-border)',
+            background: 'rgba(18,12,32,0.88)',
+            backdropFilter: 'blur(28px) saturate(1.6)',
+            WebkitBackdropFilter: 'blur(28px) saturate(1.6)',
+            border: '1px solid rgba(255,255,255,0.13)',
             borderRight: 'none',
             borderRadius: '16px 0 0 16px',
-            boxShadow: '-4px 0 24px rgba(0,0,0,0.4)',
+            boxShadow: '-6px 0 32px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.10)',
             fontFamily: 'Inter, sans-serif',
             animation: 'info-in 0.25s cubic-bezier(0.32,0.72,0,1)',
           }}
@@ -193,7 +193,7 @@ const DesktopDock = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '14px 16px 12px',
-            borderBottom: '1px solid var(--glass-border-light)',
+            borderBottom: '1px solid rgba(255,255,255,0.10)',
             flexShrink: 0,
             borderRadius: '16px 0 0 0',
             overflow: 'hidden',
@@ -202,8 +202,8 @@ const DesktopDock = ({
               fontSize: '11px',
               fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '0.7px',
-              color: 'var(--text-on-glass)',
+              letterSpacing: '0.9px',
+              color: 'rgba(200,185,255,0.95)',
             }}>
               Info
             </span>
