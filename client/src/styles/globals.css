@@ -37,9 +37,9 @@
   --glass-border-hover: rgba(255, 255, 255, 0.22);
 
   /* Backdrop blur */
-  --glass-blur:         blur(36px) saturate(1.7);
-  --glass-blur-medium:  blur(20px) saturate(1.5);
-  --glass-blur-light:   blur(12px) saturate(1.3);
+  --glass-blur:         blur(40px) saturate(1.1);
+  --glass-blur-medium:  blur(24px) saturate(1.1);
+  --glass-blur-light:   blur(14px) saturate(1.1);
   --glass-blur-scrim:   blur(2px);
 
   /* Glass shadows */
@@ -62,10 +62,10 @@
   --scrim-bg: rgba(10, 6, 16, 0.50);
 
   /* Text on glass */
-  --text-on-glass:         rgba(255, 255, 255, 0.92);
-  --text-on-glass-muted:   rgba(255, 255, 255, 0.50);
-  --text-on-glass-dim:     rgba(255, 255, 255, 0.30);
-  --text-on-glass-label:   rgba(255, 255, 255, 0.35);
+  --text-on-glass:         rgba(255, 255, 255, 0.95);
+  --text-on-glass-muted:   rgba(255, 255, 255, 0.70);
+  --text-on-glass-dim:     rgba(255, 255, 255, 0.55);
+  --text-on-glass-label:   rgba(255, 255, 255, 0.55);
 
   /* ── UI Accent Color ──────────────────────────────────────
      Used for interactive controls: toggles, sliders, active

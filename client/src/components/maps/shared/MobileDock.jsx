@@ -60,12 +60,8 @@ const MobileDock = ({
     WebkitOverflowScrolling: 'touch',
   });
 
-  // Info sheet — stronger opaque background for readability
-  const infoSheetStyle = (isOpen) => ({
-    ...sheetStyle(isOpen),
-    backdropFilter: 'blur(40px) saturate(1.1)',
-    WebkitBackdropFilter: 'blur(40px) saturate(1.1)',
-  });
+  // Info sheet — now identical to other sheets (global blur/sat token handles it)
+  const infoSheetStyle = (isOpen) => sheetStyle(isOpen);
 
   const iconBtnStyle = (id) => ({
     flex: 1,

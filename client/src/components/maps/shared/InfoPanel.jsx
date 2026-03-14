@@ -43,11 +43,11 @@ const InfoPanel = ({
   // ── Design tokens local to InfoPanel ─────────────────────────────────────
   // Coloured accents kept; neutral text pushed to bright whites for contrast.
   const T = {
-    // Text — bright whites, matching --text-on-glass but pushed higher
+    // Text — bright whites, matching updated --text-on-glass tokens
     textPrimary:  '#ffffff',                 // pure white — body text
     textSecondary:'rgba(255,255,255,0.82)',  // bright white, slightly stepped back
-    textMuted:    'rgba(255,255,255,0.55)',  // clearly muted but still legible
-    textAccent:   '#a78bfa',                 // violet accent (UPPERCASE labels)
+    textMuted:    'rgba(255,255,255,0.35)',  // de-emphasised
+    textAccent:   '#5BBCFF',                 // sky blue — matches site --accent
     textGreen:    '#6ee7b7',                 // parent-AVA badge
     textCode:     '#bfdbfe',                 // formula block — light blue
 
@@ -59,12 +59,12 @@ const InfoPanel = ({
     // Borders — match site glass tokens
     divider:      'var(--glass-border-light)',
     borderCard:   'var(--glass-border)',
-    borderCode:   'rgba(139,92,246,0.30)',
+    borderCode:   'rgba(91,188,255,0.30)',
     borderGreen:  'rgba(52,211,153,0.35)',
-    borderViolet: 'rgba(139,92,246,0.35)',
+    borderViolet: 'rgba(91,188,255,0.25)',
 
     // Badge backgrounds
-    bgViolet:     'rgba(109,40,217,0.25)',
+    bgViolet:     'rgba(91,188,255,0.15)',
     bgGreen:      'rgba(16,185,129,0.18)',
   };
 
