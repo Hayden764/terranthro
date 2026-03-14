@@ -186,14 +186,14 @@ export const CLIMATE_LAYER_TYPES = {
  * Passed as JSON to Titiler's colormap param.
  */
 export const WINKLER_COLORMAP = {
-  1: [59,  130, 246, 255],  // Blue      — Below Ia  (too cool)
-  2: [96,  165, 250, 255],  // Lt Blue   — Region Ia
-  3: [167, 243, 208, 255],  // Mint      — Region Ib
-  4: [253, 224, 71,  255],  // Yellow    — Region II
-  5: [251, 146, 60,  255],  // Orange    — Region III
-  6: [239, 68,  68,  255],  // Red       — Region IV
-  7: [185, 28,  28,  255],  // Dark Red  — Region V
-  8: [91,  33,  182, 255],  // Purple    — Above V
+  1: [59,  130, 246, 0],  // Clear      — Below Ia  (too cool)
+  2: [96,  165, 250, 255],  // Blue     — Ia
+  3: [94,  215, 180, 255],  // Teal     — Ib
+  4: [190, 230,  80, 255],  // Chartreuse — II
+  5: [248, 140,  50, 255],  // Orange   — III
+  6: [210,  60,  55, 255],  // Brick red — IV
+  7: [91,   33, 182, 255],  // Purple   — V
+  8: [91,  33,  182, 0],    // Clear    — Above V
 };
 
 export const WINKLER_LABELS = {
