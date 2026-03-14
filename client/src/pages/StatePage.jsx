@@ -86,28 +86,34 @@ const StatePage = () => {
 
         {/* Back to National Map Button */}
         <Link 
-          to="/" 
-          className="back-button"
+          to="/"
           style={{
             position: 'absolute',
             top: '20px',
             left: '20px',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
             background: 'var(--glass-bg-medium)',
             backdropFilter: 'var(--glass-blur-light)',
             WebkitBackdropFilter: 'var(--glass-blur-light)',
             color: 'var(--text-on-glass)',
-            padding: '10px 16px',
-            borderRadius: '10px',
-            textDecoration: 'none',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '14px',
-            fontWeight: '500',
             border: '1px solid var(--glass-border)',
             boxShadow: 'var(--glass-shadow-sm)',
-            zIndex: 1000
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textDecoration: 'none',
+            zIndex: 1000,
+            transition: 'background 0.2s ease',
+            flexShrink: 0,
           }}
+          title="Back to US Map"
         >
-          ← Back to US Map
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </Link>
 
         {/* Loading State */}

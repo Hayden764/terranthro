@@ -96,29 +96,29 @@ const AVAPage = () => {
             position: 'absolute',
             top: '20px',
             left: '20px',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
             background: 'var(--glass-bg-medium)',
             backdropFilter: 'var(--glass-blur-light)',
             WebkitBackdropFilter: 'var(--glass-blur-light)',
             color: 'var(--text-on-glass)',
-            padding: isMobile ? '0' : '10px 16px',
-            width: isMobile ? '40px' : 'auto',
-            height: isMobile ? '40px' : 'auto',
-            borderRadius: isMobile ? '50%' : '10px',
-            textDecoration: 'none',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: isMobile ? '20px' : '14px',
-            fontWeight: '500',
             border: '1px solid var(--glass-border)',
             boxShadow: 'var(--glass-shadow-sm)',
-            zIndex: 1000,
-            transition: 'background 0.2s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            textDecoration: 'none',
+            zIndex: 1000,
+            transition: 'background 0.2s ease',
+            flexShrink: 0,
           }}
           title={`Back to ${stateName.charAt(0).toUpperCase() + stateName.slice(1)}`}
         >
-          {isMobile ? '←' : `← Back to ${stateName.charAt(0).toUpperCase() + stateName.slice(1)}`}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </Link>
 
         <div 
