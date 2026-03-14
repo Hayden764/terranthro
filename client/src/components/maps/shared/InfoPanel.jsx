@@ -47,7 +47,7 @@ const InfoPanel = ({
     textPrimary:  '#ffffff',                 // pure white — body text
     textSecondary:'rgba(255,255,255,0.82)',  // bright white, slightly stepped back
     textMuted:    'rgba(255,255,255,0.35)',  // de-emphasised
-    textAccent:   '#5BBCFF',                 // sky blue — matches site --accent
+    textAccent:   '#ffffff',                 // white — consistent with site text
     textGreen:    '#6ee7b7',                 // parent-AVA badge
     textCode:     '#bfdbfe',                 // formula block — light blue
 

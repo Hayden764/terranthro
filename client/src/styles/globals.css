@@ -37,9 +37,9 @@
   --glass-border-hover: rgba(255, 255, 255, 0.22);
 
   /* Backdrop blur */
-  --glass-blur:         blur(40px) saturate(1.1);
-  --glass-blur-medium:  blur(24px) saturate(1.1);
-  --glass-blur-light:   blur(14px) saturate(1.1);
+  --glass-blur:         blur(40px) saturate(0.8);
+  --glass-blur-medium:  blur(24px) saturate(0.8);
+  --glass-blur-light:   blur(14px) saturate(0.8);
   --glass-blur-scrim:   blur(2px);
 
   /* Glass shadows */

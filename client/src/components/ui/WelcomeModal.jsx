@@ -51,27 +51,19 @@ const WelcomeModal = ({ onClose }) => {
 
         /* ─── Glass card ─── */
         .gl-card {
-          background: rgba(255, 255, 255, 0.07);
-          backdrop-filter: blur(36px) saturate(1.7);
-          -webkit-backdrop-filter: blur(36px) saturate(1.7);
-          border: 1px solid rgba(255, 255, 255, 0.14);
+          background: var(--glass-bg);
+          backdrop-filter: var(--glass-blur);
+          -webkit-backdrop-filter: var(--glass-blur);
+          border: 1px solid var(--glass-border);
           border-radius: 20px;
-          box-shadow:
-            /* ambient outer glow */
-            0 0 80px rgba(107, 45, 92, 0.22),
-            /* depth shadow */
-            0 24px 64px rgba(0, 0, 0, 0.55),
-            0 8px 24px rgba(0, 0, 0, 0.35),
-            /* top highlight — mimics glass thickness */
-            inset 0 1px 0 rgba(255, 255, 255, 0.2),
-            inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+          box-shadow: var(--glass-shadow);
         }
 
         /* ─── Inner glass panels (step cards, notice) ─── */
         .gl-panel {
           background: rgba(255, 255, 255, 0.055);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: var(--glass-blur-light);
+          -webkit-backdrop-filter: var(--glass-blur-light);
           border: 1px solid rgba(255, 255, 255, 0.10);
           border-radius: 12px;
           transition: background 180ms ease, border-color 180ms ease;
@@ -86,8 +78,8 @@ const WelcomeModal = ({ onClose }) => {
           background: rgba(196, 30, 58, 0.12);
           border: 1px solid rgba(196, 30, 58, 0.28);
           border-radius: 12px;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: var(--glass-blur-light);
+          -webkit-backdrop-filter: var(--glass-blur-light);
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
