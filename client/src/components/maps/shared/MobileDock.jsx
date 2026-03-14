@@ -19,11 +19,12 @@ const MobileDock = ({
   toolkit,
   dataLayer,
   scale,
+  info,
   anyLayerVisible = false,
   colormap = 'plasma',
   isClassified = false,
 }) => {
-  // 'toolkit' | 'dataLayer' | 'scale' | null
+  // 'toolkit' | 'dataLayer' | 'scale' | 'info' | null
   const [openSheet, setOpenSheet] = useState(null);
 
   const toggle = (id) => setOpenSheet(prev => prev === id ? null : id);
@@ -137,7 +138,7 @@ const MobileDock = ({
       )}
 
       {/* ── Toolkit sheet ── */}
-      <div style={sheetStyle(openSheet === 'toolkit')}>
+      <div onMouseDown={(e) => e.stopPropagation()} style={sheetStyle(openSheet === 'toolkit')}>
         <SheetHeader title="Map Toolkit" onClose={close} />
         <div style={{ padding: '0 0 8px' }}>
           {toolkit}
@@ -145,7 +146,7 @@ const MobileDock = ({
       </div>
 
       {/* ── Data Layer sheet ── */}
-      <div style={sheetStyle(openSheet === 'dataLayer')}>
+      <div onMouseDown={(e) => e.stopPropagation()} style={sheetStyle(openSheet === 'dataLayer')}>
         <SheetHeader title="Map Visualizations" onClose={close} />
         <div style={{ padding: '0 0 8px' }}>
           {dataLayer}
@@ -153,10 +154,18 @@ const MobileDock = ({
       </div>
 
       {/* ── Scale sheet ── */}
-      <div style={sheetStyle(openSheet === 'scale')}>
+      <div onMouseDown={(e) => e.stopPropagation()} style={sheetStyle(openSheet === 'scale')}>
         <SheetHeader title="Scale" onClose={close} />
         <div style={{ padding: '0 0 8px' }}>
           {scale}
+        </div>
+      </div>
+
+      {/* ── Info sheet ── */}
+      <div onMouseDown={(e) => e.stopPropagation()} style={sheetStyle(openSheet === 'info')}>
+        <SheetHeader title="Info" onClose={close} />
+        <div style={{ padding: '0 0 8px' }}>
+          {info}
         </div>
       </div>
 
@@ -221,6 +230,17 @@ const MobileDock = ({
             flexShrink: 0,
           }} />
           <span style={labelStyle('scale')}>Scale</span>
+        </button>
+
+        {/* Info button */}
+        <button style={iconBtnStyle('info')} onClick={() => toggle('info')} aria-label="Info">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke={openSheet === 'info' ? 'var(--accent)' : 'var(--text-on-glass-dim)'}
+            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4M12 8h.01" />
+          </svg>
+          <span style={labelStyle('info')}>Info</span>
         </button>
 
       </div>

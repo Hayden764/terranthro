@@ -12,6 +12,7 @@ import TopographyLayer from "./shared/TopographyLayer";
 import DataLayerPanel from "./shared/DataLayerPanel";
 import MobileDock from "./shared/MobileDock";
 import DesktopDock from "./shared/DesktopDock";
+import InfoPanel from "./shared/InfoPanel";
 import useClimateScale from "../../hooks/useClimateScale";
 import useClimateProbe from "../../hooks/useClimateProbe";
 import useMapMeasure from "../../hooks/useMapMeasure";
@@ -505,6 +506,16 @@ const MapLibreAVAViewer = ({ avaData }) => {
           anyLayerVisible={anyLayerVisible}
           colormap={topoVisible ? (activeTopoConfig?.colormap || 'terrain') : climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
           isClassified={activeIndexConfig?.isClassified || false}
+          info={
+            <InfoPanel
+              avaData={avaData}
+              activeLayer={activeLayer}
+              displayMin={displayMin}
+              displayMax={displayMax}
+              unit={activePanelConfig?.unit || ''}
+              currentMonth={currentMonth}
+            />
+          }
           toolkit={
             <TerrainControlsPanel
               map={mapRef.current}
@@ -567,6 +578,17 @@ const MapLibreAVAViewer = ({ avaData }) => {
           anyLayerVisible={anyLayerVisible}
           colormap={topoVisible ? (activeTopoConfig?.colormap || 'terrain') : climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
           isClassified={activeIndexConfig?.isClassified || false}
+          info={
+            <InfoPanel
+              avaData={avaData}
+              activeLayer={activeLayer}
+              displayMin={displayMin}
+              displayMax={displayMax}
+              unit={activePanelConfig?.unit || ''}
+              currentMonth={currentMonth}
+              mobileSheetMode={true}
+            />
+          }
           toolkit={
             <TerrainControlsPanel
               map={mapRef.current}
