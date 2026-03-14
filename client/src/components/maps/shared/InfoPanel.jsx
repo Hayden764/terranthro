@@ -19,6 +19,7 @@ const InfoPanel = ({
   onAvaHoverEnd = null,
   onStateHover = null,
   onStateHoverEnd = null,
+  resolveAvaState = null,
   mobileSheetMode = false,
 }) => {
   const navigate = useNavigate();
@@ -211,7 +212,11 @@ const InfoPanel = ({
               {parentAVA.split('|').map(p => p.trim()).filter(Boolean).map(parent => (
                 <button
                   key={parent}
-                  onClick={() => stateName && navigate(`/${stateName}/${toSlug(parent)}`)}
+                  onClick={() => {
+                    if (!stateName) return;
+                    const targetState = resolveAvaState ? resolveAvaState(parent) : stateName;
+                    navigate(`/${targetState}/${toSlug(parent)}`);
+                  }}
                   style={{
                     padding: '3px 10px',
                     borderRadius: '20px',
@@ -247,7 +252,11 @@ const InfoPanel = ({
               {subAVAs.split('|').map(s => s.trim()).filter(Boolean).map(sub => (
                 <button
                   key={sub}
-                  onClick={() => stateName && navigate(`/${stateName}/${toSlug(sub)}`)}
+                  onClick={() => {
+                    if (!stateName) return;
+                    const targetState = resolveAvaState ? resolveAvaState(sub) : stateName;
+                    navigate(`/${targetState}/${toSlug(sub)}`);
+                  }}
                   style={{
                     padding: '3px 9px',
                     borderRadius: '20px',

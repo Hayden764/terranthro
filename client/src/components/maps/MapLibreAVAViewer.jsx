@@ -467,6 +467,24 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const handleStateHover    = (name) => setHoverPreviewState(name);
   const handleStateHoverEnd = ()     => setHoverPreviewState(null);
 
+  // Option B — resolve the correct state slug for an AVA name at click time.
+  // Looks up the AVA in allFeaturesRef (which already contains all relevant
+  // state files including cross-state ones). Returns the first state slug for
+  // that AVA, falling back to the current page's stateName.
+  const STATE_CODE_TO_SLUG_B = { OR: 'oregon', WA: 'washington', CA: 'california', ID: 'idaho' };
+  const resolveAvaState = (avaName) => {
+    const nameLower = avaName.toLowerCase();
+    const feature = allFeaturesRef.current.find(
+      f => (f.properties?.name || '').toLowerCase() === nameLower
+    );
+    if (!feature) return stateName; // fallback
+    const codes = (feature.properties?.state || '').split('|').map(s => s.trim()).filter(Boolean);
+    // Prefer the current stateName if the AVA spans it, otherwise use the first code
+    const currentCode = Object.entries(STATE_CODE_TO_SLUG_B).find(([, slug]) => slug === stateName)?.[0];
+    const preferred = codes.includes(currentCode) ? currentCode : codes[0];
+    return STATE_CODE_TO_SLUG_B[preferred] || stateName;
+  };
+
   // Handler: Zoom in
   const handleZoomIn = () => {
     if (mapRef.current) {
@@ -643,6 +661,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
               onAvaHoverEnd={handleAvaHoverEnd}
               onStateHover={handleStateHover}
               onStateHoverEnd={handleStateHoverEnd}
+              resolveAvaState={resolveAvaState}
             />
           }
           toolkit={
@@ -720,6 +739,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
               onAvaHoverEnd={handleAvaHoverEnd}
               onStateHover={handleStateHover}
               onStateHoverEnd={handleStateHoverEnd}
+              resolveAvaState={resolveAvaState}
               mobileSheetMode={true}
             />
           }
