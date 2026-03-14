@@ -31,8 +31,15 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const mapRef = useRef(null);
   const boundsRef = useRef(null);
   const hasAnimatedRef = useRef(false);
+  const allFeaturesRef = useRef([]);     // cached features from state GeoJSON(s)
+  const statesFeaturesRef = useRef([]); // cached features from us-states.json
   const location = useLocation();
-  const { avaSlug } = useParams();
+  const { stateName, avaSlug } = useParams();
+
+  // AVA hover-preview state — name of the AVA being hovered in InfoPanel pills
+  const [hoverPreviewName, setHoverPreviewName] = useState(null);
+  // State boundary hover-preview
+  const [hoverPreviewState, setHoverPreviewState] = useState(null);
   
   // Terrain controls state
   const [terrainEnabled, setTerrainEnabled] = useState(true);
@@ -325,6 +332,79 @@ const MapLibreAVAViewer = ({ avaData }) => {
         }
       });
 
+      // ── Hover-preview overlay — sky-blue ghost of related AVAs ──────────
+      const emptyGeoJson = { type: 'FeatureCollection', features: [] };
+      map.addSource('preview-ava', { type: 'geojson', data: emptyGeoJson });
+
+      map.addLayer({
+        id: 'preview-ava-fill',
+        type: 'fill',
+        source: 'preview-ava',
+        paint: { 'fill-color': '#5BBCFF', 'fill-opacity': 0.12 }
+      });
+      map.addLayer({
+        id: 'preview-ava-glow',
+        type: 'line',
+        source: 'preview-ava',
+        paint: { 'line-color': '#5BBCFF', 'line-width': 10, 'line-opacity': 0.18, 'line-blur': 6 }
+      });
+      map.addLayer({
+        id: 'preview-ava-line',
+        type: 'line',
+        source: 'preview-ava',
+        paint: { 'line-color': '#93D9FF', 'line-width': 2, 'line-opacity': 0.75 }
+      });
+
+      // ── State boundary hover-preview ─────────────────────────────────────
+      map.addSource('preview-state', { type: 'geojson', data: emptyGeoJson });
+      map.addLayer({
+        id: 'preview-state-fill',
+        type: 'fill',
+        source: 'preview-state',
+        paint: { 'fill-color': '#5BBCFF', 'fill-opacity': 0.06 }
+      });
+      map.addLayer({
+        id: 'preview-state-glow',
+        type: 'line',
+        source: 'preview-state',
+        paint: { 'line-color': '#5BBCFF', 'line-width': 12, 'line-opacity': 0.20, 'line-blur': 8 }
+      });
+      map.addLayer({
+        id: 'preview-state-line',
+        type: 'line',
+        source: 'preview-state',
+        paint: { 'line-color': '#93D9FF', 'line-width': 2, 'line-opacity': 0.80, 'line-dasharray': [4, 3] }
+      });
+
+      // Fetch us-states.json for state boundary hover-preview
+      fetch('/data/us-states.json')
+        .then(r => r.json())
+        .then(col => { statesFeaturesRef.current = col.features || []; })
+        .catch(err => console.warn('preview-state fetch failed:', err));
+      const STATE_SLUGS_TO_FILE = {
+        oregon: '/data/OR_avas.geojson',
+        washington: '/data/WA_avas.geojson',
+        california: '/data/CA_avas.geojson',
+        idaho: '/data/ID_avas.geojson',
+      };
+      const props0 = avaData?.features?.[0]?.properties || avaData?.properties || {};
+      const stateCodes = (props0.state || '').split('|').map(s => s.trim()).filter(Boolean);
+      const STATE_CODE_TO_SLUG = { OR: 'oregon', WA: 'washington', CA: 'california', ID: 'idaho' };
+      const filesToFetch = new Set();
+      // Always include the current page's state
+      if (stateName && STATE_SLUGS_TO_FILE[stateName]) filesToFetch.add(STATE_SLUGS_TO_FILE[stateName]);
+      // Also include all states the AVA spans
+      stateCodes.forEach(code => {
+        const slug = STATE_CODE_TO_SLUG[code];
+        if (slug && STATE_SLUGS_TO_FILE[slug]) filesToFetch.add(STATE_SLUGS_TO_FILE[slug]);
+      });
+      Promise.all([...filesToFetch].map(url => fetch(url).then(r => r.json())))
+        .then(collections => {
+          const features = collections.flatMap(c => c.features || []);
+          allFeaturesRef.current = features;
+        })
+        .catch(err => console.warn('preview-ava fetch failed:', err));
+
       // Fit to AVA bounds
       if (boundsRef.current && !boundsRef.current.isEmpty()) {
         map.fitBounds(boundsRef.current, {
@@ -342,6 +422,50 @@ const MapLibreAVAViewer = ({ avaData }) => {
       }
     };
   }, [avaData]);
+
+  // ── Hover-preview: update the preview-ava source when a pill is hovered ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getSource('preview-ava')) return;
+    if (!hoverPreviewName) {
+      map.getSource('preview-ava').setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+    const nameLower = hoverPreviewName.toLowerCase();
+    const match = allFeaturesRef.current.find(
+      f => (f.properties?.name || '').toLowerCase() === nameLower
+    );
+    map.getSource('preview-ava').setData(
+      match
+        ? { type: 'FeatureCollection', features: [match] }
+        : { type: 'FeatureCollection', features: [] }
+    );
+  }, [hoverPreviewName]);
+
+  // ── State hover-preview: show state boundary when state badge is hovered ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getSource('preview-state')) return;
+    if (!hoverPreviewState) {
+      map.getSource('preview-state').setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+    const nameLower = hoverPreviewState.toLowerCase();
+    const match = statesFeaturesRef.current.find(
+      f => (f.properties?.name || '').toLowerCase() === nameLower
+    );
+    map.getSource('preview-state').setData(
+      match
+        ? { type: 'FeatureCollection', features: [match] }
+        : { type: 'FeatureCollection', features: [] }
+    );
+  }, [hoverPreviewState]);
+
+  // Callbacks passed into InfoPanel pills
+  const handleAvaHover    = (name) => setHoverPreviewName(name);
+  const handleAvaHoverEnd = ()     => setHoverPreviewName(null);
+  const handleStateHover    = (name) => setHoverPreviewState(name);
+  const handleStateHoverEnd = ()     => setHoverPreviewState(null);
 
   // Handler: Zoom in
   const handleZoomIn = () => {
@@ -514,6 +638,11 @@ const MapLibreAVAViewer = ({ avaData }) => {
               displayMax={displayMax}
               unit={activePanelConfig?.unit || ''}
               currentMonth={currentMonth}
+              stateName={avaSlug ? stateName : undefined}
+              onAvaHover={handleAvaHover}
+              onAvaHoverEnd={handleAvaHoverEnd}
+              onStateHover={handleStateHover}
+              onStateHoverEnd={handleStateHoverEnd}
             />
           }
           toolkit={
@@ -586,6 +715,11 @@ const MapLibreAVAViewer = ({ avaData }) => {
               displayMax={displayMax}
               unit={activePanelConfig?.unit || ''}
               currentMonth={currentMonth}
+              stateName={avaSlug ? stateName : undefined}
+              onAvaHover={handleAvaHover}
+              onAvaHoverEnd={handleAvaHoverEnd}
+              onStateHover={handleStateHover}
+              onStateHoverEnd={handleStateHoverEnd}
               mobileSheetMode={true}
             />
           }

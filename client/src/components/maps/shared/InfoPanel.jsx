@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LAYER_INFO } from './layerInfoContent';
 
 /**
@@ -13,13 +14,21 @@ const InfoPanel = ({
   displayMax,
   unit = '',
   currentMonth,
+  stateName = null,
+  onAvaHover = null,
+  onAvaHoverEnd = null,
+  onStateHover = null,
+  onStateHoverEnd = null,
   mobileSheetMode = false,
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   const props = avaData?.features?.[0]?.properties || {};
   const layerInfo = activeLayer ? LAYER_INFO[activeLayer] : null;
   const showLayer = !!layerInfo;
+
+  // Convert AVA display name → URL slug
+  const toSlug = (name) => name.toLowerCase().replace(/\s+/g, '-');
 
   const fmtDate = (str) => {
     if (!str) return null;
@@ -48,7 +57,6 @@ const InfoPanel = ({
     textSecondary:'rgba(255,255,255,0.82)',  // bright white, slightly stepped back
     textMuted:    'rgba(255,255,255,0.35)',  // de-emphasised
     textAccent:   '#ffffff',                 // white — consistent with site text
-    textGreen:    '#6ee7b7',                 // parent-AVA badge
     textCode:     '#bfdbfe',                 // formula block — light blue
 
     // Surfaces — match site glass tokens exactly
@@ -60,12 +68,14 @@ const InfoPanel = ({
     divider:      'var(--glass-border-light)',
     borderCard:   'var(--glass-border)',
     borderCode:   'rgba(91,188,255,0.30)',
-    borderGreen:  'rgba(52,211,153,0.35)',
-    borderViolet: 'rgba(91,188,255,0.25)',
 
-    // Badge backgrounds
-    bgViolet:     'rgba(91,188,255,0.15)',
-    bgGreen:      'rgba(16,185,129,0.18)',
+    // Unified nav-pill tokens (white rest → sky-blue hover)
+    pillBg:       'rgba(255,255,255,0.08)',
+    pillBorder:   'rgba(255,255,255,0.18)',
+    pillText:     'rgba(255,255,255,0.85)',
+    pillHoverBg:  'rgba(91,188,255,0.18)',
+    pillHoverBorder: 'rgba(91,188,255,0.50)',
+    pillHoverText:   '#ffffff',
   };
 
   const labelStyle = {
@@ -103,25 +113,70 @@ const InfoPanel = ({
     return (
       <div style={{ padding: '16px 0 8px', display: 'flex', flexDirection: 'column' }}>
 
-        {/* State badge + county */}
+        {/* State badge(s) — one per state, clickable → state page */}
         <div style={{ ...sectionStyle, padding: innerPad, paddingBottom: '14px', marginBottom: '14px' }}>
-          {props.state && (
-            <div style={{
-              display: 'inline-block',
-              padding: '3px 10px',
-              borderRadius: '20px',
-              fontSize: '11px',
-              fontWeight: 600,
-              background: T.bgViolet,
-              border: `1px solid ${T.borderViolet}`,
-              color: T.textPrimary,
-              letterSpacing: '0.3px',
-              marginBottom: '10px',
-            }}>
-              {props.state === 'OR' ? 'Oregon' : props.state === 'CA' ? 'California' :
-               props.state === 'WA' ? 'Washington' : props.state} AVA
-            </div>
-          )}
+          {props.state && (() => {
+            const STATE_SLUGS  = { OR: 'oregon', WA: 'washington', CA: 'california', ID: 'idaho' };
+            const STATE_LABELS = { OR: 'Oregon',  WA: 'Washington', CA: 'California', ID: 'Idaho' };
+            const codes = props.state.split('|').map(s => s.trim()).filter(Boolean);
+            return (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                {codes.map(code => {
+                  const slug  = STATE_SLUGS[code]  || code.toLowerCase();
+                  const label = STATE_LABELS[code] || code;
+                  return stateName ? (
+                    <button
+                      key={code}
+                      onClick={() => navigate(`/${slug}`)}
+                      style={{
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: T.pillBg,
+                        border: `1px solid ${T.pillBorder}`,
+                        color: T.pillText,
+                        letterSpacing: '0.3px',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = T.pillHoverBg;
+                        e.currentTarget.style.borderColor = T.pillHoverBorder;
+                        e.currentTarget.style.color = T.pillHoverText;
+                        onStateHover?.(label);
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = T.pillBg;
+                        e.currentTarget.style.borderColor = T.pillBorder;
+                        e.currentTarget.style.color = T.pillText;
+                        onStateHoverEnd?.();
+                      }}
+                    >
+                      {label} AVA ↗
+                    </button>
+                  ) : (
+                    <div
+                      key={code}
+                      style={{
+                        display: 'inline-block',
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: T.pillBg,
+                        border: `1px solid ${T.pillBorder}`,
+                        color: T.pillText,
+                        letterSpacing: '0.3px',
+                      }}
+                    >
+                      {label} AVA
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
           {county && (
             <div>
               <div style={labelStyle}>Location</div>
@@ -148,30 +203,75 @@ const InfoPanel = ({
           </div>
         </div>
 
-        {/* Parent AVA */}
+        {/* Parent AVA(s) — each a clickable pill */}
         {parentAVA && (
           <div style={{ padding: innerPad, ...sectionStyle }}>
             <div style={labelStyle}>Part of</div>
-            <div style={{
-              display: 'inline-block',
-              padding: '3px 10px',
-              borderRadius: '20px',
-              fontSize: '11px',
-              fontWeight: 600,
-              background: T.bgGreen,
-              border: `1px solid ${T.borderGreen}`,
-              color: T.textGreen,
-            }}>
-              {parentAVA}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
+              {parentAVA.split('|').map(p => p.trim()).filter(Boolean).map(parent => (
+                <button
+                  key={parent}
+                  onClick={() => stateName && navigate(`/${stateName}/${toSlug(parent)}`)}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: T.pillBg,
+                    border: `1px solid ${T.pillBorder}`,
+                    color: T.pillText,
+                    cursor: stateName ? 'pointer' : 'default',
+                    transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                  }}
+                  onMouseEnter={e => {
+                    if (stateName) { e.currentTarget.style.background = T.pillHoverBg; e.currentTarget.style.borderColor = T.pillHoverBorder; e.currentTarget.style.color = T.pillHoverText; }
+                    onAvaHover?.(parent);
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = T.pillBg; e.currentTarget.style.borderColor = T.pillBorder; e.currentTarget.style.color = T.pillText;
+                    onAvaHoverEnd?.();
+                  }}
+                >
+                  {parent} ↗
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Sub-AVAs */}
+        {/* Sub-AVAs — each a clickable chip */}
         {subAVAs && (
           <div style={{ padding: innerPad, ...sectionStyle }}>
             <div style={labelStyle}>Contains</div>
-            <div style={valueStyle}>{subAVAs}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+              {subAVAs.split('|').map(s => s.trim()).filter(Boolean).map(sub => (
+                <button
+                  key={sub}
+                  onClick={() => stateName && navigate(`/${stateName}/${toSlug(sub)}`)}
+                  style={{
+                    padding: '3px 9px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    background: T.pillBg,
+                    border: `1px solid ${T.pillBorder}`,
+                    color: T.pillText,
+                    cursor: stateName ? 'pointer' : 'default',
+                    transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                  }}
+                  onMouseEnter={e => {
+                    if (stateName) { e.currentTarget.style.background = T.pillHoverBg; e.currentTarget.style.borderColor = T.pillHoverBorder; e.currentTarget.style.color = T.pillHoverText; }
+                    onAvaHover?.(sub);
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = T.pillBg; e.currentTarget.style.borderColor = T.pillBorder; e.currentTarget.style.color = T.pillText;
+                    onAvaHoverEnd?.();
+                  }}
+                >
+                  {sub} ↗
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
