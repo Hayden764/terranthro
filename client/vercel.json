@@ -5,6 +5,18 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/data/(.*)",
+      "destination": "/data/$1"
+    },
+    {
+      "source": "/climate-data/(.*)",
+      "destination": "/climate-data/$1"
+    },
+    {
+      "source": "/topography-data/(.*)",
+      "destination": "/topography-data/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
