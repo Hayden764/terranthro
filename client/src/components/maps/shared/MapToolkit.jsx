@@ -1,29 +1,19 @@
 import { useState, useEffect } from 'react';
 import CameraControls from './CameraControls';
 
-/**
- * MapToolkit
- * Top-right collapsible panel combining:
- *   • Tools — Pan / Probe / Measure (always shown; Probe+Measure blur when no layer active)
- *   • View  — Zoom, Reset, 3D Terrain, Bearing, Pitch
- *
- * @param {Function} props.onZoomIn
- * @param {Function} props.onZoomOut
- * @param {Function} props.onResetView
- * @param {Function} props.onToggleTerrain
- * @param {Function} props.onBearingChange
- * @param {Function} props.onPitchChange
- * @param {boolean}  props.terrainEnabled
- * @param {number}   props.currentBearing
- * @param {number}   props.currentPitch
- * @param {string}   props.activeTool       - 'pan' | 'probe' | 'measure'
- * @param {Function} props.onToolChange     - (tool: string) => void
- * @param {boolean}  props.anyLayerVisible  - Whether any data layer is on
- * @param {number|null}  props.totalDistance   - Measure result in km
- * @param {Function}     props.onClearMeasure  - Reset measure waypoints
- * @param {Function}     props.fmtKm           - km formatter
- * @param {number}       props.measurePointCount
- */
+const CARD = {
+  background:   'rgba(255,255,255,0.07)',
+  border:       '1px solid rgba(255,255,255,0.11)',
+  borderRadius: '12px',
+  boxShadow:    '0 1px 4px rgba(0,0,0,0.25)',
+  padding:      '12px 14px',
+};
+
+const cardLbl = {
+  fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+  letterSpacing: '1px', color: 'rgba(255,255,255,0.4)', marginBottom: '10px',
+};
+
 const MapToolkit = ({
   onZoomIn,
   onZoomOut,
@@ -42,7 +32,7 @@ const MapToolkit = ({
   fmtKm,
   measurePointCount = 0,
   mobileSheetMode = false,
-  map = null,  // maplibregl Map instance for direct camera control
+  map = null,
 }) => {
   const [isExpanded, setIsExpanded] = useState(() => {
     const stored = localStorage.getItem('mapToolkitExpanded');
@@ -54,54 +44,33 @@ const MapToolkit = ({
     localStorage.setItem('mapToolkitExpanded', isExpanded.toString());
   }, [isExpanded]);
 
-  const getCardinalDirection = (bearing) => {
-    const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-    return dirs[Math.round(bearing / 22.5) % 16];
-  };
-
-  // Tool button style factory
-  const toolBtn = (id) => {
-    const isActive = activeTool === id;
-    const locked = (id === 'probe' || id === 'measure') && !anyLayerVisible;
-    return {
-      flex: 1,
-      padding: '7px 0',
-      borderRadius: '8px',
-      border: isActive
-        ? '1.5px solid var(--accent-border)'
-        : '1px solid var(--glass-border)',
-      background: isActive
-        ? 'var(--accent-medium)'
-        : 'var(--glass-bg-medium)',
-      color: isActive ? 'var(--accent-text)' : 'var(--text-on-glass)',
-      cursor: locked ? 'not-allowed' : 'pointer',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '3px',
-      fontSize: '10px',
-      fontWeight: 600,
-      fontFamily: 'Inter, sans-serif',
-      letterSpacing: '0.04em',
-      transition: 'all 0.15s ease',
-      opacity: locked ? 0.35 : 1,
-      filter: locked ? 'blur(0.4px)' : 'none',
-      userSelect: 'none',
-    };
-  };
-
   const handleToolClick = (id) => {
     const locked = (id === 'probe' || id === 'measure') && !anyLayerVisible;
     if (!locked) onToolChange?.(id);
   };
 
-  // Body content — shared between mobile sheet and desktop expanded panel
+  const toolBtn = (id) => {
+    const isActive = activeTool === id;
+    const locked = (id === 'probe' || id === 'measure') && !anyLayerVisible;
+    return {
+      flex: 1, padding: '8px 0', borderRadius: '9px',
+      border: isActive ? '1px solid rgba(56,189,248,0.45)' : '1px solid rgba(255,255,255,0.10)',
+      background: isActive ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.05)',
+      color: isActive ? 'var(--accent-text)' : 'rgba(255,255,255,0.55)',
+      cursor: locked ? 'not-allowed' : 'pointer',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: '4px', fontSize: '10px', fontWeight: 600, fontFamily: 'Inter, sans-serif',
+      letterSpacing: '0.04em', transition: 'all 0.15s ease',
+      opacity: locked ? 0.3 : 1, userSelect: 'none',
+    };
+  };
+
   const BodyContent = () => (
-    <div style={{ overflowY: 'auto', flex: 1, padding: '0 16px 16px' }}>
-      {/* TOOLS section */}
-      <div style={{ marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid var(--glass-border-light)', paddingTop: '14px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Tools</div>
+    <div style={{ overflowY: 'auto', flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+      {/* ── Tools card ─────────────────────────────────────────── */}
+      <div style={CARD}>
+        <div style={cardLbl}>Tools</div>
         <div style={{ display: 'flex', gap: '6px' }}>
           <button style={toolBtn('pan')} onClick={() => handleToolClick('pan')} title="Pan — drag to navigate">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -109,7 +78,7 @@ const MapToolkit = ({
             </svg>
             Pan
           </button>
-          <button style={toolBtn('probe')} onClick={() => handleToolClick('probe')} title={anyLayerVisible ? 'Probe — click to sample layer value' : 'Activate a data layer to use Probe'}>
+          <button style={toolBtn('probe')} onClick={() => handleToolClick('probe')} title={anyLayerVisible ? 'Probe — sample layer value' : 'Activate a layer to use Probe'}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M2 13.5V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1.5" />
               <path d="M6 11.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7.5" />
@@ -118,7 +87,7 @@ const MapToolkit = ({
             </svg>
             Probe
           </button>
-          <button style={toolBtn('measure')} onClick={() => handleToolClick('measure')} title={anyLayerVisible ? 'Measure — click to place waypoints' : 'Activate a data layer to use Measure'}>
+          <button style={toolBtn('measure')} onClick={() => handleToolClick('measure')} title={anyLayerVisible ? 'Measure — place waypoints' : 'Activate a layer to use Measure'}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4" />
               <line x1="8" y1="8" x2="8" y2="16" strokeWidth="1.5" />
@@ -128,45 +97,81 @@ const MapToolkit = ({
             Measure
           </button>
         </div>
+
+        {/* Measure readout */}
         {activeTool === 'measure' && anyLayerVisible && (
-          <div style={{ marginTop: '10px', padding: '8px 10px', background: 'var(--glass-bg-light)', border: '1px solid var(--glass-border-light)', borderRadius: '8px' }}>
+          <div style={{
+            marginTop: '10px', padding: '9px 11px', borderRadius: '9px',
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+          }}>
             {measurePointCount < 2 ? (
-              <div style={{ fontSize: '11px', color: 'var(--text-on-glass-dim)', fontStyle: 'italic' }}>Click map to place waypoints…</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>Click map to place waypoints…</div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-on-glass-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Distance · {measurePointCount} pts</div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Distance · {measurePointCount} pts</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-text)', letterSpacing: '-0.5px', marginTop: '2px' }}>{fmtKm?.(totalDistance) ?? '—'}</div>
                 </div>
-                <button onClick={onClearMeasure} title="Clear waypoints" style={{ background: 'var(--glass-bg-medium)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '5px 8px', color: 'var(--text-on-glass-dim)', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}>Clear</button>
+                <button onClick={onClearMeasure} style={{
+                  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '7px', padding: '5px 10px', color: 'rgba(255,255,255,0.55)',
+                  fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}>Clear</button>
               </div>
             )}
-            <div style={{ fontSize: '10px', color: 'var(--text-on-glass-dim)', marginTop: '6px' }}>Dbl-click or Esc to reset</div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginTop: '5px' }}>Dbl-click or Esc to reset</div>
           </div>
         )}
       </div>
 
-      {/* VIEW section */}
-      <div style={{ marginBottom: '14px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-on-glass-label)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>View</div>
+      {/* ── View card ──────────────────────────────────────────── */}
+      <div style={CARD}>
+        <div style={cardLbl}>View</div>
+
+        {/* Zoom + Reset */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-          {[{label: '+', fn: onZoomIn, title: 'Zoom in'}, {label: '−', fn: onZoomOut, title: 'Zoom out'}, {label: '↻', fn: onResetView, title: 'Reset view', ml: true}].map(({label, fn, title, ml}) => (
-            <button key={label} onClick={fn} title={title} style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--glass-bg-medium)', border: '1px solid var(--glass-border)', color: 'var(--text-on-glass)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 500, boxShadow: 'var(--glass-shadow-sm)', marginLeft: ml ? 'auto' : 0 }}>{label}</button>
+          {[
+            { label: '+', fn: onZoomIn,    title: 'Zoom in' },
+            { label: '−', fn: onZoomOut,   title: 'Zoom out' },
+            { label: '↻', fn: onResetView, title: 'Reset view', ml: true },
+          ].map(({ label, fn, title, ml }) => (
+            <button key={label} onClick={fn} title={title} style={{
+              width: '34px', height: '34px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+              color: 'rgba(255,255,255,0.75)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '17px', fontWeight: 500, marginLeft: ml ? 'auto' : 0,
+              transition: 'background 0.15s',
+            }}>{label}</button>
           ))}
         </div>
-        <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid var(--glass-border-light)' }}>
+
+        {/* 3D Terrain toggle */}
+        <div style={{ paddingBottom: '14px', marginBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '12px' }}>
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              <input type="checkbox" checked={terrainEnabled} onChange={(e) => onToggleTerrain(e.target.checked)} style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }} aria-label="Toggle 3D terrain" />
-              <div style={{ width: '44px', height: '24px', borderRadius: '12px', background: terrainEnabled ? 'var(--accent-medium)' : 'rgba(255,255,255,0.15)', border: terrainEnabled ? '1px solid var(--accent-border)' : '1px solid var(--glass-border)', transition: 'all 0.2s ease', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '2px', left: terrainEnabled ? '22px' : '2px', width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)', transition: 'left 0.2s ease' }} />
+              <input type="checkbox" checked={terrainEnabled} onChange={e => onToggleTerrain(e.target.checked)}
+                style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }} aria-label="Toggle 3D terrain" />
+              <div style={{
+                width: '42px', height: '23px', borderRadius: '12px', position: 'relative',
+                background: terrainEnabled ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.12)',
+                border: terrainEnabled ? '1px solid rgba(56,189,248,0.5)' : '1px solid rgba(255,255,255,0.15)',
+                transition: 'all 0.2s',
+              }}>
+                <div style={{
+                  position: 'absolute', top: '2px',
+                  left: terrainEnabled ? '21px' : '2px',
+                  width: '17px', height: '17px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.9)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  transition: 'left 0.2s',
+                }} />
               </div>
             </div>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-on-glass-muted)' }}>3D Terrain</span>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: terrainEnabled ? '#ffffff' : 'rgba(255,255,255,0.5)' }}>3D Terrain</span>
           </label>
         </div>
 
-        {/* Camera bearing + pitch sliders — stable standalone component, never remounts */}
+        {/* Bearing + pitch sliders */}
         <CameraControls
           map={map}
           bearing={currentBearing}
@@ -176,74 +181,67 @@ const MapToolkit = ({
           onPitchChange={onPitchChange}
         />
       </div>
+
     </div>
   );
 
-  // Mobile sheet mode — bare body only
-  if (mobileSheetMode) {
-    return <BodyContent />;
-  }
+  // Mobile sheet
+  if (mobileSheetMode) return <BodyContent />;
 
-  // Collapsed — icon only
+  // Collapsed pill
   if (!isExpanded) {
     return (
-      <button
-        onClick={() => setIsExpanded(true)}
-        style={{
-          position: 'absolute', top: '16px', right: '16px', zIndex: 50,
-          width: '48px', height: '48px',
-          background: 'var(--glass-bg-medium)',
-          backdropFilter: 'var(--glass-blur-light)',
-          WebkitBackdropFilter: 'var(--glass-blur-light)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '12px',
-          boxShadow: 'var(--glass-shadow-sm)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer',
-        }}
-        aria-label="Open map toolkit"
-      >
-        <span style={{ fontSize: '22px' }}>🗺️</span>
+      <button onClick={() => setIsExpanded(true)} style={{
+        position: 'absolute', top: '16px', right: '16px', zIndex: 50,
+        width: '44px', height: '44px',
+        background: 'rgba(14,14,18,0.75)',
+        backdropFilter: 'blur(20px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer',
+      }} aria-label="Open map toolkit">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+        </svg>
       </button>
     );
   }
 
+  // Desktop expanded — minimal dark shell
   return (
-    <div
-      style={{
-        position: 'absolute', top: '16px', right: '16px', zIndex: 50,
-        width: '256px',
-        background: 'var(--glass-bg)',
-        backdropFilter: 'var(--glass-blur)',
-        WebkitBackdropFilter: 'var(--glass-blur)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: '16px',
-        boxShadow: 'var(--glass-shadow)',
-        fontFamily: 'Inter, sans-serif',
-        // Cap height so toolkit never overlaps ScalePanel below it
-        maxHeight: 'calc(90vh - 16px - 300px)',
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      {/* ── Panel header (pinned, never scrolls) ── */}
-      <div style={{ padding: '14px 16px 0', flexShrink: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border-light)' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-on-glass)', letterSpacing: '0.05em', margin: 0, fontFamily: 'Montserrat, sans-serif', textTransform: 'uppercase' }}>
+    <div style={{
+      position: 'absolute', top: '16px', right: '16px', zIndex: 50,
+      width: '252px',
+      background: 'rgba(14,14,18,0.75)',
+      backdropFilter: 'blur(20px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+      fontFamily: 'Inter, sans-serif',
+      maxHeight: 'calc(90vh - 16px - 300px)',
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px', flexShrink: 0,
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+      }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255,255,255,0.55)', fontFamily: 'Montserrat, sans-serif' }}>
           Map Toolkit
-        </h3>
-        <button onClick={() => setIsExpanded(false)}
-          style={{ color: 'var(--text-on-glass-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: '6px', lineHeight: 1 }}
-          aria-label="Collapse"
-        >
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        </span>
+        <button onClick={() => setIsExpanded(false)} style={{
+          background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
+          color: 'rgba(255,255,255,0.35)', lineHeight: 1,
+        }} aria-label="Collapse">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
       </div>
-      </div>{/* end pinned header wrapper */}
 
-      {/* ── Scrollable body ── */}
       <BodyContent />
     </div>
   );

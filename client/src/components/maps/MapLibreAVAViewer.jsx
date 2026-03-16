@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -31,11 +31,9 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const mapRef = useRef(null);
   const boundsRef = useRef(null);
   const hasAnimatedRef = useRef(false);
-  const allFeaturesRef = useRef([]);     // cached features from state GeoJSON(s)
-  const statesFeaturesRef = useRef([]); // cached features from us-states.json
   const location = useLocation();
   const { stateName, avaSlug } = useParams();
-
+  
   // Terrain controls state
   const [terrainEnabled, setTerrainEnabled] = useState(true);
   const [currentPitch, setCurrentPitch] = useState(60);
@@ -54,6 +52,65 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const handleLayerChange = (layer) => {
     setActiveLayer(layer);
     setActiveTool('pan');
+  };
+
+  // AVA hover highlight — called from InfoPanel when user hovers a parent/child pill
+  const hoverGeoCacheRef = useRef({});
+  const handleAvaHover = async (slug) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Clear previous highlight
+    if (map.getLayer('ava-hover-line'))  map.removeLayer('ava-hover-line');
+    if (map.getLayer('ava-hover-glow'))  map.removeLayer('ava-hover-glow');
+    if (map.getLayer('ava-hover-fill'))  map.removeLayer('ava-hover-fill');
+    if (map.getSource('ava-hover'))      map.removeSource('ava-hover');
+
+    if (!slug) return;
+
+    try {
+      // Cache geometry so repeated hovers don't re-fetch
+      if (!hoverGeoCacheRef.current[slug]) {
+        const res = await fetch(`/api/avas/${slug}`);
+        if (!res.ok) return;
+        const feature = await res.json();
+        hoverGeoCacheRef.current[slug] = feature;
+      }
+      const feature = hoverGeoCacheRef.current[slug];
+      if (!feature?.geometry) return;
+
+      // Re-check map is still alive after async fetch
+      if (!mapRef.current) return;
+      if (mapRef.current.getSource('ava-hover')) return; // another hover beat us
+
+      map.addSource('ava-hover', { type: 'geojson', data: feature });
+
+      // Soft fill
+      map.addLayer({
+        id: 'ava-hover-fill',
+        type: 'fill',
+        source: 'ava-hover',
+        paint: { 'fill-color': '#5BBCFF', 'fill-opacity': 0.08 },
+      });
+
+      // Glow
+      map.addLayer({
+        id: 'ava-hover-glow',
+        type: 'line',
+        source: 'ava-hover',
+        paint: { 'line-color': '#5BBCFF', 'line-width': 10, 'line-opacity': 0.18, 'line-blur': 6 },
+      });
+
+      // Crisp outline
+      map.addLayer({
+        id: 'ava-hover-line',
+        type: 'line',
+        source: 'ava-hover',
+        paint: { 'line-color': '#5BBCFF', 'line-width': 2, 'line-opacity': 0.9 },
+      });
+    } catch (e) {
+      // silently ignore — hover is non-critical
+    }
   };
 
   // Unified layer selection — one active layer (climate / index / topo) at a time
@@ -327,79 +384,6 @@ const MapLibreAVAViewer = ({ avaData }) => {
         }
       });
 
-      // ── Hover-preview overlay — sky-blue ghost of related AVAs ──────────
-      const emptyGeoJson = { type: 'FeatureCollection', features: [] };
-      map.addSource('preview-ava', { type: 'geojson', data: emptyGeoJson });
-
-      map.addLayer({
-        id: 'preview-ava-fill',
-        type: 'fill',
-        source: 'preview-ava',
-        paint: { 'fill-color': '#5BBCFF', 'fill-opacity': 0.12 }
-      });
-      map.addLayer({
-        id: 'preview-ava-glow',
-        type: 'line',
-        source: 'preview-ava',
-        paint: { 'line-color': '#5BBCFF', 'line-width': 10, 'line-opacity': 0.18, 'line-blur': 6 }
-      });
-      map.addLayer({
-        id: 'preview-ava-line',
-        type: 'line',
-        source: 'preview-ava',
-        paint: { 'line-color': '#93D9FF', 'line-width': 2, 'line-opacity': 0.75 }
-      });
-
-      // ── State boundary hover-preview ─────────────────────────────────────
-      map.addSource('preview-state', { type: 'geojson', data: emptyGeoJson });
-      map.addLayer({
-        id: 'preview-state-fill',
-        type: 'fill',
-        source: 'preview-state',
-        paint: { 'fill-color': '#5BBCFF', 'fill-opacity': 0.06 }
-      });
-      map.addLayer({
-        id: 'preview-state-glow',
-        type: 'line',
-        source: 'preview-state',
-        paint: { 'line-color': '#5BBCFF', 'line-width': 12, 'line-opacity': 0.20, 'line-blur': 8 }
-      });
-      map.addLayer({
-        id: 'preview-state-line',
-        type: 'line',
-        source: 'preview-state',
-        paint: { 'line-color': '#93D9FF', 'line-width': 2, 'line-opacity': 0.80, 'line-dasharray': [4, 3] }
-      });
-
-      // Fetch us-states.json for state boundary hover-preview
-      fetch('/data/us-states.json')
-        .then(r => r.json())
-        .then(col => { statesFeaturesRef.current = col.features || []; })
-        .catch(err => console.warn('preview-state fetch failed:', err));
-      const STATE_SLUGS_TO_FILE = {
-        oregon: '/data/OR_avas.geojson',
-        washington: '/data/WA_avas.geojson',
-        california: '/data/CA_avas.geojson',
-        idaho: '/data/ID_avas.geojson',
-      };
-      const props0 = avaData?.features?.[0]?.properties || avaData?.properties || {};
-      const stateCodes = (props0.state || '').split('|').map(s => s.trim()).filter(Boolean);
-      const STATE_CODE_TO_SLUG = { OR: 'oregon', WA: 'washington', CA: 'california', ID: 'idaho' };
-      const filesToFetch = new Set();
-      // Always include the current page's state
-      if (stateName && STATE_SLUGS_TO_FILE[stateName]) filesToFetch.add(STATE_SLUGS_TO_FILE[stateName]);
-      // Also include all states the AVA spans
-      stateCodes.forEach(code => {
-        const slug = STATE_CODE_TO_SLUG[code];
-        if (slug && STATE_SLUGS_TO_FILE[slug]) filesToFetch.add(STATE_SLUGS_TO_FILE[slug]);
-      });
-      Promise.all([...filesToFetch].map(url => fetch(url).then(r => r.json())))
-        .then(collections => {
-          const features = collections.flatMap(c => c.features || []);
-          allFeaturesRef.current = features;
-        })
-        .catch(err => console.warn('preview-ava fetch failed:', err));
-
       // Fit to AVA bounds
       if (boundsRef.current && !boundsRef.current.isEmpty()) {
         map.fitBounds(boundsRef.current, {
@@ -417,66 +401,6 @@ const MapLibreAVAViewer = ({ avaData }) => {
       }
     };
   }, [avaData]);
-
-  // ── Hover-preview: update the preview-ava source directly (no re-render) ──
-  const handleAvaHover = useCallback((name) => {
-    const map = mapRef.current;
-    if (!map || !map.getSource('preview-ava')) return;
-    const nameLower = name.toLowerCase();
-    const match = allFeaturesRef.current.find(
-      f => (f.properties?.name || '').toLowerCase() === nameLower
-    );
-    map.getSource('preview-ava').setData(
-      match
-        ? { type: 'FeatureCollection', features: [match] }
-        : { type: 'FeatureCollection', features: [] }
-    );
-  }, []);
-
-  const handleAvaHoverEnd = useCallback(() => {
-    const map = mapRef.current;
-    if (!map || !map.getSource('preview-ava')) return;
-    map.getSource('preview-ava').setData({ type: 'FeatureCollection', features: [] });
-  }, []);
-
-  // ── State hover-preview: update directly (no re-render) ──────────────────
-  const handleStateHover = useCallback((name) => {
-    const map = mapRef.current;
-    if (!map || !map.getSource('preview-state')) return;
-    const nameLower = name.toLowerCase();
-    const match = statesFeaturesRef.current.find(
-      f => (f.properties?.name || '').toLowerCase() === nameLower
-    );
-    map.getSource('preview-state').setData(
-      match
-        ? { type: 'FeatureCollection', features: [match] }
-        : { type: 'FeatureCollection', features: [] }
-    );
-  }, []);
-
-  const handleStateHoverEnd = useCallback(() => {
-    const map = mapRef.current;
-    if (!map || !map.getSource('preview-state')) return;
-    map.getSource('preview-state').setData({ type: 'FeatureCollection', features: [] });
-  }, []);
-
-  // Option B — resolve the correct state slug for an AVA name at click time.
-  // Looks up the AVA in allFeaturesRef (which already contains all relevant
-  // state files including cross-state ones). Returns the first state slug for
-  // that AVA, falling back to the current page's stateName.
-  const STATE_CODE_TO_SLUG_B = { OR: 'oregon', WA: 'washington', CA: 'california', ID: 'idaho' };
-  const resolveAvaState = (avaName) => {
-    const nameLower = avaName.toLowerCase();
-    const feature = allFeaturesRef.current.find(
-      f => (f.properties?.name || '').toLowerCase() === nameLower
-    );
-    if (!feature) return stateName; // fallback
-    const codes = (feature.properties?.state || '').split('|').map(s => s.trim()).filter(Boolean);
-    // Prefer the current stateName if the AVA spans it, otherwise use the first code
-    const currentCode = Object.entries(STATE_CODE_TO_SLUG_B).find(([, slug]) => slug === stateName)?.[0];
-    const preferred = codes.includes(currentCode) ? currentCode : codes[0];
-    return STATE_CODE_TO_SLUG_B[preferred] || stateName;
-  };
 
   // Handler: Zoom in
   const handleZoomIn = () => {
@@ -651,10 +575,6 @@ const MapLibreAVAViewer = ({ avaData }) => {
               currentMonth={currentMonth}
               stateName={avaSlug ? stateName : undefined}
               onAvaHover={handleAvaHover}
-              onAvaHoverEnd={handleAvaHoverEnd}
-              onStateHover={handleStateHover}
-              onStateHoverEnd={handleStateHoverEnd}
-              resolveAvaState={resolveAvaState}
             />
           }
           toolkit={
@@ -728,12 +648,8 @@ const MapLibreAVAViewer = ({ avaData }) => {
               unit={activePanelConfig?.unit || ''}
               currentMonth={currentMonth}
               stateName={avaSlug ? stateName : undefined}
-              onAvaHover={handleAvaHover}
-              onAvaHoverEnd={handleAvaHoverEnd}
-              onStateHover={handleStateHover}
-              onStateHoverEnd={handleStateHoverEnd}
-              resolveAvaState={resolveAvaState}
               mobileSheetMode={true}
+              onAvaHover={handleAvaHover}
             />
           }
           toolkit={

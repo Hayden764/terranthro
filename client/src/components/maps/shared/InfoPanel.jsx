@@ -15,22 +15,20 @@ const InfoPanel = ({
   unit = '',
   currentMonth,
   stateName = null,
-  onAvaHover = null,
-  onAvaHoverEnd = null,
-  onStateHover = null,
-  onStateHoverEnd = null,
-  resolveAvaState = null,
   mobileSheetMode = false,
+  onAvaHover = null,
 }) => {
   const navigate = useNavigate();
-  const [subAvasExpanded, setSubAvasExpanded] = useState(false);
-  const [hoveredPill, setHoveredPill] = useState(null); // tracks which pill is highlighted
 
-  const props = avaData?.features?.[0]?.properties || {};
+  // Handle both Feature and FeatureCollection
+  const props = avaData?.type === 'Feature'
+    ? (avaData.properties || {})
+    : (avaData?.features?.[0]?.properties || {});
+
   const layerInfo = activeLayer ? LAYER_INFO[activeLayer] : null;
   const showLayer = !!layerInfo;
 
-  // Convert AVA display name → URL slug
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const toSlug = (name) => name.toLowerCase().replace(/\s+/g, '-');
 
   const fmtDate = (str) => {
@@ -41,307 +39,317 @@ const InfoPanel = ({
 
   const fmtCounty = (str) => {
     if (!str) return null;
-    const parts = str.split('|').map(s => s.trim());
+    const parts = str.split('|').map(s => s.trim()).filter(Boolean);
+    if (parts.length === 0) return null;
     if (parts.length === 1) return `${parts[0]} County`;
-    const last = parts.pop();
-    return `${parts.join(', ')} & ${last} ${parts.length > 0 ? 'Counties' : 'County'}`;
+    const last = parts[parts.length - 1];
+    const rest = parts.slice(0, -1);
+    return `${rest.join(', ')} & ${last} Counties`;
   };
 
-  const fmtStat = (v) => {
-    if (v == null || isNaN(v)) return '—';
-    return Number(v).toFixed(1);
+  const fmtState = (str) => {
+    if (!str) return null;
+    const NAMES = {
+      OR: 'Oregon', CA: 'California', WA: 'Washington', ID: 'Idaho',
+      NY: 'New York', TX: 'Texas', VA: 'Virginia', PA: 'Pennsylvania',
+      MI: 'Michigan', OH: 'Ohio', NC: 'North Carolina', MO: 'Missouri',
+      CO: 'Colorado', NM: 'New Mexico', AZ: 'Arizona', MD: 'Maryland',
+      NJ: 'New Jersey', MA: 'Massachusetts', CT: 'Connecticut',
+      RI: 'Rhode Island', TN: 'Tennessee', KY: 'Kentucky', WI: 'Wisconsin',
+      IL: 'Illinois', MN: 'Minnesota', IA: 'Iowa', IN: 'Indiana',
+      LA: 'Louisiana', MS: 'Mississippi', AR: 'Arkansas', GA: 'Georgia',
+      WV: 'West Virginia', HI: 'Hawaii',
+    };
+    const parts = str.split('|').map(s => s.trim()).filter(Boolean);
+    const names = parts.map(s => NAMES[s] || s);
+    if (names.length === 1) return names[0];
+    const last = names[names.length - 1];
+    return `${names.slice(0, -1).join(', ')} & ${last}`;
   };
 
-  // ── Design tokens local to InfoPanel ─────────────────────────────────────
-  // Coloured accents kept; neutral text pushed to bright whites for contrast.
+  const fmtStat = (v) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(1);
+
+  // ── Design tokens ─────────────────────────────────────────────────────────
   const T = {
-    // Text — bright whites, matching updated --text-on-glass tokens
-    textPrimary:  '#ffffff',                 // pure white — body text
-    textSecondary:'rgba(255,255,255,0.82)',  // bright white, slightly stepped back
-    textMuted:    'rgba(255,255,255,0.35)',  // de-emphasised
-    textAccent:   '#ffffff',                 // white — consistent with site text
-    textCode:     '#bfdbfe',                 // formula block — light blue
-
-    // Surfaces — match site glass tokens exactly
-    surfaceRow:      'var(--glass-bg)',
-    surfaceCode:     'var(--glass-bg-input)',
-    surfaceStatCard: 'var(--glass-bg-medium)',
-
-    // Borders — match site glass tokens
-    divider:      'var(--glass-border-light)',
-    borderCard:   'var(--glass-border)',
-    borderCode:   'rgba(91,188,255,0.30)',
-
-    // Unified nav-pill tokens (white rest → sky-blue hover)
-    pillBg:       'rgba(255,255,255,0.08)',
-    pillBorder:   'rgba(255,255,255,0.18)',
-    pillText:     'rgba(255,255,255,0.85)',
-    pillHoverBg:  'rgba(91,188,255,0.18)',
-    pillHoverBorder: 'rgba(91,188,255,0.50)',
-    pillHoverText:   '#ffffff',
+    textPrimary:   '#ffffff',
+    textSecondary: 'rgba(255,255,255,0.75)',
+    textMuted:     'rgba(255,255,255,0.35)',
+    textGreen:     '#6ee7b7',
+    textCode:      '#bfdbfe',
+    bgViolet:      'rgba(91,188,255,0.15)',
+    borderViolet:  'rgba(91,188,255,0.28)',
+    bgGreen:       'rgba(16,185,129,0.18)',
+    borderGreen:   'rgba(52,211,153,0.35)',
+    surfaceCode:   'rgba(0,0,0,0.25)',
+    borderCode:    'rgba(91,188,255,0.25)',
   };
 
-  const labelStyle = {
-    fontSize: '10px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '1px',
-    color: T.textAccent,
-    marginBottom: '5px',
+  // Apple-style card — plain object, never a component → no remount issues
+  const card = {
+    background:   'rgba(255,255,255,0.07)',
+    border:       '1px solid rgba(255,255,255,0.11)',
+    borderRadius: '12px',
+    boxShadow:    '0 1px 4px rgba(0,0,0,0.25)',
+    padding:      '12px 14px',
   };
 
-  const valueStyle = {
-    fontSize: '13px',
-    color: T.textPrimary,
-    lineHeight: 1.55,
+  const lbl = {
+    fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+    letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', marginBottom: '4px',
   };
 
-  const sectionStyle = {
-    borderBottom: `1px solid ${T.divider}`,
-    paddingBottom: '14px',
-    marginBottom: '14px',
+  const val = {
+    fontSize: '13px', color: T.textPrimary, lineHeight: 1.55,
   };
-
-  const innerPad = '0 16px';
 
   // ── AVA mode ──────────────────────────────────────────────────────────────
-  const AVAContent = () => {
-    const established = fmtDate(props.created);
-    const county = fmtCounty(props.county);
-    const parentAVA = props.within;
-    const subAVAs = props.contains;
-    const cfr = props.cfr_index ? `27 CFR §${props.cfr_index}` : null;
-    const petitioner = props.petitioner;
+  // Normalize parents/children — DB returns arrays of {slug,name} objects;
+  // legacy GeoJSON uses pipe-delimited strings in props.within / props.contains.
+  const parents = (() => {
+    if (Array.isArray(props.parents) && props.parents.length) return props.parents;
+    if (props.within) return props.within.split('|').map(n => n.trim()).filter(Boolean).map(n => ({ name: n, slug: toSlug(n) }));
+    return [];
+  })();
+
+  const children = (() => {
+    if (Array.isArray(props.children) && props.children.length) return props.children;
+    if (props.contains) return props.contains.split('|').map(n => n.trim()).filter(Boolean).map(n => ({ name: n, slug: toSlug(n) }));
+    return [];
+  })();
+
+  // Normalize states — DB returns [{abbreviation, name}]; legacy is pipe string "OR|WA"
+  const stateLabel = (() => {
+    if (Array.isArray(props.states) && props.states.length) {
+      const names = props.states.map(s => s.name);
+      if (names.length === 1) return names[0];
+      return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+    }
+    return fmtState(props.state);
+  })();
+
+  // Normalize counties — DB returns [{name, state}]; legacy is pipe string "Yamhill"
+  const countyLabel = (() => {
+    if (Array.isArray(props.counties) && props.counties.length) {
+      const names = props.counties.map(c => c.name);
+      if (names.length === 1) return `${names[0]} County`;
+      return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]} Counties`;
+    }
+    return fmtCounty(props.county);
+  })();
+
+  // Resolve parent navigation — DB parents have their own slug; legacy needs slug derived
+  const parentNavSlug = (parent) => {
+    // If parent.slug looks like DB format (underscores), convert to URL dashes
+    if (parent.slug) return parent.slug.replace(/_/g, '-');
+    return toSlug(parent.name);
+  };
+
+  // Expand toggles for parent / child lists
+  const [parentsExpanded, setParentsExpanded] = useState(false);
+  const [childrenExpanded, setChildrenExpanded] = useState(false);
+
+  const AVAList = ({ items, expanded, onToggle }) => {
+    const LIMIT = 5;
+    const visible = expanded ? items : items.slice(0, LIMIT);
+    const overflow = items.length - LIMIT;
 
     return (
-      <div style={{ padding: '16px 0 8px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+        {visible.map(item => (
+          <button
+            key={item.name}
+            onClick={() => stateName && navigate(`/${stateName}/${parentNavSlug(item)}`)}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)';
+              e.currentTarget.style.color = '#ffffff';
+              if (onAvaHover) onAvaHover(item.slug || item.name.toLowerCase().replace(/\s+/g, '_'));
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)';
+              e.currentTarget.style.color = T.textSecondary;
+              if (onAvaHover) onAvaHover(null);
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              width: '100%', padding: '8px 12px',
+              borderRadius: '8px', border: '1px solid rgba(255,255,255,0.10)',
+              background: 'rgba(255,255,255,0.05)',
+              color: T.textSecondary,
+              fontSize: '12px', fontWeight: 500,
+              cursor: stateName ? 'pointer' : 'default',
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+              textAlign: 'left',
+            }}
+          >
+            <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {item.name}
+            </span>
+            <span style={{ fontSize: '13px', marginLeft: '8px', opacity: 0.55, flexShrink: 0 }}>↗</span>
+          </button>
+        ))}
+        {!expanded && overflow > 0 && (
+          <button
+            onClick={() => onToggle(true)}
+            onMouseEnter={e => { e.currentTarget.style.color = T.textSecondary; }}
+            onMouseLeave={e => { e.currentTarget.style.color = T.textMuted; }}
+            style={{
+              background: 'none', border: 'none', padding: '2px 0',
+              fontSize: '11px', fontWeight: 600, color: T.textMuted,
+              cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            + {overflow} more ↓
+          </button>
+        )}
+        {expanded && overflow > 0 && (
+          <button
+            onClick={() => onToggle(false)}
+            onMouseEnter={e => { e.currentTarget.style.color = T.textSecondary; }}
+            onMouseLeave={e => { e.currentTarget.style.color = T.textMuted; }}
+            style={{
+              background: 'none', border: 'none', padding: '2px 0',
+              fontSize: '11px', fontWeight: 600, color: T.textMuted,
+              cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            ↑ Show less
+          </button>
+        )}
+      </div>
+    );
+  };
 
-        {/* State badge(s) — one per state, clickable → state page */}
-        <div style={{ ...sectionStyle, padding: innerPad, paddingBottom: '14px', marginBottom: '14px' }}>
-          {props.state && (() => {
-            const STATE_SLUGS  = { OR: 'oregon', WA: 'washington', CA: 'california', ID: 'idaho' };
-            const STATE_LABELS = { OR: 'Oregon',  WA: 'Washington', CA: 'California', ID: 'Idaho' };
-            const codes = props.state.split('|').map(s => s.trim()).filter(Boolean);
-            return (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-                {codes.map(code => {
-                  const slug  = STATE_SLUGS[code]  || code.toLowerCase();
-                  const label = STATE_LABELS[code] || code;
-                  return stateName ? (
-                    <button
-                      key={code}
-                      onClick={() => navigate(`/${slug}`)}
-                      style={{
-                        padding: '3px 10px',
-                        borderRadius: '20px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        background: hoveredPill === `state-${code}` ? T.pillHoverBg : T.pillBg,
-                        border: `1px solid ${hoveredPill === `state-${code}` ? T.pillHoverBorder : T.pillBorder}`,
-                        color: hoveredPill === `state-${code}` ? T.pillHoverText : T.pillText,
-                        letterSpacing: '0.3px',
-                        cursor: 'pointer',
-                        transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
-                      }}
-                      onMouseEnter={() => { setHoveredPill(`state-${code}`); onStateHover?.(label); }}
-                      onMouseLeave={() => { setHoveredPill(null); onStateHoverEnd?.(); }}
-                    >
-                      {label} AVA ↗
-                    </button>
-                  ) : (
-                    <div
-                      key={code}
-                      style={{
-                        display: 'inline-block',
-                        padding: '3px 10px',
-                        borderRadius: '20px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        background: T.pillBg,
-                        border: `1px solid ${T.pillBorder}`,
-                        color: T.pillText,
-                        letterSpacing: '0.3px',
-                      }}
-                    >
-                      {label} AVA
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-          {county && (
-            <div>
-              <div style={labelStyle}>Location</div>
-              <div style={valueStyle}>{county}</div>
-            </div>
-          )}
-        </div>
+  const AVAContent = () => {
+    const established = fmtDate(props.created);
+    const cfr         = props.cfr_index ? `27 CFR §${props.cfr_index}` : null;
+    const petitioner  = props.petitioner;
 
-        {/* Established + CFR */}
-        <div style={{ padding: innerPad, ...sectionStyle }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            {established && (
-              <div>
-                <div style={labelStyle}>Established</div>
-                <div style={valueStyle}>{established}</div>
+    return (
+      <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+        {/* Card 1 — State + Location */}
+        {(stateLabel || countyLabel) && (
+          <div style={card}>
+            {stateLabel && stateName && (
+              <button
+                onClick={() => navigate(`/${stateName}`)}
+                style={{
+                  display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
+                  fontSize: '11px', fontWeight: 600, letterSpacing: '0.3px',
+                  background: T.bgViolet, border: `1px solid ${T.borderViolet}`,
+                  color: T.textPrimary, cursor: 'pointer', marginBottom: countyLabel ? '10px' : '0',
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(91,188,255,0.28)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = T.bgViolet; }}
+              >
+                {stateLabel} AVA ↗
+              </button>
+            )}
+            {stateLabel && !stateName && (
+              <div style={{
+                display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
+                fontSize: '11px', fontWeight: 600, letterSpacing: '0.3px',
+                background: T.bgViolet, border: `1px solid ${T.borderViolet}`,
+                color: T.textPrimary, marginBottom: countyLabel ? '10px' : '0',
+              }}>
+                {stateLabel} AVA
               </div>
             )}
-            {cfr && (
+            {countyLabel && (
               <div>
-                <div style={labelStyle}>CFR Reference</div>
-                <div style={{ ...valueStyle, fontFamily: 'monospace', fontSize: '12px' }}>{cfr}</div>
+                <div style={lbl}>Location</div>
+                <div style={val}>{countyLabel}</div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Parent AVA(s) — each a clickable pill */}
-        {parentAVA && (
-          <div style={{ padding: innerPad, ...sectionStyle }}>
-            <div style={labelStyle}>Part of</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
-              {parentAVA.split('|').map(p => p.trim()).filter(Boolean).map(parent => (
-                <button
-                  key={parent}
-                  onClick={() => {
-                    if (!stateName) return;
-                    const targetState = resolveAvaState ? resolveAvaState(parent) : stateName;
-                    navigate(`/${targetState}/${toSlug(parent)}`);
-                  }}
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    background: hoveredPill === `parent-${parent}` ? T.pillHoverBg : T.pillBg,
-                    border: `1px solid ${hoveredPill === `parent-${parent}` ? T.pillHoverBorder : T.pillBorder}`,
-                    color: hoveredPill === `parent-${parent}` ? T.pillHoverText : T.pillText,
-                    cursor: stateName ? 'pointer' : 'default',
-                    transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
-                  }}
-                  onMouseEnter={() => { if (stateName) setHoveredPill(`parent-${parent}`); onAvaHover?.(parent); }}
-                  onMouseLeave={() => { setHoveredPill(null); onAvaHoverEnd?.(); }}
-                >
-                  {parent} ↗
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
-        {/* Sub-AVAs — one per row, collapsed to first 5 */}
-        {subAVAs && (() => {
-          const subs = subAVAs.split('|').map(s => s.trim()).filter(Boolean);
-          const LIMIT = 5;
-          const visible = subAvasExpanded ? subs : subs.slice(0, LIMIT);
-          const hiddenCount = subs.length - LIMIT;
-          return (
-            <div style={{ padding: innerPad, ...sectionStyle }}>
-              <div style={labelStyle}>Contains ({subs.length})</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
-                {visible.map(sub => (
-                  <button
-                    key={sub}
-                    onClick={() => {
-                      if (!stateName) return;
-                      const targetState = resolveAvaState ? resolveAvaState(sub) : stateName;
-                      navigate(`/${targetState}/${toSlug(sub)}`);
-                    }}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      width: '100%',
-                      padding: '5px 12px',
-                      borderRadius: '20px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      background: hoveredPill === `sub-${sub}` ? T.pillHoverBg : T.pillBg,
-                      border: `1px solid ${hoveredPill === `sub-${sub}` ? T.pillHoverBorder : T.pillBorder}`,
-                      color: hoveredPill === `sub-${sub}` ? T.pillHoverText : T.pillText,
-                      cursor: stateName ? 'pointer' : 'default',
-                      textAlign: 'left',
-                      letterSpacing: '0.3px',
-                      transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
-                    }}
-                    onMouseEnter={() => { if (stateName) setHoveredPill(`sub-${sub}`); onAvaHover?.(sub); }}
-                    onMouseLeave={() => { setHoveredPill(null); onAvaHoverEnd?.(); }}
-                  >
-                    <span>{sub}</span>
-                    {stateName && <span style={{ opacity: 0.55, fontSize: '10px', marginLeft: '6px', flexShrink: 0 }}>↗</span>}
-                  </button>
-                ))}
-              </div>
-              {subs.length > LIMIT && (
-                <button
-                  onClick={() => setSubAvasExpanded(v => !v)}
-                  style={{
-                    marginTop: '6px',
-                    fontSize: '11px',
-                    color: T.pillText,
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '2px 10px',
-                    opacity: 0.6,
-                    display: 'block',
-                  }}
-                >
-                  {subAvasExpanded ? 'Show less ↑' : `+ ${hiddenCount} more ↓`}
-                </button>
+        {/* Card 2 — Established + CFR */}
+        {(established || cfr) && (
+          <div style={card}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {established && (
+                <div>
+                  <div style={lbl}>Established</div>
+                  <div style={val}>{established}</div>
+                </div>
+              )}
+              {cfr && (
+                <div>
+                  <div style={lbl}>CFR Reference</div>
+                  <div style={{ ...val, fontFamily: 'monospace', fontSize: '12px' }}>{cfr}</div>
+                </div>
               )}
             </div>
-          );
-        })()}
-
-        {/* Petitioner */}
-        {petitioner && (
-          <div style={{ padding: innerPad, paddingBottom: '8px' }}>
-            <div style={labelStyle}>Petitioner</div>
-            <div style={{ ...valueStyle, fontSize: '12px', color: T.textSecondary }}>{petitioner}</div>
           </div>
         )}
+
+        {/* Card 3 — Part of (parent AVAs) */}
+        {parents.length > 0 && (
+          <div style={card}>
+            <div style={{ ...lbl, marginBottom: 0 }}>
+              Part of
+              <span style={{ marginLeft: '6px', fontWeight: 400, opacity: 0.6 }}>({parents.length})</span>
+            </div>
+            <AVAList items={parents} expanded={parentsExpanded} onToggle={setParentsExpanded} />
+          </div>
+        )}
+
+        {/* Card 4 — Contains (sub-AVAs) */}
+        {children.length > 0 && (
+          <div style={card}>
+            <div style={{ ...lbl, marginBottom: 0 }}>
+              Contains
+              <span style={{ marginLeft: '6px', fontWeight: 400, opacity: 0.6 }}>({children.length})</span>
+            </div>
+            <AVAList items={children} expanded={childrenExpanded} onToggle={setChildrenExpanded} />
+          </div>
+        )}
+
+        {/* Card 5 — Petitioner */}
+        {petitioner && (
+          <div style={card}>
+            <div style={lbl}>Petitioner</div>
+            <div style={{ ...val, fontSize: '12px', color: T.textSecondary }}>{petitioner}</div>
+          </div>
+        )}
+
       </div>
     );
   };
 
   // ── Layer mode ────────────────────────────────────────────────────────────
   const LayerContent = () => {
-    const info = layerInfo;
+    const info     = layerInfo;
     const hasStats = displayMin != null && displayMax != null && !isNaN(displayMin) && !isNaN(displayMax);
-    const mean = hasStats ? ((displayMin + displayMax) / 2) : null;
+    const mean     = hasStats ? (displayMin + displayMax) / 2 : null;
 
     return (
-      <div style={{ padding: '16px 0 8px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
-        {/* Icon + why */}
-        <div style={{ padding: innerPad, ...sectionStyle }}>
+        {/* Card 1 — Icon + Why */}
+        <div style={card}>
           <div style={{ fontSize: '26px', marginBottom: '8px' }}>{info.icon}</div>
           <p style={{ fontSize: '13px', color: T.textSecondary, lineHeight: 1.65, margin: 0 }}>
             {info.why}
           </p>
         </div>
 
-        {/* Stats — Min / Mean / Max */}
+        {/* Card 2 — AVA Statistics */}
         {hasStats && (
-          <div style={{ padding: innerPad, ...sectionStyle }}>
-            <div style={labelStyle}>AVA Statistics</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '6px' }}>
-              {[
-                { label: 'Min', val: fmtStat(displayMin) },
-                { label: 'Mean', val: fmtStat(mean) },
-                { label: 'Max', val: fmtStat(displayMax) },
-              ].map(({ label, val }) => (
+          <div style={card}>
+            <div style={lbl}>AVA Statistics</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginTop: '8px' }}>
+              {[{ label: 'Min', v: displayMin }, { label: 'Mean', v: mean }, { label: 'Max', v: displayMax }].map(({ label, v }) => (
                 <div key={label} style={{
-                  background: T.surfaceStatCard,
-                  border: `1px solid ${T.borderCard}`,
-                  borderRadius: '10px',
-                  padding: '8px 4px',
-                  textAlign: 'center',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: '8px', padding: '8px 4px', textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: T.textAccent, marginBottom: '4px' }}>{label}</div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.3px' }}>{val}</div>
+                  <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.3px' }}>{fmtStat(v)}</div>
                   <div style={{ fontSize: '10px', color: T.textMuted, marginTop: '1px' }}>{unit}</div>
                 </div>
               ))}
@@ -349,51 +357,42 @@ const InfoPanel = ({
           </div>
         )}
 
-        {/* Formula */}
-        <div style={{ padding: innerPad, ...sectionStyle }}>
-          <div style={labelStyle}>Formula</div>
+        {/* Card 3 — Formula */}
+        <div style={card}>
+          <div style={lbl}>Formula</div>
           <div style={{
-            fontFamily: 'monospace',
-            fontSize: '11px',
-            color: T.textCode,
-            lineHeight: 1.75,
-            background: T.surfaceCode,
-            border: `1px solid ${T.borderCode}`,
-            borderRadius: '8px',
-            padding: '10px 12px',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
+            fontFamily: 'monospace', fontSize: '11px', color: T.textCode,
+            lineHeight: 1.8, background: T.surfaceCode, border: `1px solid ${T.borderCode}`,
+            borderRadius: '8px', padding: '10px 12px',
+            whiteSpace: typeof info.formula === 'string' ? 'pre-wrap' : 'normal',
+            wordBreak: 'break-word', marginTop: '6px',
           }}>
             {info.formula}
           </div>
         </div>
 
-        {/* Period */}
-        <div style={{ padding: innerPad, ...sectionStyle }}>
-          <div style={labelStyle}>Period</div>
-          <div style={valueStyle}>{info.period}</div>
+        {/* Card 4 — Period + Data Source */}
+        <div style={card}>
+          <div style={{ marginBottom: '10px' }}>
+            <div style={lbl}>Period</div>
+            <div style={val}>{info.period}</div>
+          </div>
+          <div>
+            <div style={lbl}>Data Source</div>
+            <div style={{ ...val, fontSize: '12px', color: T.textSecondary }}>{info.source}</div>
+          </div>
         </div>
 
-        {/* Data source */}
-        <div style={{ padding: innerPad, ...sectionStyle }}>
-          <div style={labelStyle}>Data Source</div>
-          <div style={{ ...valueStyle, fontSize: '12px', color: T.textSecondary }}>{info.source}</div>
-        </div>
-
-        {/* Reference ranges */}
+        {/* Card 5 — Reference Ranges */}
         {info.ranges && (
-          <div style={{ padding: innerPad, paddingBottom: '8px' }}>
-            <div style={labelStyle}>Reference Ranges</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+          <div style={{ ...card, padding: '12px 14px 8px' }}>
+            <div style={lbl}>Reference Ranges</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
               {info.ranges.map((r, i) => (
                 <div key={i} style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                  padding: '7px 10px',
-                  borderRadius: '8px',
-                  background: T.surfaceRow,
-                  border: `1px solid ${T.borderCard}`,
+                  display: 'flex', alignItems: 'flex-start', gap: '10px',
+                  padding: '6px 8px', borderRadius: '7px',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
                 }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: T.textPrimary, minWidth: '90px', flexShrink: 0 }}>{r.label}</span>
                   <span style={{ fontSize: '11px', color: T.textSecondary, lineHeight: 1.45 }}>{r.desc}</span>
@@ -402,26 +401,24 @@ const InfoPanel = ({
             </div>
           </div>
         )}
+
       </div>
     );
   };
 
-  // ── Mobile sheet mode ─────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   if (mobileSheetMode) {
-    return showLayer ? <LayerContent /> : <AVAContent />;
+    return showLayer ? LayerContent() : AVAContent();
   }
 
-  // ── Desktop mode ──────────────────────────────────────────────────────────
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{
-        overflowY: 'auto',
-        maxHeight: 'calc(100vh - 80px)',
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(255,255,255,0.15) transparent',
-      }}>
-        {showLayer ? <LayerContent /> : <AVAContent />}
-      </div>
+    <div style={{
+      overflowY: 'auto',
+      maxHeight: 'calc(100vh - 80px)',
+      scrollbarWidth: 'thin',
+      scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+    }}>
+      {showLayer ? LayerContent() : AVAContent()}
     </div>
   );
 };

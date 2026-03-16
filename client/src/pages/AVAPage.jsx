@@ -1,11 +1,13 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useMapContext } from '../context/MapContext';
+import { getStateConfig } from '../config/stateConfig';
 import MapLibreAVAViewer from '../components/maps/MapLibreAVAViewer';
 import '../styles/globals.css';
 
 const AVAPage = () => {
   const { stateName, avaSlug } = useParams();
+  const navigate = useNavigate();
   const [avaData, setAvaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,27 +17,74 @@ const AVAPage = () => {
 
   const { setSelectedAVA, setCurrentLevel } = useMapContext();
 
+  const stateConfig = getStateConfig(stateName);
+
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    if (!avaSlug) {
+      setLoading(false);
+      setError('AVA slug not found');
+      return;
+    }
+
+    // Convert URL slug (dashes) to DB slug (underscores) for the API
     const dbSlug = avaSlug.replace(/-/g, '_');
+
+    // Fetch full AVA data from the database API — includes rich parent/child/state/county data
     fetch(`/api/avas/${dbSlug}`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then(feature => {
-        if (feature?.error) throw new Error(feature.error);
-        setAvaName(feature.properties.name);
-        setAvaData({ type: 'FeatureCollection', features: [feature] });
-        setLoading(false);
+        // API returns a GeoJSON Feature directly
+        if (feature && feature.type === 'Feature') {
+          setAvaName(feature.properties.name);
+          setAvaData(feature);
+          setLoading(false);
+        } else {
+          throw new Error('Invalid response from API');
+        }
       })
-      .catch(err => {
-        console.error('Error loading AVA:', err);
-        setError(err.message);
-        setLoading(false);
+      .catch(apiErr => {
+        console.warn('API fetch failed, falling back to static GeoJSON:', apiErr.message);
+
+        // Fallback: load from static GeoJSON file
+        if (!stateConfig || !stateConfig.avaFile) {
+          setLoading(false);
+          setError('State configuration not found');
+          return;
+        }
+
+        fetch(stateConfig.avaFile)
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            const avaFeature = data.features.find(f => {
+              const name = f.properties.name || '';
+              const slug = name.toLowerCase().replace(/\s+/g, '-');
+              return slug === avaSlug;
+            });
+
+            if (avaFeature) {
+              setAvaName(avaFeature.properties.name);
+              setAvaData({
+                type: 'FeatureCollection',
+                features: [avaFeature]
+              });
+            } else {
+              setError('AVA not found');
+            }
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error('Error loading AVA from fallback:', err);
+            setError(err.message);
+            setLoading(false);
+          });
       });
-  }, [avaSlug]);
+  }, [stateName, avaSlug, stateConfig]);
 
   useEffect(() => {
     if (avaData) {

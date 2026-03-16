@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CONTINUOUS_COLORMAPS } from './climateConfig';
+import { CONTINUOUS_COLORMAPS, CLIMATE_LAYER_TYPES, INDEX_LAYER_TYPES, MONTH_ABBR } from './climateConfig';
+import { LAYER_INFO } from './layerInfoContent.jsx';
 import InfoPanel from './InfoPanel';
 
 /**
@@ -27,6 +28,9 @@ const DesktopDock = ({
   anyLayerVisible = false,
   colormap = 'plasma',
   isClassified = false,
+  activeLayer = null,
+  activeYear = null,
+  currentMonth = null,
 }) => {
   const [openPanel, setOpenPanel] = useState(null); // 'toolkit' | 'dataLayer' | 'scale' | null
   const [infoOpen, setInfoOpen] = useState(true);   // Info panel independent — starts open
@@ -198,16 +202,54 @@ const DesktopDock = ({
             borderRadius: '16px 0 0 0',
             overflow: 'hidden',
           }}>
-            <span style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.9px',
-              color: '#ffffff',
-            }}>
-              Info
-            </span>
-            <button onClick={() => setInfoOpen(false)} style={closeBtnStyle} aria-label="Close info panel">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.9px',
+                color: '#ffffff',
+                flexShrink: 0,
+              }}>
+                Info
+              </span>
+              {activeLayer && LAYER_INFO[activeLayer] && (() => {
+                const isIndex   = !!INDEX_LAYER_TYPES[activeLayer];
+                const isPrism   = !!CLIMATE_LAYER_TYPES[activeLayer];
+                const periodPill = isIndex && activeYear
+                  ? String(activeYear)
+                  : isPrism && currentMonth
+                  ? `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][currentMonth - 1]} · 1991–2020`
+                  : null;
+                return (
+                  <>
+                    <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(255,255,255,0.30)', flexShrink: 0 }}>—</span>
+                    <span style={{
+                      fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.75)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.1px',
+                      flex: 1, minWidth: 0,
+                    }}>
+                      {LAYER_INFO[activeLayer].title}
+                    </span>
+                    {periodPill && (
+                      <span style={{
+                        flexShrink: 0,
+                        fontSize: '10px', fontWeight: 700,
+                        padding: '2px 7px', borderRadius: '10px',
+                        background: 'var(--accent-dim)',
+                        border: '1px solid var(--accent-border)',
+                        color: 'var(--accent-text)',
+                        letterSpacing: '0.2px',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {periodPill}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+            <button onClick={() => setInfoOpen(false)} style={{ ...closeBtnStyle, marginLeft: '8px', flexShrink: 0 }} aria-label="Close info panel">
               <CloseIcon />
             </button>
           </div>

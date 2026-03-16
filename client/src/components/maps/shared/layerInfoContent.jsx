@@ -3,19 +3,38 @@
  * Each entry maps to a layer id and contains:
  *   title       — display name
  *   icon        — emoji shorthand
- *   formula     — calculation description
+ *   formula     — JSX node rendered inside a monospace formula block
  *   period      — temporal scope
  *   source      — data provenance
  *   why         — viticulture relevance
- *   ranges      — optional array of { label, value, desc } reference ranges
+ *   ranges      — optional array of { label, desc } reference ranges
  */
+
+// Shared inline styles for formula notation
+const S   = { fontSize: '0.78em', lineHeight: 0 };          // sub/sup size
+const dim = { opacity: 0.55 };                               // secondary text
+const kw  = { color: '#93c5fd' };                            // keyword / label (blue)
+const op  = { color: '#c4b5fd' };                            // operator (purple)
+const num = { color: '#6ee7b7' };                            // number (green)
 
 export const LAYER_INFO = {
   // ── PRISM Monthly ─────────────────────────────────────────────────────────
   tdmean: {
     title: 'Mean Temperature',
     icon: '🌡',
-    formula: '(T\u2098\u2090\u2093 + T\u2098\u1d35\u207f) \u00f7 2, averaged daily over the month',
+    formula: (
+      <span>
+        <span style={kw}>T</span><sub style={{ ...S, ...kw }}>mean</sub>{' '}
+        <span style={op}>=</span>{' '}
+        <span style={op}>(</span>
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>max</sub>{' '}
+          <span style={op}>+</span>{' '}
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>min</sub>
+        <span style={op}>) ÷ 2</span>
+        <br />
+        <span style={dim}>averaged daily over the month</span>
+      </span>
+    ),
     period: '30-year normals (1991\u20132020), monthly resolution',
     source: 'PRISM Climate Group, Oregon State University \u2014 800\u202fm gridded normals',
     why: 'Primary driver of vine development and fruit ripening. Values too low cause stress and delayed budbreak; values too high accelerate sugar accumulation faster than flavour development. Cool-climate regions (10\u201315\u00b0C growing season mean) tend to produce high-acid, aromatic wines; warm regions (18\u00b0C+) favour full-bodied, lower-acid styles.',
@@ -32,7 +51,13 @@ export const LAYER_INFO = {
   elevation: {
     title: 'Elevation',
     icon: '⛰',
-    formula: 'Raw height above mean sea level from a digital elevation model (DEM)',
+    formula: (
+      <span>
+        <span style={dim}>Raw height above mean sea level (metres)</span>
+        <br />
+        <span style={dim}>from USGS 3DEP digital elevation model</span>
+      </span>
+    ),
     period: 'Static \u2014 derived from USGS 3DEP survey data',
     source: 'USGS 3D Elevation Program (3DEP) \u2014 1/3 arc-second (\u223c10\u202fm resolution)',
     why: 'Elevation affects temperature via the environmental lapse rate (\u22126.5\u00b0C per 1\u202000\u202fm). Higher sites are cooler and may escape valley fog and frost. In warm climates, elevated vineyards provide critical diurnal temperature variation that preserves acidity and aromatic complexity.',
@@ -47,7 +72,24 @@ export const LAYER_INFO = {
   slope: {
     title: 'Slope',
     icon: '📐',
-    formula: 'arctan(\u221a(dz/dx)\u00b2 + (dz/dy)\u00b2) \u2014 Horn\u2019s method gradient magnitude',
+    formula: (
+      <span>
+        <span style={kw}>slope</span>{' '}
+        <span style={op}>=</span>{' '}
+        arctan<span style={op}>(</span>
+          √<span style={op}>[(</span>
+            ∂z<span style={op}>/</span>∂x
+          <span style={op}>)</span><sup style={S}>2</sup>{' '}
+          <span style={op}>+</span>{' '}
+          <span style={op}>(</span>
+            ∂z<span style={op}>/</span>∂y
+          <span style={op}>)</span><sup style={S}>2</sup>
+          <span style={op}>]</span>
+        <span style={op}>)</span>
+        <br />
+        <span style={dim}>Horn's 3×3 window gradient magnitude</span>
+      </span>
+    ),
     period: 'Static \u2014 derived from elevation DEM',
     source: 'Computed from USGS 3DEP DEM using Horn\u2019s 3\u00d73 window algorithm',
     why: 'Steep slopes promote water drainage and soil warming but limit mechanisation. Gentle slopes are easier to farm. Moderate slopes (5\u201320\u00b0) optimise drainage without erosion risk. In cold-climate regions, slopes also promote cold-air drainage that reduces frost risk compared to flat valley floors.',
@@ -63,7 +105,19 @@ export const LAYER_INFO = {
   aspect: {
     title: 'Aspect',
     icon: '🧭',
-    formula: 'atan2(dz/dy, \u2212dz/dx) \u2014 Horn\u2019s method gradient direction',
+    formula: (
+      <span>
+        <span style={kw}>aspect</span>{' '}
+        <span style={op}>=</span>{' '}
+        atan2<span style={op}>(</span>
+          ∂z<span style={op}>/</span>∂y
+          <span style={op}>,&nbsp;−</span>
+          ∂z<span style={op}>/</span>∂x
+        <span style={op}>)</span>
+        <br />
+        <span style={dim}>Horn's 3×3 window gradient direction</span>
+      </span>
+    ),
     period: 'Static \u2014 derived from elevation DEM',
     source: 'Computed from USGS 3DEP DEM using Horn\u2019s 3\u00d73 window algorithm',
     why: 'In the Northern Hemisphere, south- and southwest-facing slopes receive more direct solar radiation, making them warmer and better for ripening. North-facing slopes are cooler and may be used to preserve acidity in warm regions. East-facing slopes warm up quickly in the morning; west-facing slopes accumulate afternoon heat.',
@@ -79,7 +133,27 @@ export const LAYER_INFO = {
   gdd_winkler_accumulated: {
     title: 'GDD Winkler (Continuous)',
     icon: '🌱',
-    formula: '\u03a3 max(0, (T\u2098\u2090\u2093 + T\u2098\u1d35\u207f) / 2 \u2212 10\u00b0C) \u00d7 days\u2081 Apr 1 \u2013 Oct 31',
+    formula: (
+      <span>
+        <span style={kw}>WI</span>{' '}
+        <span style={op}>=</span>{' '}
+        <span style={op}>Σ</span>{' '}
+        max<span style={op}>(</span>
+          <span style={num}>0</span>
+          <span style={op}>,</span>{' '}
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>mean</sub>{' '}
+          <span style={op}>−</span>{' '}
+          <span style={num}>10</span>°C
+        <span style={op}>)</span>
+        <br />
+        <span style={dim}>summed daily, Apr 1 – Oct 31</span>
+        <br />
+        <span style={dim}>T</span><sub style={{ ...S, ...dim }}>mean</sub>
+        <span style={dim}>{' = (T'}</span><sub style={{ ...S, ...dim }}>max</sub>
+        <span style={dim}>{' + T'}</span><sub style={{ ...S, ...dim }}>min</sub>
+        <span style={dim}>{') / 2'}</span>
+      </span>
+    ),
     period: '2025 growing season; computed from PRISM daily normals',
     source: 'Calculated from PRISM daily Tmax/Tmin at 800\u202fm resolution',
     why: 'The Winkler Index (growing degree days, base 10\u00b0C) is the global standard for measuring heat accumulation during the growing season. It was developed at UC Davis and remains the primary tool for matching varieties to climate zones. Higher GDD = more heat-loving varieties.',
@@ -96,7 +170,48 @@ export const LAYER_INFO = {
   gdd_winkler_classified: {
     title: 'Winkler Regions',
     icon: '🗺',
-    formula: 'Same GDD accumulation as Winkler continuous, binned into Winkler I\u2013V+ classes',
+    formula: (
+      <span>
+        <span style={kw}>WI</span>{' '}
+        <span style={op}>=</span>{' '}
+        <span style={op}>Σ</span>{' '}
+        max<span style={op}>(</span>
+          <span style={num}>0</span>
+          <span style={op}>,</span>{' '}
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>mean</sub>{' '}
+          <span style={op}>−</span>{' '}
+          <span style={num}>10</span>°C
+        <span style={op}>)</span>
+        <br />
+        <span style={dim}>summed daily, Apr 1 – Oct 31</span>
+        <br />
+        <span style={dim}>T</span><sub style={{ ...S, ...dim }}>mean</sub>
+        <span style={dim}>{' = (T'}</span><sub style={{ ...S, ...dim }}>max</sub>
+        <span style={dim}>{' + T'}</span><sub style={{ ...S, ...dim }}>min</sub>
+        <span style={dim}>{') / 2'}</span>
+        <br /><br />
+        <span style={dim}>Classified into Winkler Regions:</span>
+        <br />
+        <span style={{ ...dim, display: 'block', paddingLeft: '0.5em' }}>
+          <span style={kw}>Ia</span>
+          <span style={dim}> &lt; 1,700  ·  </span>
+          <span style={kw}>Ib</span>
+          <span style={dim}> &lt; 1,940</span>
+          <br />
+          <span style={kw}>II</span>
+          <span style={dim}> &lt; 2,200  ·  </span>
+          <span style={kw}>III</span>
+          <span style={dim}> &lt; 2,500</span>
+          <br />
+          <span style={kw}>IV</span>
+          <span style={dim}> &lt; 3,000  ·  </span>
+          <span style={kw}>V</span>
+          <span style={dim}> &lt; 4,200  ·  </span>
+          <span style={kw}>V+</span>
+          <span style={dim}> ≥ 4,200</span>
+        </span>
+      </span>
+    ),
     period: '2025 growing season',
     source: 'Calculated from PRISM daily Tmax/Tmin at 800\u202fm resolution',
     why: 'The classified Winkler map makes it easy to see at a glance which parts of an AVA fall into which heat-accumulation zone. Sub-AVA variation is common: a hillside pocket may be Region I while the valley floor is Region II.',
@@ -115,7 +230,23 @@ export const LAYER_INFO = {
   gst_smarthobday: {
     title: 'Growing Season Temperature',
     icon: '☀️',
-    formula: '\u03a3 (T\u2098\u2090\u2093 + T\u2098\u1d35\u207f) / 2 \u00f7 (days Apr\u2013Oct)',
+    formula: (
+      <span>
+        <span style={kw}>GST</span>{' '}
+        <span style={op}>=</span>{' '}
+        <span style={op}>(Σ </span>
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>mean</sub>
+        <span style={op}>)</span>{' '}
+        <span style={op}>÷</span>{' '}
+        <span style={kw}>n</span>
+        <br />
+        <span style={dim}>mean of daily T</span>
+        <sub style={{ ...S, ...dim }}>mean</sub>
+        <span style={dim}>, Apr 1 – Oct 31</span>
+        <br />
+        <span style={dim}>no base-temperature threshold</span>
+      </span>
+    ),
     period: '2025 growing season (Apr 1 \u2013 Oct 31)',
     source: 'Calculated from PRISM daily normals at 800\u202fm resolution',
     why: 'The Smart-Hobday Growing Season Temperature (GST) is a simpler alternative to GDD that works well across a wide range of latitudes. Unlike GDD, it has no base-temperature threshold and therefore captures cold-stress periods. It is widely used in Australian and New Zealand viticulture research.',
@@ -131,7 +262,27 @@ export const LAYER_INFO = {
   huglin: {
     title: 'Huglin Index (Continuous)',
     icon: '🌞',
-    formula: '\u03a3 [(T\u2098\u2090\u2093 \u2212 10) + (T\u2098\u1d35\u207f \u2212 10)] / 2 \u00d7 d, Apr 1 \u2013 Sep 30\nwhere d = day-length coefficient (1.02\u20131.06 for 40\u201350\u00b0 N)',
+    formula: (
+      <span>
+        <span style={kw}>HI</span>{' '}
+        <span style={op}>=</span>{' '}
+        <span style={op}>Σ [(</span>
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>max</sub>{' '}
+          <span style={op}>−</span>{' '}
+          <span style={num}>10</span>
+        <span style={op}>) + (</span>
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>mean</sub>{' '}
+          <span style={op}>−</span>{' '}
+          <span style={num}>10</span>
+        <span style={op}>)] ÷ 2 × </span>
+        <span style={kw}>d</span>
+        <br />
+        <span style={dim}>summed daily, Apr 1 – Sep 30</span>
+        <br />
+        <span style={kw}>d</span>
+        <span style={dim}> = day-length coeff. (1.02 – 1.06 at 40–50°N)</span>
+      </span>
+    ),
     period: '2025 growing season (Apr\u2013Sep)',
     source: 'Calculated from PRISM daily normals; day-length factor from latitude',
     why: 'Developed by Pierre Huglin in 1978, the Huglin Index (HI) improves on GDD by incorporating maximum temperature and a latitude-based day-length correction. It more accurately reflects solar energy available to the vine at higher latitudes (e.g., Willamette Valley at ~45\u00b0N) where longer summer days partially compensate for cooler temperatures.',
@@ -150,7 +301,45 @@ export const LAYER_INFO = {
   huglin_classified: {
     title: 'Huglin Classes',
     icon: '🏷',
-    formula: 'Same Huglin Index computation, binned into 8 official Huglin classes',
+    formula: (
+      <span>
+        <span style={kw}>HI</span>{' '}
+        <span style={op}>=</span>{' '}
+        <span style={op}>Σ [(</span>
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>max</sub>{' '}
+          <span style={op}>−</span>{' '}
+          <span style={num}>10</span>
+        <span style={op}>) + (</span>
+          <span style={kw}>T</span><sub style={{ ...S, ...kw }}>mean</sub>{' '}
+          <span style={op}>−</span>{' '}
+          <span style={num}>10</span>
+        <span style={op}>)] ÷ 2 × </span>
+        <span style={kw}>d</span>
+        <br />
+        <span style={dim}>summed daily, Apr 1 – Sep 30</span>
+        <br /><br />
+        <span style={dim}>Classified into 8 Huglin classes:</span>
+        <br />
+        <span style={{ ...dim, display: 'block', paddingLeft: '0.5em' }}>
+          <span style={kw}>Very Cool</span>
+          <span style={dim}> &lt; 1,200  ·  </span>
+          <span style={kw}>Cool</span>
+          <span style={dim}> &lt; 1,400</span>
+          <br />
+          <span style={kw}>Temperate</span>
+          <span style={dim}> &lt; 1,600  ·  </span>
+          <span style={kw}>Warm Temp</span>
+          <span style={dim}> &lt; 1,800</span>
+          <br />
+          <span style={kw}>Warm</span>
+          <span style={dim}> &lt; 2,000  ·  </span>
+          <span style={kw}>Hot</span>
+          <span style={dim}> &lt; 2,400  ·  </span>
+          <span style={kw}>Very Hot</span>
+          <span style={dim}> ≥ 2,400</span>
+        </span>
+      </span>
+    ),
     period: '2025 growing season',
     source: 'Calculated from PRISM daily normals at 800\u202fm resolution',
     why: 'The classified Huglin map shows spatial variation in heat accumulation accounting for day-length. It is particularly useful in AVAs at higher latitudes (above 40\u00b0N) where Huglin diverges noticeably from the Winkler Index. Sub-AVA patches in different classes indicate meaningful microclimatic differences for variety selection.',
