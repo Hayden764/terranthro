@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -36,11 +36,6 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const location = useLocation();
   const { stateName, avaSlug } = useParams();
 
-  // AVA hover-preview state — name of the AVA being hovered in InfoPanel pills
-  const [hoverPreviewName, setHoverPreviewName] = useState(null);
-  // State boundary hover-preview
-  const [hoverPreviewState, setHoverPreviewState] = useState(null);
-  
   // Terrain controls state
   const [terrainEnabled, setTerrainEnabled] = useState(true);
   const [currentPitch, setCurrentPitch] = useState(60);
@@ -423,15 +418,11 @@ const MapLibreAVAViewer = ({ avaData }) => {
     };
   }, [avaData]);
 
-  // ── Hover-preview: update the preview-ava source when a pill is hovered ──
-  useEffect(() => {
+  // ── Hover-preview: update the preview-ava source directly (no re-render) ──
+  const handleAvaHover = useCallback((name) => {
     const map = mapRef.current;
     if (!map || !map.getSource('preview-ava')) return;
-    if (!hoverPreviewName) {
-      map.getSource('preview-ava').setData({ type: 'FeatureCollection', features: [] });
-      return;
-    }
-    const nameLower = hoverPreviewName.toLowerCase();
+    const nameLower = name.toLowerCase();
     const match = allFeaturesRef.current.find(
       f => (f.properties?.name || '').toLowerCase() === nameLower
     );
@@ -440,17 +431,19 @@ const MapLibreAVAViewer = ({ avaData }) => {
         ? { type: 'FeatureCollection', features: [match] }
         : { type: 'FeatureCollection', features: [] }
     );
-  }, [hoverPreviewName]);
+  }, []);
 
-  // ── State hover-preview: show state boundary when state badge is hovered ──
-  useEffect(() => {
+  const handleAvaHoverEnd = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !map.getSource('preview-ava')) return;
+    map.getSource('preview-ava').setData({ type: 'FeatureCollection', features: [] });
+  }, []);
+
+  // ── State hover-preview: update directly (no re-render) ──────────────────
+  const handleStateHover = useCallback((name) => {
     const map = mapRef.current;
     if (!map || !map.getSource('preview-state')) return;
-    if (!hoverPreviewState) {
-      map.getSource('preview-state').setData({ type: 'FeatureCollection', features: [] });
-      return;
-    }
-    const nameLower = hoverPreviewState.toLowerCase();
+    const nameLower = name.toLowerCase();
     const match = statesFeaturesRef.current.find(
       f => (f.properties?.name || '').toLowerCase() === nameLower
     );
@@ -459,13 +452,13 @@ const MapLibreAVAViewer = ({ avaData }) => {
         ? { type: 'FeatureCollection', features: [match] }
         : { type: 'FeatureCollection', features: [] }
     );
-  }, [hoverPreviewState]);
+  }, []);
 
-  // Callbacks passed into InfoPanel pills
-  const handleAvaHover    = (name) => setHoverPreviewName(name);
-  const handleAvaHoverEnd = ()     => setHoverPreviewName(null);
-  const handleStateHover    = (name) => setHoverPreviewState(name);
-  const handleStateHoverEnd = ()     => setHoverPreviewState(null);
+  const handleStateHoverEnd = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !map.getSource('preview-state')) return;
+    map.getSource('preview-state').setData({ type: 'FeatureCollection', features: [] });
+  }, []);
 
   // Option B — resolve the correct state slug for an AVA name at click time.
   // Looks up the AVA in allFeaturesRef (which already contains all relevant

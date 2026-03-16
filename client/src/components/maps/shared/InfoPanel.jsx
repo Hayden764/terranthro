@@ -23,6 +23,8 @@ const InfoPanel = ({
   mobileSheetMode = false,
 }) => {
   const navigate = useNavigate();
+  const [subAvasExpanded, setSubAvasExpanded] = useState(false);
+  const [hoveredPill, setHoveredPill] = useState(null); // tracks which pill is highlighted
 
   const props = avaData?.features?.[0]?.properties || {};
   const layerInfo = activeLayer ? LAYER_INFO[activeLayer] : null;
@@ -134,25 +136,15 @@ const InfoPanel = ({
                         borderRadius: '20px',
                         fontSize: '11px',
                         fontWeight: 600,
-                        background: T.pillBg,
-                        border: `1px solid ${T.pillBorder}`,
-                        color: T.pillText,
+                        background: hoveredPill === `state-${code}` ? T.pillHoverBg : T.pillBg,
+                        border: `1px solid ${hoveredPill === `state-${code}` ? T.pillHoverBorder : T.pillBorder}`,
+                        color: hoveredPill === `state-${code}` ? T.pillHoverText : T.pillText,
                         letterSpacing: '0.3px',
                         cursor: 'pointer',
                         transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
                       }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = T.pillHoverBg;
-                        e.currentTarget.style.borderColor = T.pillHoverBorder;
-                        e.currentTarget.style.color = T.pillHoverText;
-                        onStateHover?.(label);
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = T.pillBg;
-                        e.currentTarget.style.borderColor = T.pillBorder;
-                        e.currentTarget.style.color = T.pillText;
-                        onStateHoverEnd?.();
-                      }}
+                      onMouseEnter={() => { setHoveredPill(`state-${code}`); onStateHover?.(label); }}
+                      onMouseLeave={() => { setHoveredPill(null); onStateHoverEnd?.(); }}
                     >
                       {label} AVA ↗
                     </button>
@@ -222,20 +214,14 @@ const InfoPanel = ({
                     borderRadius: '20px',
                     fontSize: '11px',
                     fontWeight: 600,
-                    background: T.pillBg,
-                    border: `1px solid ${T.pillBorder}`,
-                    color: T.pillText,
+                    background: hoveredPill === `parent-${parent}` ? T.pillHoverBg : T.pillBg,
+                    border: `1px solid ${hoveredPill === `parent-${parent}` ? T.pillHoverBorder : T.pillBorder}`,
+                    color: hoveredPill === `parent-${parent}` ? T.pillHoverText : T.pillText,
                     cursor: stateName ? 'pointer' : 'default',
                     transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
                   }}
-                  onMouseEnter={e => {
-                    if (stateName) { e.currentTarget.style.background = T.pillHoverBg; e.currentTarget.style.borderColor = T.pillHoverBorder; e.currentTarget.style.color = T.pillHoverText; }
-                    onAvaHover?.(parent);
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = T.pillBg; e.currentTarget.style.borderColor = T.pillBorder; e.currentTarget.style.color = T.pillText;
-                    onAvaHoverEnd?.();
-                  }}
+                  onMouseEnter={() => { if (stateName) setHoveredPill(`parent-${parent}`); onAvaHover?.(parent); }}
+                  onMouseLeave={() => { setHoveredPill(null); onAvaHoverEnd?.(); }}
                 >
                   {parent} ↗
                 </button>
@@ -244,45 +230,70 @@ const InfoPanel = ({
           </div>
         )}
 
-        {/* Sub-AVAs — each a clickable chip */}
-        {subAVAs && (
-          <div style={{ padding: innerPad, ...sectionStyle }}>
-            <div style={labelStyle}>Contains</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
-              {subAVAs.split('|').map(s => s.trim()).filter(Boolean).map(sub => (
+        {/* Sub-AVAs — one per row, collapsed to first 5 */}
+        {subAVAs && (() => {
+          const subs = subAVAs.split('|').map(s => s.trim()).filter(Boolean);
+          const LIMIT = 5;
+          const visible = subAvasExpanded ? subs : subs.slice(0, LIMIT);
+          const hiddenCount = subs.length - LIMIT;
+          return (
+            <div style={{ padding: innerPad, ...sectionStyle }}>
+              <div style={labelStyle}>Contains ({subs.length})</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+                {visible.map(sub => (
+                  <button
+                    key={sub}
+                    onClick={() => {
+                      if (!stateName) return;
+                      const targetState = resolveAvaState ? resolveAvaState(sub) : stateName;
+                      navigate(`/${targetState}/${toSlug(sub)}`);
+                    }}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      width: '100%',
+                      padding: '5px 12px',
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      background: hoveredPill === `sub-${sub}` ? T.pillHoverBg : T.pillBg,
+                      border: `1px solid ${hoveredPill === `sub-${sub}` ? T.pillHoverBorder : T.pillBorder}`,
+                      color: hoveredPill === `sub-${sub}` ? T.pillHoverText : T.pillText,
+                      cursor: stateName ? 'pointer' : 'default',
+                      textAlign: 'left',
+                      letterSpacing: '0.3px',
+                      transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                    }}
+                    onMouseEnter={() => { if (stateName) setHoveredPill(`sub-${sub}`); onAvaHover?.(sub); }}
+                    onMouseLeave={() => { setHoveredPill(null); onAvaHoverEnd?.(); }}
+                  >
+                    <span>{sub}</span>
+                    {stateName && <span style={{ opacity: 0.55, fontSize: '10px', marginLeft: '6px', flexShrink: 0 }}>↗</span>}
+                  </button>
+                ))}
+              </div>
+              {subs.length > LIMIT && (
                 <button
-                  key={sub}
-                  onClick={() => {
-                    if (!stateName) return;
-                    const targetState = resolveAvaState ? resolveAvaState(sub) : stateName;
-                    navigate(`/${targetState}/${toSlug(sub)}`);
-                  }}
+                  onClick={() => setSubAvasExpanded(v => !v)}
                   style={{
-                    padding: '3px 9px',
-                    borderRadius: '20px',
+                    marginTop: '6px',
                     fontSize: '11px',
-                    fontWeight: 500,
-                    background: T.pillBg,
-                    border: `1px solid ${T.pillBorder}`,
                     color: T.pillText,
-                    cursor: stateName ? 'pointer' : 'default',
-                    transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
-                  }}
-                  onMouseEnter={e => {
-                    if (stateName) { e.currentTarget.style.background = T.pillHoverBg; e.currentTarget.style.borderColor = T.pillHoverBorder; e.currentTarget.style.color = T.pillHoverText; }
-                    onAvaHover?.(sub);
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = T.pillBg; e.currentTarget.style.borderColor = T.pillBorder; e.currentTarget.style.color = T.pillText;
-                    onAvaHoverEnd?.();
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '2px 10px',
+                    opacity: 0.6,
+                    display: 'block',
                   }}
                 >
-                  {sub} ↗
+                  {subAvasExpanded ? 'Show less ↑' : `+ ${hiddenCount} more ↓`}
                 </button>
-              ))}
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Petitioner */}
         {petitioner && (
