@@ -8,44 +8,61 @@ import '../styles/globals.css';
 
 const StatePage = () => {
   const { stateName } = useParams();
-  const [avaData, setAvaData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [listData, setListData] = useState(null);   // no geometry — for AVAListPanel
+  const [avaData, setAvaData] = useState(null);     // with geometry — for MapLibreStateMap
+  const [listLoading, setListLoading] = useState(true);
+  const [mapLoading, setMapLoading] = useState(true);
   const [error, setError] = useState(null);
   const avaHoverHandlerRef = useRef(null);
-  
+
   const { setSelectedState, setCurrentLevel } = useMapContext();
-  const stateConfig = getStateConfig(stateName);  useEffect(() => {
+  const stateConfig = getStateConfig(stateName);
+
+  useEffect(() => {
     if (!stateConfig) {
-      setLoading(false);
+      setListLoading(false);
+      setMapLoading(false);
       return;
     }
 
-    if (stateConfig.avaFile) {
-      setLoading(true);
-      setError(null);
-      
-      console.log(`Loading AVAs for ${stateConfig.name}:`, stateConfig.avaFile);
-      
-      fetch(stateConfig.avaFile)
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          return res.json();
-        })
-        .then(data => {
-          console.log(`✅ Loaded ${data.features?.length || 0} AVAs for ${stateConfig.name}`);
-          setAvaData(data);
-          setLoading(false);
-        })
-        .catch(err => {
-          console.error(`❌ Error loading AVAs for ${stateConfig.name}:`, err);
-          setError(err.message);
-          setLoading(false);
-        });
-    } else {
-      console.log(`No AVA data available for ${stateConfig.name}`);
-      setAvaData(null);
-      setLoading(false);
-    }
+    setListLoading(true);
+    setMapLoading(true);
+    setError(null);
+    setListData(null);
+    setAvaData(null);
+
+    const abbrev = stateConfig.abbreviation;
+
+    // Fetch list data first (no geometry — fast)
+    fetch(`/api/avas/state/${abbrev}?geometry=false`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        setListData(data);
+        setListLoading(false);
+      })
+      .catch(err => {
+        console.error(`Error loading AVA list for ${stateConfig.name}:`, err);
+        setError(err.message);
+        setListLoading(false);
+      });
+
+    // Fetch full geometry for the map (slower, larger)
+    fetch(`/api/avas/state/${abbrev}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        return res.json();
+      })
+      .then(data => {
+        setAvaData(data);
+        setMapLoading(false);
+      })
+      .catch(err => {
+        console.error(`Error loading AVA geometry for ${stateConfig.name}:`, err);
+        setMapLoading(false);
+      });
   }, [stateName, stateConfig]);
 
   useEffect(() => {
@@ -76,9 +93,9 @@ const StatePage = () => {
           onAVAHoverHandler={(handler) => { avaHoverHandlerRef.current = handler; }}
         />
         
-        {!loading && !error && avaData && (
+        {!listLoading && !error && listData && (
           <AVAListPanel
-            avaData={avaData}
+            avaData={listData}
             stateName={stateName}
             onAVAHover={(name, hover) => avaHoverHandlerRef.current?.(name, hover)}
           />
@@ -117,7 +134,7 @@ const StatePage = () => {
         </Link>
 
         {/* Loading State */}
-        {loading && (
+        {(listLoading || mapLoading) && (
           <div 
             style={{
               position: 'absolute',
@@ -170,7 +187,7 @@ const StatePage = () => {
         )}
 
         {/* No AVA Data State */}
-        {!loading && !error && !avaData && (
+        {!listLoading && !mapLoading && !error && !listData && (
           <div 
             style={{
               position: 'absolute',

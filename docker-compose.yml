@@ -11,8 +11,16 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # schema.sql is auto-run on first container init (empty volume only)
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      # Place any supplemental SQL seed files here; they run after schema.sql
+      # The main AVA seed is data-pipeline/scripts/seed-avas.js (run manually)
       - ./database/seeds:/docker-entrypoint-initdb.d/seeds
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terranthro_user -d terranthro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
