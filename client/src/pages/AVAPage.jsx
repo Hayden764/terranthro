@@ -1,13 +1,11 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useMapContext } from '../context/MapContext';
-import { getStateConfig, getAllStateConfigs } from '../config/stateConfig';
 import MapLibreAVAViewer from '../components/maps/MapLibreAVAViewer';
 import '../styles/globals.css';
 
 const AVAPage = () => {
   const { stateName, avaSlug } = useParams();
-  const navigate = useNavigate();
   const [avaData, setAvaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,62 +15,27 @@ const AVAPage = () => {
 
   const { setSelectedAVA, setCurrentLevel } = useMapContext();
 
-  const stateConfig = getStateConfig(stateName);
-
   useEffect(() => {
-    if (!stateConfig || !stateConfig.avaFile) {
-      setLoading(false);
-      setError('State configuration not found');
-      return;
-    }
-
-    const findBySlug = (features) =>
-      features.find(f => {
-        const name = f.properties.name || '';
-        return name.toLowerCase().replace(/\s+/g, '-') === avaSlug;
-      });
-
-    fetch(stateConfig.avaFile)
+    setLoading(true);
+    setError(null);
+    const dbSlug = avaSlug.replace(/-/g, '_');
+    fetch(`/api/avas/${dbSlug}`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then(data => {
-        const avaFeature = findBySlug(data.features);
-        if (avaFeature) {
-          setAvaName(avaFeature.properties.name);
-          setAvaData({ type: 'FeatureCollection', features: [avaFeature] });
-          setLoading(false);
-          return;
-        }
-
-        // Option C — fallback: search all other state files
-        const allConfigs = getAllStateConfigs();
-        const otherFiles = Object.values(allConfigs)
-          .filter(c => c.avaFile && c.avaFile !== stateConfig.avaFile)
-          .map(c => c.avaFile);
-
-        return Promise.all(otherFiles.map(url => fetch(url).then(r => r.json())))
-          .then(collections => {
-            for (const col of collections) {
-              const found = findBySlug(col.features || []);
-              if (found) {
-                setAvaName(found.properties.name);
-                setAvaData({ type: 'FeatureCollection', features: [found] });
-                setLoading(false);
-                return;
-              }
-            }
-            setError('AVA not found');
-            setLoading(false);
-          });
+      .then(feature => {
+        if (feature?.error) throw new Error(feature.error);
+        setAvaName(feature.properties.name);
+        setAvaData({ type: 'FeatureCollection', features: [feature] });
+        setLoading(false);
       })
       .catch(err => {
         console.error('Error loading AVA:', err);
         setError(err.message);
         setLoading(false);
       });
-  }, [stateName, avaSlug, stateConfig]);
+  }, [avaSlug]);
 
   useEffect(() => {
     if (avaData) {
