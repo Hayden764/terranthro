@@ -33,6 +33,8 @@ const AVAPage = () => {
     fetch(`/api/avas/${dbSlug}`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) throw new Error('Not a JSON response');
         return res.json();
       })
       .then(feature => {
@@ -58,6 +60,8 @@ const AVAPage = () => {
         fetch(stateConfig.avaFile)
           .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const ct = res.headers.get('content-type') || '';
+            if (!ct.includes('application/json') && !ct.includes('application/geo+json')) throw new Error('Not a JSON response');
             return res.json();
           })
           .then(data => {
