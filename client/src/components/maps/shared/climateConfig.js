@@ -6,10 +6,11 @@
 
 // Titiler and COG server URLs
 export const TITILER_URL = 'https://titiler-latest-0cem.onrender.com';
-export const COG_SERVER_URL = 'https://cogs.terranthro.com';
+// Use r2.dev URL — avoids custom-domain CDN propagation delays for new uploads
+export const COG_SERVER_URL = 'https://pub-9686f7c1467c4989896000832d9500b0.r2.dev';
 
 // R2 public URL — Titiler fetches COGs from Cloudflare R2
-const COG_DOCKER_URL = 'https://cogs.terranthro.com';
+const COG_DOCKER_URL = 'https://pub-9686f7c1467c4989896000832d9500b0.r2.dev';
 
 // If ports 8000/8080 are in use, try these alternative ports:
 // export const TITILER_URL = 'http://localhost:8001';
@@ -302,6 +303,19 @@ export const INDEX_LAYER_TYPES = {
     available: true,
     rescaleDefault: '1,8',
   },
+  ppt_growing_season_2025: {
+    id: 'ppt_growing_season_2025',
+    label: 'Growing Season Precip',
+    unit: 'mm',
+    colormap: 'blues',
+    fileSlug: 'ppt_growing_season',
+    cogFilename: 'ppt_growing_season_2025_total_cog.tif',
+    description: 'Total precipitation Apr–Oct (mm)',
+    isIndex: true,
+    isClassified: false,
+    available: true,
+    rescaleDefault: '0,1500',
+  },
 };
 
 /**
@@ -345,7 +359,7 @@ export const getTitilerTileUrlWithRescale = (cogUrl, rescaleMin, rescaleMax) => 
  */
 export const getTitilerStatsUrl = (prismVar, month, bbox) => {
   const monthStr = String(month).padStart(2, '0');
-  const cogUrl = `https://cogs.terranthro.com/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
+  const cogUrl = `${COG_SERVER_URL}/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
   const params = new URLSearchParams({
     url: cogUrl,
     bbox: bbox,
@@ -362,7 +376,7 @@ export const getTitilerStatsUrl = (prismVar, month, bbox) => {
  */
 export const getTitilerPointUrl = (prismVar, month, lng, lat) => {
   const monthStr = String(month).padStart(2, '0');
-  const cogUrl = `https://cogs.terranthro.com/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
+  const cogUrl = `${COG_SERVER_URL}/climate-data/national/prism_${prismVar}_us_30s_2020${monthStr}_avg_30y_cog.tif`;
   const encodedCogUrl = encodeURIComponent(cogUrl);
   return `${TITILER_URL}/cog/point/${lng}/${lat}?url=${encodedCogUrl}`;
 };

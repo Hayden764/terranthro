@@ -66,7 +66,7 @@ const ClimateLayer = ({
       const encodedCogUrl = encodeURIComponent(cogUrl);
 
       const rescaleParam = rescale ? rescale : '-22,26';
-      const tileUrl = `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=${encodedCogUrl}&rescale=${rescaleParam}&colormap_name=${colormap}`;
+      const tileUrl = `https://titiler-latest-0cem.onrender.com/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=${encodedCogUrl}&rescale=${rescaleParam}&colormap_name=${colormap}`;
       console.log('✅ Adding climate layer with Titiler URL:', tileUrl);
 
       try {

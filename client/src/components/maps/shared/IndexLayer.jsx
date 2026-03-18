@@ -30,6 +30,7 @@ const IndexLayer = ({
   map,
   fileSlug,
   year = 2025,
+  cogFilename = null,       // optional: override the auto-generated filename
   isClassified = false,
   colormapData = null,
   colormap = 'plasma',
@@ -53,8 +54,9 @@ const IndexLayer = ({
         console.warn('IndexLayer: cleanup error', e);
       }
 
-      // Docker-internal COG URL for Titiler
-      const cogUrl = `https://cogs.terranthro.com/climate-data/indices/${fileSlug}_${year}_cog.tif`;
+      // COG URL for Titiler
+      const filename = cogFilename || `${fileSlug}_${year}_cog.tif`;
+      const cogUrl = `${COG_SERVER_URL}/climate-data/indices/${filename}`;
       const encodedCogUrl = encodeURIComponent(cogUrl);
 
       let tileUrl;
@@ -106,7 +108,7 @@ const IndexLayer = ({
     }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [map, fileSlug, year, isClassified, colormapData, colormap, rescale, rescaleDefault, isVisible]);
+  }, [map, fileSlug, year, cogFilename, isClassified, colormapData, colormap, rescale, rescaleDefault, isVisible]);
 
   // Sync visibility without re-adding the layer
   useEffect(() => {

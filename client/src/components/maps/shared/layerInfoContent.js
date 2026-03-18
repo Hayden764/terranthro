@@ -142,6 +142,21 @@ export const LAYER_INFO = {
     ],
   },
 
+  ppt_growing_season_2025: {
+    icon: '🌧️',
+    why: 'Total growing-season precipitation (April–October) reveals how much natural rainfall a vineyard receives during the critical ripening window. Low summer rainfall produces concentrated, disease-free fruit; high rainfall requires vigilant canopy management and fungal disease control.',
+    formula: 'PPT = Σ [Apr 1 – Oct 31] daily precipitation (mm)\n\nComputed from PRISM daily 4 km gridded precipitation for the 2025 growing season.',
+    period: 'Growing season April – October 2025',
+    source: 'Terranthro — computed from PRISM daily data (4 km)',
+    ranges: [
+      { label: '< 100 mm',      desc: 'Arid growing season — irrigation essential; very low disease pressure.' },
+      { label: '100–250 mm',    desc: 'Semi-arid — supplemental irrigation typically needed.' },
+      { label: '250–500 mm',    desc: 'Moderate — most established vineyards can be dry-farmed.' },
+      { label: '500–750 mm',    desc: 'Wet — careful canopy management required; fungal risk.' },
+      { label: '> 750 mm',      desc: 'Very wet — high disease pressure; harvest timing critical.' },
+    ],
+  },
+
   huglin_classified: {
     icon: '🌍',
     why: 'The classified Huglin map assigns each pixel to one of eight discrete climate classes, making it straightforward to compare the Terranthro AVA against European benchmark appellations and global wine regions that use HI as their primary climate descriptor.',

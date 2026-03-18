@@ -17,6 +17,7 @@ import useClimateScale from "../../hooks/useClimateScale";
 import useClimateProbe from "../../hooks/useClimateProbe";
 import useMapMeasure from "../../hooks/useMapMeasure";
 import useTopoScale from "../../hooks/useTopoScale";
+import { useAvaClimateStats } from "../../hooks/useAvaClimateStats";
 import { CLIMATE_LAYER_TYPES, INDEX_LAYER_TYPES } from "./shared/climateConfig";
 import { TOPO_LAYER_TYPES } from "./shared/topographyConfig";
 import { getStateConfig } from "../../config/stateConfig";
@@ -250,6 +251,26 @@ const MapLibreAVAViewer = ({ avaData }) => {
   const scaleLoading  = climateVisible ? climateScaleLoading : topoVisible ? topoScaleLoading : indexScaleLoading;
   const scaleError    = climateVisible ? climateScaleError   : topoVisible ? topoScaleError   : indexScaleError;
   const autoAdjust    = climateVisible ? climateAutoAdjust   : topoVisible ? topoAutoAdjust   : indexAutoAdjust;
+
+  // AVA-clipped stats from Neon DB — override viewport range in ScalePanel when on an AVA page
+  const LAYER_TO_DB_VAR = {
+    gdd_winkler_accumulated: 'gdd_winkler',
+    huglin:                  'huglin',
+    gst_smarthobday:         'gst',
+    ppt_growing_season_2025: 'ppt',
+  };
+  const dbSlug = avaSlug ? avaSlug.replace(/-/g, '_') : null;
+  const { stats: avaDbStats } = useAvaClimateStats(dbSlug, 2025);
+  const activeDbVarKey = activeLayer ? LAYER_TO_DB_VAR[activeLayer] : null;
+  const activeDbStat   = activeDbVarKey && avaDbStats ? avaDbStats[activeDbVarKey] : null;
+
+  // When DB stats exist: use absolute min/max so scale and map tiles match exactly.
+  // effectiveRescale feeds BOTH the Titiler tile URL and the ScalePanel display.
+  const effectiveRescale = activeDbStat
+    ? `${parseFloat(activeDbStat.min.toFixed(2))},${parseFloat(activeDbStat.max.toFixed(2))}`
+    : rescale;
+  const scaleMin = activeDbStat ? activeDbStat.min : displayMin;
+  const scaleMax = activeDbStat ? activeDbStat.max : displayMax;
 
   // Fire auto-adjust on first toggle-on; reset on toggle-off — PRISM
   const prevClimateVisibleRef = useRef(false);
@@ -586,7 +607,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
           map={mapRef.current}
           isVisible={climateVisible}
           currentMonth={currentMonth}
-          rescale={climateRescale}
+          rescale={climateVisible ? effectiveRescale : climateRescale}
           prismVar={prismVar}
           colormap={effectiveClimateColormap}
         />
@@ -599,11 +620,12 @@ const MapLibreAVAViewer = ({ avaData }) => {
           isVisible={indexVisible}
           fileSlug={activeIndexConfig?.fileSlug}
           year={activeYear}
+          cogFilename={activeIndexConfig?.cogFilename || null}
           isClassified={activeIndexConfig?.isClassified || false}
           colormapData={activeIndexConfig?.colormapData || null}
           colormap={effectiveIndexColormap || 'plasma'}
           rescaleDefault={activeIndexConfig?.rescaleDefault || '0,5000'}
-          rescale={indexRescale}
+          rescale={indexVisible ? effectiveRescale : indexRescale}
         />
       )}
 
@@ -632,6 +654,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
               unit={activePanelConfig?.unit || ''}
               currentMonth={currentMonth}
               stateName={avaSlug ? stateName : undefined}
+              dbSlug={avaSlug ? avaSlug.replace(/-/g, '_') : null}
               onAvaHover={handleAvaHover}
             />
           }
@@ -679,8 +702,9 @@ const MapLibreAVAViewer = ({ avaData }) => {
               colormap={topoVisible ? (activeTopoConfig?.colormap || 'terrain') : climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
               onColormapChange={topoVisible ? () => {} : climateVisible ? setClimateColormap : setIndexColormap}
               readOnlyColormap={topoVisible}
-              displayMin={displayMin}
-              displayMax={displayMax}
+              displayMin={scaleMin}
+              displayMax={scaleMax}
+              avaClipped={!!activeDbStat}
               isLoading={scaleLoading}
               error={scaleError}
               onAutoAdjust={autoAdjust}
@@ -706,6 +730,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
               unit={activePanelConfig?.unit || ''}
               currentMonth={currentMonth}
               stateName={avaSlug ? stateName : undefined}
+              dbSlug={avaSlug ? avaSlug.replace(/-/g, '_') : null}
               mobileSheetMode={true}
               onAvaHover={handleAvaHover}
             />
@@ -754,8 +779,9 @@ const MapLibreAVAViewer = ({ avaData }) => {
               colormap={topoVisible ? (activeTopoConfig?.colormap || 'terrain') : climateVisible ? effectiveClimateColormap : effectiveIndexColormap || 'plasma'}
               onColormapChange={topoVisible ? () => {} : climateVisible ? setClimateColormap : setIndexColormap}
               readOnlyColormap={topoVisible}
-              displayMin={displayMin}
-              displayMax={displayMax}
+              displayMin={scaleMin}
+              displayMax={scaleMax}
+              avaClipped={!!activeDbStat}
               isLoading={scaleLoading}
               error={scaleError}
               onAutoAdjust={autoAdjust}

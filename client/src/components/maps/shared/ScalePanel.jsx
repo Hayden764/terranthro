@@ -21,6 +21,7 @@ const ScalePanel = ({
   onColormapChange,
   displayMin = null,
   displayMax = null,
+  avaClipped = false,
   isLoading = false,
   error = null,
   onAutoAdjust,
@@ -62,7 +63,7 @@ const ScalePanel = ({
               <>
                 <span>{displayMin.toFixed(1)}{unit}</span>
                 <span style={{ color: 'var(--text-on-glass-label)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                  {readOnlyColormap ? 'min – max' : 'p2 – p98'}
+                  {avaClipped ? 'min – max' : readOnlyColormap ? 'min – max' : 'p2 – p98'}
                 </span>
                 <span>{displayMax.toFixed(1)}{unit}</span>
               </>
@@ -74,6 +75,13 @@ const ScalePanel = ({
               </>
             )}
           </div>
+
+          {/* AVA-clipped badge */}
+          {avaClipped && (
+            <div style={{ marginBottom: '8px', padding: '3px 7px', background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.35)', borderRadius: '5px', fontSize: '9px', fontWeight: 700, color: '#4ade80', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center' }}>
+              AVA-clipped · 2025
+            </div>
+          )}
 
           {/* Color ramp picker toggle */}
           {!readOnlyColormap && (

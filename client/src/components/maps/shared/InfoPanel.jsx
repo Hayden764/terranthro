@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LAYER_INFO } from './layerInfoContent';
+import { useAvaClimateStats } from '../../../hooks/useAvaClimateStats';
 
 /**
  * InfoPanel
@@ -17,6 +18,7 @@ const InfoPanel = ({
   stateName = null,
   mobileSheetMode = false,
   onAvaHover = null,
+  dbSlug = null,       // DB slug (underscores) passed directly — avoids waiting for avaData.properties
 }) => {
   const navigate = useNavigate();
 
@@ -27,6 +29,10 @@ const InfoPanel = ({
 
   const layerInfo = activeLayer ? LAYER_INFO[activeLayer] : null;
   const showLayer = !!layerInfo;
+
+  // ── Climate stats (DB-backed, Oregon only for now) ─────────────────────
+  const avaSlug = dbSlug || props.slug || null;
+  const { stats: climateStats, loading: climateLoading } = useAvaClimateStats(avaSlug, 2025);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const toSlug = (name) => name.toLowerCase().replace(/\s+/g, '-');
@@ -317,18 +323,148 @@ const InfoPanel = ({
           </div>
         )}
 
+        {/* ── Climate Stats ─────────────────────────────────────────────── */}
+        {climateLoading && (
+          <div style={{ ...card, textAlign: 'center', color: T.textMuted, fontSize: '12px', padding: '16px' }}>
+            Loading climate data…
+          </div>
+        )}
+
+        {!climateLoading && climateStats && (() => {
+          const CLIMATE_META = {
+            gdd_winkler: { label: 'Winkler GDD',          icon: '☀️',  decimals: 0 },
+            huglin:      { label: 'Huglin Index',          icon: '🌡️', decimals: 0 },
+            gst:         { label: 'Growing Season Temp',   icon: '🌿',  decimals: 1 },
+            ppt:         { label: 'Growing Season Precip', icon: '🌧️', decimals: 0 },
+          };
+
+          const entries = Object.entries(CLIMATE_META)
+            .map(([key, meta]) => ({ key, meta, data: climateStats[key] }))
+            .filter(e => e.data);
+
+          if (!entries.length) return null;
+
+          return (
+            <>
+              {/* Section divider */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '4px 2px',
+              }}>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.10)' }} />
+                <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '1px', color: 'rgba(255,255,255,0.30)' }}>
+                  2025 Growing Season
+                </span>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.10)' }} />
+              </div>
+
+              {entries.map(({ key, meta, data }) => {
+                const fmt = (v) => v == null ? '—' : Number(v).toFixed(meta.decimals);
+                const range = data.max - data.min;
+                // p10–p90 bar position within min–max range
+                const barLeft  = range > 0 ? ((data.p10 - data.min) / range) * 100 : 0;
+                const barWidth = range > 0 ? ((data.p90 - data.p10) / range) * 100 : 100;
+
+                return (
+                  <div key={key} style={card}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                        <span style={{ fontSize: '15px' }}>{meta.icon}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
+                          letterSpacing: '0.8px', color: 'rgba(255,255,255,0.45)' }}>
+                          {meta.label}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: T.textMuted }}>{data.unit}</span>
+                    </div>
+
+                    {/* Mean */}
+                    <div style={{ fontSize: '26px', fontWeight: 700, color: T.textPrimary,
+                      letterSpacing: '-0.5px', lineHeight: 1, marginBottom: '10px' }}>
+                      {fmt(data.mean)}
+                    </div>
+
+                    {/* Min–Max range bar with P10–P90 highlighted */}
+                    <div style={{ marginBottom: '8px' }}>
+                      <div style={{
+                        position: 'relative', height: '5px',
+                        background: 'rgba(255,255,255,0.10)', borderRadius: '99px',
+                      }}>
+                        <div style={{
+                          position: 'absolute', top: 0,
+                          left: `${barLeft}%`, width: `${barWidth}%`,
+                          height: '100%', borderRadius: '99px',
+                          background: 'rgba(56,189,248,0.55)',
+                        }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between',
+                        marginTop: '4px', fontSize: '10px', color: T.textMuted }}>
+                        <span>{fmt(data.min)}</span>
+                        <span style={{ color: 'rgba(56,189,248,0.70)', fontSize: '9px' }}>
+                          p10–p90: {fmt(data.p10)} – {fmt(data.p90)}
+                        </span>
+                        <span>{fmt(data.max)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          );
+        })()}
+
       </div>
     );
   };
 
   // ── Layer mode ────────────────────────────────────────────────────────────
+
+  // Map activeLayer id → DB variable key in ava_climate_stats
+  const LAYER_TO_DB_VAR = {
+    gdd_winkler_accumulated:  'gdd_winkler',
+    gdd_winkler_classified:   'gdd_winkler',
+    huglin:                   'huglin',
+    huglin_classified:        'huglin',
+    gst_smarthobday:          'gst',
+    ppt:                      'ppt',
+    ppt_growing_season_2025:  'ppt',
+  };
+
   const LayerContent = () => {
     const info     = layerInfo;
-    const hasStats = displayMin != null && displayMax != null && !isNaN(displayMin) && !isNaN(displayMax);
-    const mean     = hasStats ? (displayMin + displayMax) / 2 : null;
+
+    // DB-backed AVA stats (polygon-clipped, accurate)
+    const dbVarKey  = activeLayer ? LAYER_TO_DB_VAR[activeLayer] : null;
+    const dbStat    = dbVarKey && climateStats ? climateStats[dbVarKey] : null;
+
+    // Fallback: Titiler viewport stats (whole-viewport, less accurate)
+    const hasViewportStats = displayMin != null && displayMax != null && !isNaN(displayMin) && !isNaN(displayMax);
 
     return (
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+        {/* AVA hierarchy — Part of / Contains — also shown in layer mode */}
+        {parents.length > 0 && (
+          <div style={card}>
+            <div style={{ ...lbl, marginBottom: 0 }}>
+              Part of
+              <span style={{ marginLeft: '6px', fontWeight: 400, opacity: 0.6 }}>({parents.length})</span>
+            </div>
+            <AVAList items={parents} expanded={parentsExpanded} onToggle={setParentsExpanded} />
+          </div>
+        )}
+
+        {children.length > 0 && (
+          <div style={card}>
+            <div style={{ ...lbl, marginBottom: 0 }}>
+              Contains
+              <span style={{ marginLeft: '6px', fontWeight: 400, opacity: 0.6 }}>({children.length})</span>
+            </div>
+            <AVAList items={children} expanded={childrenExpanded} onToggle={setChildrenExpanded} />
+          </div>
+        )}
 
         {/* Card 1 — Icon + Why */}
         <div style={card}>
@@ -339,23 +475,111 @@ const InfoPanel = ({
         </div>
 
         {/* Card 2 — AVA Statistics */}
-        {hasStats && (
+        {dbStat ? (
+          /* ── DB-backed polygon-clipped stats (preferred) ── */
           <div style={card}>
-            <div style={lbl}>AVA Statistics</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginTop: '8px' }}>
-              {[{ label: 'Min', v: displayMin }, { label: 'Mean', v: mean }, { label: 'Max', v: displayMax }].map(({ label, v }) => (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={lbl}>AVA Statistics</div>
+              <div style={{
+                fontSize: '9px', fontWeight: 600, textTransform: 'uppercase',
+                letterSpacing: '0.8px', color: 'rgba(110,231,183,0.70)',
+                background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(52,211,153,0.20)',
+                borderRadius: '4px', padding: '2px 6px',
+              }}>
+                AVA-clipped · 2025
+              </div>
+            </div>
+
+            {/* Min / Mean / Max row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '10px' }}>
+              {[
+                { label: 'Min',  v: dbStat.min  },
+                { label: 'Mean', v: dbStat.mean },
+                { label: 'Max',  v: dbStat.max  },
+              ].map(({ label, v }) => (
                 <div key={label} style={{
                   background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
                   borderRadius: '8px', padding: '8px 4px', textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>{label}</div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.3px' }}>{fmtStat(v)}</div>
+                  <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                    letterSpacing: '0.8px', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.3px' }}>
+                    {fmtStat(v)}
+                  </div>
+                  <div style={{ fontSize: '10px', color: T.textMuted, marginTop: '1px' }}>{dbStat.unit}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* P10–P90 range bar */}
+            {(() => {
+              const range    = dbStat.max - dbStat.min;
+              const barLeft  = range > 0 ? ((dbStat.p10 - dbStat.min) / range) * 100 : 0;
+              const barWidth = range > 0 ? ((dbStat.p90 - dbStat.p10) / range) * 100 : 100;
+              return (
+                <div>
+                  <div style={{
+                    position: 'relative', height: '5px',
+                    background: 'rgba(255,255,255,0.10)', borderRadius: '99px',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 0,
+                      left: `${barLeft}%`, width: `${Math.max(barWidth, 4)}%`,
+                      height: '100%', borderRadius: '99px',
+                      background: 'rgba(56,189,248,0.55)',
+                    }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between',
+                    marginTop: '5px', fontSize: '10px', color: T.textMuted }}>
+                    <span>{fmtStat(dbStat.min)}</span>
+                    <span style={{ color: 'rgba(56,189,248,0.70)', fontSize: '9px' }}>
+                      p10–p90: {fmtStat(dbStat.p10)} – {fmtStat(dbStat.p90)}
+                    </span>
+                    <span>{fmtStat(dbStat.max)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : hasViewportStats ? (
+          /* ── Titiler viewport stats fallback ── */
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={lbl}>AVA Statistics</div>
+              <div style={{
+                fontSize: '9px', fontWeight: 600, textTransform: 'uppercase',
+                letterSpacing: '0.8px', color: 'rgba(255,255,255,0.35)',
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '4px', padding: '2px 6px',
+              }}>
+                Viewport range
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+              {[
+                { label: 'Min',  v: displayMin },
+                { label: 'Mean', v: (displayMin + displayMax) / 2 },
+                { label: 'Max',  v: displayMax },
+              ].map(({ label, v }) => (
+                <div key={label} style={{
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: '8px', padding: '8px 4px', textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
+                    letterSpacing: '0.8px', color: 'rgba(255,255,255,0.45)', marginBottom: '4px' }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: T.textPrimary, letterSpacing: '-0.3px' }}>
+                    {fmtStat(v)}
+                  </div>
                   <div style={{ fontSize: '10px', color: T.textMuted, marginTop: '1px' }}>{unit}</div>
                 </div>
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Card 3 — Formula */}
         <div style={card}>
