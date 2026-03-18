@@ -160,9 +160,9 @@ const InfoPanel = ({
             key={item.name}
             onClick={() => stateName && navigate(`/${stateName}/${parentNavSlug(item)}`)}
             onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)';
-              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.background = 'rgba(56,189,248,0.12)';
+              e.currentTarget.style.borderColor = 'rgba(56,189,248,0.40)';
+              e.currentTarget.style.color = '#7dd3fc';
               if (onAvaHover) onAvaHover(item.slug || item.name.toLowerCase().replace(/\s+/g, '_'));
             }}
             onMouseLeave={e => {

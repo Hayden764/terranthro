@@ -1,4 +1,15 @@
+#!/usr/bin/env node
 /**
+ * Rewrites topographyConfig.js with the full AVA registry and correct public R2 URL.
+ * Run from data-pipeline/: node scripts/update-topo-config.js
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const TARGET = path.resolve(__dirname, '../../client/src/components/maps/shared/topographyConfig.js');
+
+const content = `/**
  * Topography Data Configuration
  * AVA availability registry, Titiler tile URLs, and legend configs
  * for slope, aspect, and elevation COG layers.
@@ -57,7 +68,6 @@ export const TOPO_LAYER_TYPES = {
 // Only AVAs with actual data files (aspect.tif, elevation.tif, slope.tif) are listed
 export const AVA_TOPO_REGISTRY = {
   // ── Arkansas AVAs ──────────────────────────────────────────────────
-  // 'arkansas-mountain' — COGs not generated (missing from 3DEP coverage)
   'altus':                      { state: 'AR', folder: 'altus' },
 
   // ── California AVAs ────────────────────────────────────────────────
@@ -164,7 +174,6 @@ export const AVA_TOPO_REGISTRY = {
   'river-junction':                             { state: 'CA', folder: 'river_junction' },
   'rockpile':                                   { state: 'CA', folder: 'rockpile' },
   'russian-river-valley':                       { state: 'CA', folder: 'russian_river_valley' },
-  // 'rutherford' — COGs not generated (missing from 3DEP coverage)
   'saddle-rock-malibu':                         { state: 'CA', folder: 'saddle_rock_malibu' },
   'salado-creek':                               { state: 'CA', folder: 'salado_creek' },
   'san-antonio-valley':                         { state: 'CA', folder: 'san_antonio_valley' },
@@ -176,7 +185,6 @@ export const AVA_TOPO_REGISTRY = {
   'san-pasqual-valley':                         { state: 'CA', folder: 'san_pasqual_valley' },
   'san-ysidro-district':                        { state: 'CA', folder: 'san_ysidro_district' },
   'santa-clara-valley':                         { state: 'CA', folder: 'santa_clara_valley' },
-  // 'santa-cruz-mountains' — COGs not generated (missing from 3DEP coverage)
   'santa-lucia-highlands':                      { state: 'CA', folder: 'santa_lucia_highlands' },
   'santa-maria-valley':                         { state: 'CA', folder: 'santa_maria_valley' },
   'santa-margarita-ranch':                      { state: 'CA', folder: 'santa_margarita_ranch' },
@@ -209,17 +217,16 @@ export const AVA_TOPO_REGISTRY = {
   'yountville':                                 { state: 'CA', folder: 'yountville' },
   'yucaipa-valley':                             { state: 'CA', folder: 'yucaipa_valley' },
 
+  // ── Idaho AVAs ─────────────────────────────────────────────────────
+  // 'snake-river-valley': missing local .tif files — omitted until generated
+
   // ── New York AVAs ──────────────────────────────────────────────────
-  // Missing COGs (not generated): champlain_valley_of_new_york, finger_lakes, lake_erie, seneca_lake
-  // Skipped large parent AVAs: hudson_river_region, long_island, upper_hudson
   'cayuga-lake':                    { state: 'NY', folder: 'cayuga_lake' },
   'niagara-escarpment':             { state: 'NY', folder: 'niagara_escarpment' },
   'north-fork-of-long-island':      { state: 'NY', folder: 'north_fork_of_long_island' },
   'the-hamptons-long-island':       { state: 'NY', folder: 'the_hamptons_long_island' },
 
   // ── Oregon AVAs ────────────────────────────────────────────────────
-  // Missing COGs (not generated): columbia_valley
-  // Skipped large parent AVAs: rogue_valley, southern_oregon, umpqua_valley, willamette_valley
   'applegate-valley':               { state: 'OR', folder: 'applegate_valley' },
   'chehalem-mountains':             { state: 'OR', folder: 'chehalem_mountains' },
   'columbia-gorge':                 { state: 'OR', folder: 'columbia_gorge' },
@@ -257,7 +264,7 @@ export const hasTopographyData = (avaSlug) => {
 export const getTopoCogUrl = (avaSlug, layerType) => {
   const entry = AVA_TOPO_REGISTRY[avaSlug];
   if (!entry) return null;
-  return `${TOPO_COG_DOCKER_URL}/topography-data/${entry.state}/${entry.folder}/${layerType}.tif`;
+  return \`\${TOPO_COG_DOCKER_URL}/topography-data/\${entry.state}/\${entry.folder}/\${layerType}.tif\`;
 };
 
 /**
@@ -274,8 +281,8 @@ export const getTopoTileUrl = (avaSlug, layerType, rescale = null) => {
   const config = TOPO_LAYER_TYPES[layerType];
   const encodedCogUrl = encodeURIComponent(cogUrl);
 
-  const rescaleParam = rescale ? `&rescale=${rescale}` : '';
-  return `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=${encodedCogUrl}${rescaleParam}&colormap_name=${config.colormap}`;
+  const rescaleParam = rescale ? \`&rescale=\${rescale}\` : '';
+  return \`\${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?url=\${encodedCogUrl}\${rescaleParam}&colormap_name=\${config.colormap}\`;
 };
 
 /**
@@ -290,7 +297,7 @@ export const getTopoStatsUrl = (avaSlug, layerType) => {
   if (!cogUrl) return null;
   const encodedCogUrl = encodeURIComponent(cogUrl);
   // Use percentile_2/98 over the full raster (no bbox) for true AVA-wide range
-  return `${TITILER_URL}/cog/statistics?url=${encodedCogUrl}&max_size=512&resampling=bilinear`;
+  return \`\${TITILER_URL}/cog/statistics?url=\${encodedCogUrl}&max_size=512&resampling=bilinear\`;
 };
 
 /**
@@ -300,12 +307,29 @@ export const getTopoInfoUrl = (avaSlug, layerType) => {
   const cogUrl = getTopoCogUrl(avaSlug, layerType);
   if (!cogUrl) return null;
   const encodedCogUrl = encodeURIComponent(cogUrl);
-  return `${TITILER_URL}/cog/info?url=${encodedCogUrl}`;
+  return \`\${TITILER_URL}/cog/info?url=\${encodedCogUrl}\`;
 };
 
 // MapLibre source/layer ID helpers
-export const getTopoSourceId = (layerType) => `topo-${layerType}`;
-export const getTopoLayerId = (layerType) => `topo-${layerType}-layer`;
+export const getTopoSourceId = (layerType) => \`topo-\${layerType}\`;
+export const getTopoLayerId  = (layerType) => \`topo-\${layerType}-layer\`;
 
 // Default opacity
 export const TOPO_LAYER_OPACITY = 0.65;
+`;
+
+fs.writeFileSync(TARGET, content, 'utf8');
+
+const written = fs.readFileSync(TARGET, 'utf8');
+const caCount = (written.match(/state: 'CA'/g) || []).length;
+const orCount = (written.match(/state: 'OR'/g) || []).length;
+const nyCount = (written.match(/state: 'NY'/g) || []).length;
+const arCount = (written.match(/state: 'AR'/g) || []).length;
+const hasUrl  = written.includes('pub-9686f7c1467c4989896000832d9500b0');
+
+console.log(`✅ Written to: ${TARGET}`);
+console.log(`   CA entries : ${caCount}`);
+console.log(`   OR entries : ${orCount}`);
+console.log(`   NY entries : ${nyCount}`);
+console.log(`   AR entries : ${arCount}`);
+console.log(`   Correct URL: ${hasUrl}`);

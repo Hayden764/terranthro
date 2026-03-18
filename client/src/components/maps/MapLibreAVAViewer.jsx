@@ -19,6 +19,7 @@ import useMapMeasure from "../../hooks/useMapMeasure";
 import useTopoScale from "../../hooks/useTopoScale";
 import { CLIMATE_LAYER_TYPES, INDEX_LAYER_TYPES } from "./shared/climateConfig";
 import { TOPO_LAYER_TYPES } from "./shared/topographyConfig";
+import { getStateConfig } from "../../config/stateConfig";
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
@@ -55,33 +56,90 @@ const MapLibreAVAViewer = ({ avaData }) => {
   };
 
   // AVA hover highlight — called from InfoPanel when user hovers a parent/child pill
-  const hoverGeoCacheRef = useRef({});
-  const handleAvaHover = async (slug) => {
-    const map = mapRef.current;
-    if (!map) return;
+  const hoverGeoCacheRef  = useRef({});   // slug → GeoJSON Feature
+  const stateGeoJsonCache = useRef({});   // stateFile → FeatureCollection
+  const currentHoverSlug  = useRef(null); // tracks the slug that "owns" the current render
 
-    // Clear previous highlight
+  const clearHoverLayers = (map) => {
     if (map.getLayer('ava-hover-line'))  map.removeLayer('ava-hover-line');
     if (map.getLayer('ava-hover-glow'))  map.removeLayer('ava-hover-glow');
     if (map.getLayer('ava-hover-fill'))  map.removeLayer('ava-hover-fill');
     if (map.getSource('ava-hover'))      map.removeSource('ava-hover');
+  };
+
+  /**
+   * Resolve an AVA feature by slug.
+   * 1. Try the REST API (works when backend is running).
+   * 2. Fall back to searching the current state's static GeoJSON in /data/.
+   */
+  const resolveAvaFeature = async (slug) => {
+    // Return cached result immediately
+    if (hoverGeoCacheRef.current[slug]) return hoverGeoCacheRef.current[slug];
+
+    // ── 1. API attempt ────────────────────────────────────────────
+    try {
+      const res = await fetch(`/api/avas/${slug}`);
+      if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const feature = await res.json();
+          if (feature?.geometry) {
+            hoverGeoCacheRef.current[slug] = feature;
+            return feature;
+          }
+        }
+      }
+    } catch (_) { /* fall through */ }
+
+    // ── 2. Static GeoJSON fallback ────────────────────────────────
+    const stateConfig = getStateConfig(stateName);
+    if (!stateConfig?.avaFile) return null;
+
+    try {
+      // Load + cache the whole state file (only fetched once)
+      if (!stateGeoJsonCache.current[stateConfig.avaFile]) {
+        const res = await fetch(stateConfig.avaFile);
+        if (!res.ok) return null;
+        stateGeoJsonCache.current[stateConfig.avaFile] = await res.json();
+      }
+      const collection = stateGeoJsonCache.current[stateConfig.avaFile];
+
+      // Match by converting feature name → slug and comparing
+      const nameToSlug = (name) => name.toLowerCase().replace(/[\s/]+/g, '_').replace(/[^a-z0-9_]/g, '');
+      const feature = collection.features?.find(f => {
+        const name = f.properties?.name || '';
+        return nameToSlug(name) === slug || nameToSlug(name) === slug.replace(/-/g, '_');
+      });
+
+      if (feature?.geometry) {
+        hoverGeoCacheRef.current[slug] = feature;
+        return feature;
+      }
+    } catch (_) { /* silently ignore */ }
+
+    return null;
+  };
+
+  const handleAvaHover = async (slug) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Always clear the previous highlight immediately
+    clearHoverLayers(map);
+    currentHoverSlug.current = slug;
 
     if (!slug) return;
 
     try {
-      // Cache geometry so repeated hovers don't re-fetch
-      if (!hoverGeoCacheRef.current[slug]) {
-        const res = await fetch(`/api/avas/${slug}`);
-        if (!res.ok) return;
-        const feature = await res.json();
-        hoverGeoCacheRef.current[slug] = feature;
-      }
-      const feature = hoverGeoCacheRef.current[slug];
+      const feature = await resolveAvaFeature(slug);
+
+      // Bail if the user moved to a different item while we were fetching
+      if (currentHoverSlug.current !== slug) return;
+      if (!mapRef.current) return;
       if (!feature?.geometry) return;
 
-      // Re-check map is still alive after async fetch
-      if (!mapRef.current) return;
-      if (mapRef.current.getSource('ava-hover')) return; // another hover beat us
+      // Clear again before adding (guards against parallel calls)
+      clearHoverLayers(map);
 
       map.addSource('ava-hover', { type: 'geojson', data: feature });
 
@@ -90,7 +148,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
         id: 'ava-hover-fill',
         type: 'fill',
         source: 'ava-hover',
-        paint: { 'fill-color': '#5BBCFF', 'fill-opacity': 0.08 },
+        paint: { 'fill-color': '#38bdf8', 'fill-opacity': 0.10 },
       });
 
       // Glow
@@ -98,7 +156,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
         id: 'ava-hover-glow',
         type: 'line',
         source: 'ava-hover',
-        paint: { 'line-color': '#5BBCFF', 'line-width': 10, 'line-opacity': 0.18, 'line-blur': 6 },
+        paint: { 'line-color': '#38bdf8', 'line-width': 12, 'line-opacity': 0.20, 'line-blur': 8 },
       });
 
       // Crisp outline
@@ -106,7 +164,7 @@ const MapLibreAVAViewer = ({ avaData }) => {
         id: 'ava-hover-line',
         type: 'line',
         source: 'ava-hover',
-        paint: { 'line-color': '#5BBCFF', 'line-width': 2, 'line-opacity': 0.9 },
+        paint: { 'line-color': '#38bdf8', 'line-width': 2.5, 'line-opacity': 1.0 },
       });
     } catch (e) {
       // silently ignore — hover is non-critical

@@ -416,7 +416,7 @@ class DEMFetcher:
             srcNodata=NODATA,
             dstNodata=NODATA,
             resampleAlg="bilinear",
-            creationOptions=["COMPRESS=DEFLATE", "TILED=YES"],
+            creationOptions=["COMPRESS=DEFLATE", "TILED=YES", "BIGTIFF=IF_SAFER"],
         )
         gdal.Warp(output_path, tile_paths, options=warp_options)
         return output_path

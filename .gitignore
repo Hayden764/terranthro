@@ -58,3 +58,7 @@ ClimateData/Unprocessed/prism_*/
 data-sources/
 ._*
 .DS_Store
+
+# Wrangler local dev cache (never commit these)
+.wrangler/
+**/.wrangler/
