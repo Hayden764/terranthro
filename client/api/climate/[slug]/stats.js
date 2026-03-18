@@ -1,7 +1,7 @@
 // GET /api/climate/[slug]/stats?year=2025
 // Vercel serverless function — replaces Express GET /:slug/stats
 
-import { pool } from '../../_db.js';
+import { pool } from '../../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

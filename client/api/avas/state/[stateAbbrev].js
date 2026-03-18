@@ -1,7 +1,7 @@
 // GET /api/avas/state/[stateAbbrev]?geometry=true|false
 // Vercel serverless function — replaces Express GET /api/avas/state/:stateAbbrev
 
-import { pool } from '../../../_db.js';
+import { pool } from '../../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

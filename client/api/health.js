@@ -1,5 +1,5 @@
 // GET /api/health
-import { pool } from '../_db.js';
+import { pool } from './lib/db.js';
 
 export default async function handler(req, res) {
   let dbOk = false;
