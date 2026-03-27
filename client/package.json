@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    "dev:vite": "vite",
+    "dev": "vite",
+    "dev:vercel": "npx vercel dev",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx"
