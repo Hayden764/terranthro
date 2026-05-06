@@ -1,118 +1,45 @@
-# Terranthro — Progressive Terroir Visualization Platform
+# Terranthro
 
-A multi-scale terroir visualization platform for American Viticultural Areas (AVAs). Navigate from a national overview down to individual AVA detail with 3D terrain, live PRISM climate rasters, computed growing-season indices, and topography overlays — all rendered in the browser via MapLibre GL JS and Cloud Optimized GeoTIFFs.
+> A multi-scale terroir visualization platform for American Viticultural Areas (AVAs).
 
-Deployed at: **[terranthro.vercel.app](https://terranthro.vercel.app)**
+Navigate from a national overview down to individual AVA detail with 3D terrain, PRISM climate rasters, computed growing-season indices, topography overlays, and per-AVA climate statistics — all rendered in the browser via MapLibre GL JS and Cloud Optimized GeoTIFFs served from Cloudflare R2.
 
----
-
-## 🍷 What It Does
-
-Terranthro lets you explore US wine regions across three levels of geographic detail:
-
-1. **National View (`/`)** — All 33 US wine-producing states on an interactive globe
-2. **State View (`/states/:stateName`)** — Every AVA within a state with a side-panel list
-3. **AVA Detail (`/states/:stateName/avas/:avaSlug`)** — 3D terrain viewer with toggleable climate, growing-season index, and topography raster layers
+**Live:** [terranthro.vercel.app](https://terranthro.vercel.app)
 
 ---
 
-## ✅ Current Features
+## What It Does
 
-### Navigation & UI
-- **Three-level routing**: National → State → AVA with clean URL paths
-- **Welcome modal** with "don't show again" preference saved to `localStorage`
-- **Breadcrumb navigation** across all levels
-- **Bi-directional hover sync**: map polygon ↔ AVA list panel highlight each other
-- **Glassmorphism design system**: frosted-glass panels, backdrop blur, vivid accent colors
+Three geographic levels, each with its own map and UI:
 
-### AVA Map Toolkit (AVA level — top-right collapsible panel)
-- **Pan** tool — default drag-to-navigate mode
-- **Probe** tool — click any point on an active raster layer to read its pixel value; displays a hover tooltip and a pinnable point modal with the sampled value and coordinates
-- **Measure** tool — click to place waypoints and compute cumulative geodesic distance (km); supports Clear button and Esc/double-click reset
-- **Zoom in / Zoom out / Reset view** buttons
-- **3D Terrain toggle** — enable/disable MapLibre terrain extrusion
-- **Bearing slider** — rotate the map 0°–360° with live cardinal direction label
-- **Pitch slider** — tilt the map 0°–85° (visible only when terrain is enabled)
-- Panel state (expanded/collapsed) persisted via `localStorage`
-
-### Data Layer Panel (AVA level — left collapsible panel)
-- Single-selection radio across all layer categories
-- **PRISM Climate Normals** — 12-month slider, one variable at a time
-- **Growing-Season Indices** — year dropdown (2025), five index layers
-- **Topography** — elevation, slope, aspect (panel shown only for AVAs with data)
-- Deselect by clicking the active layer again
-
-### Scale / Legend Panel (AVA level — bottom-right)
-- **Continuous layers**: gradient bar with live min/max labels, colormap picker (10 options: Plasma, Viridis, Inferno, Magma, Red→Green, Blues, Reds, Red↔Blue, Spectral, Cool), and **Auto Adjust** button that samples the current viewport bbox via Titiler statistics
-- **Classified layers** (Winkler Regions, Huglin Classes): discrete class swatches — no colormap picker
-- Panel hidden when no layer is active
-
-### Climate Layers — PRISM Normals
-
-| ID | Label | Variable | Status |
-|---|---|---|---|
-| `tdmean` | Mean Temperature | `tdmean` | ✅ Active |
-| `tmax` | Max Temperature | `tmax` | 🔲 Coming soon |
-| `tmin` | Min Temperature | `tmin` | 🔲 Coming soon |
-| `ppt` | Precipitation | `ppt` | 🔲 Coming soon |
-
-Source: national 30-arcsecond PRISM COGs, tiled via Titiler. Viewport auto-scales on layer activation.
-
-### Climate Layers — Growing-Season Indices (2025)
-
-| ID | Label | Type | Description |
-|---|---|---|---|
-| `gdd_winkler_accumulated` | GDD Winkler | Continuous | Growing degree days Apr–Oct |
-| `gdd_winkler_classified` | Winkler Regions | Classified | Winkler I–V classification |
-| `gst_smarthobday` | Growing Season Temp | Continuous | Mean temp Apr–Oct (Smart-Hobday) |
-| `huglin` | Huglin Index | Continuous | Huglin heliothermal index Apr–Sep |
-| `huglin_classified` | Huglin Classes | Classified | Huglin climate classification (8 zones) |
-
-### Topography Layers
-
-| ID | Label | Colormap | Unit |
-|---|---|---|---|
-| `elevation` | Elevation | terrain | m |
-| `slope` | Slope | rdylgn_r | ° |
-| `aspect` | Aspect | hsv | ° |
-
-**AVA coverage** (topography panel shown only for these):
-
-| State | AVAs with data |
-|---|---|
-| Oregon | Applegate Valley, Chehalem Mountains, Columbia Gorge, Dundee Hills, Elkton Oregon, Eola-Amity Hills, Laurelwood District, Lower Long Tom, McMinnville, Mount Pisgah (Polk County), Red Hill Douglas County, Ribbon Ridge, The Rocks District of Milton-Freewater, Umpqua Valley, Van Duzer Corridor, Walla Walla Valley, Yamhill-Carlton |
-| California | Alisos Canyon |
+| Level | Route | What you see |
+|---|---|---|
+| **National** | `/` | Interactive globe with all 33 wine-producing states |
+| **State** | `/:stateName` | Every AVA in the state with a searchable side-panel list |
+| **AVA Detail** | `/:stateName/:avaSlug` | 3D terrain viewer with climate, index, and topography raster layers, an info panel with AVA metadata + live statistics, and a full data toolkit |
 
 ---
 
-## 🏗️ Technology Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend framework | React 18 + Vite 5 |
-| Mapping | MapLibre GL JS v5 |
-| Routing | React Router v7 |
-| Styling | CSS Modules + Tailwind CSS (utilities) |
-| Basemaps | ESRI World Imagery (national/state) / MapTiler Hybrid (AVA) |
-| Raster tiles | Cloud Optimized GeoTIFFs (COGs) via Titiler |
+| Framework | React 18 + Vite 5 |
+| Mapping | MapLibre GL JS 5 |
+| Routing | React Router 7 |
+| Styling | CSS Modules + Tailwind CSS |
+| Basemaps | ESRI World Imagery (national/state) · MapTiler Hybrid (AVA) |
+| Raster tiles | Cloud Optimized GeoTIFFs (COGs) via [Titiler](https://developmentseed.org/titiler/) |
+| COG storage | Cloudflare R2 (public bucket) |
 | Climate data | PRISM Climate Group 30-arcsecond monthly normals |
-| Climate indices | GDD/Winkler, Huglin, GST — computed from PRISM (Python) |
-| Topography | USGS 3DEP elevation → slope/aspect derived COGs |
-| Deployment | Vercel (frontend) |
-| Local tile server | Titiler (Docker) + `http-server` |
-| Database (planned) | PostgreSQL 15 + PostGIS 3.3 |
-| Backend API (planned) | Node.js + Express |
+| Climate indices | GDD/Winkler, Huglin, GST, GSP — computed from PRISM (Python) |
+| Topography | USGS 3DEP 1/3 arc-second DEM → elevation/slope/aspect COGs |
+| Per-AVA stats | Neon Postgres (serverless) — polygon-clipped statistics |
+| Deployment | Vercel (frontend + serverless API routes) |
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- Git
-- Docker (for local raster tile serving)
-
-### Frontend
+## Quick Start
 
 ```bash
 git clone https://github.com/Hayden764/terranthro.git
@@ -121,207 +48,240 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:3001** in your browser.
+Open **http://localhost:3001**.
 
-> **Note:** Map UI and AVA boundaries work without Docker. Climate and topography raster layers require the local tile stack below.
-
-### Local Tile Stack (for raster layers)
-
-```bash
-# 1. Start Titiler (COG tile server) via Docker
-docker-compose up titiler
-
-# 2. Serve COG files via http-server
-npx http-server ./client/public -p 8080 --cors
-```
-
-- Titiler: `http://localhost:8000`
-- COG files: `http://localhost:8080`
+> The map UI, AVA boundaries, and all raster layers work immediately — COGs are served from Cloudflare R2 and Titiler is hosted on Render. No Docker required.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 terranthro/
-├── client/                                # React + Vite frontend (deployed to Vercel)
+├── client/                          # React + Vite frontend (Vercel)
+│   ├── api/                         # Vercel serverless functions
+│   │   ├── health.js
+│   │   ├── avas/
+│   │   │   ├── [slug].js            # GET /api/avas/:slug
+│   │   │   └── state/[stateAbbrev].js
+│   │   ├── climate/
+│   │   │   └── [slug]/stats.js      # GET /api/climate/:slug/stats?year=
+│   │   ├── layers/
+│   │   │   ├── [avaId].js
+│   │   │   ├── national.js
+│   │   │   └── state/[stateId].js
+│   │   └── lib/db.js                # Neon Postgres pool
 │   ├── public/
-│   │   ├── data/                          # AVA GeoJSON per state (33 files)
-│   │   ├── climate-data/
-│   │   │   ├── national/                  # PRISM 30s national COGs (monthly)
-│   │   │   └── indices/                   # Computed index COGs (2025 season)
-│   │   └── topography-data/
-│   │       ├── OR/                        # Oregon AVA COGs (17 AVAs)
-│   │       └── CA/                        # California AVA COGs (Alisos Canyon)
+│   │   ├── data/                    # AVA GeoJSON — 33 state files
+│   │   └── topography-data/         # Local COG mirror (OR, CA, ID)
 │   └── src/
-│       ├── App.jsx                        # Root routing + context providers
 │       ├── components/
 │       │   ├── maps/
 │       │   │   ├── MapLibreNationalMap.jsx
 │       │   │   ├── MapLibreStateMap.jsx
 │       │   │   ├── MapLibreAVAViewer.jsx
 │       │   │   └── shared/
-│       │   │       ├── MapToolkit.jsx        # Pan/Probe/Measure + View controls
-│       │   │       ├── DataLayerPanel.jsx    # Layer selection panel
-│       │   │       ├── ScalePanel.jsx        # Legend + colormap + auto-adjust
-│       │   │       ├── ClimateLayer.jsx      # PRISM raster tile rendering
-│       │   │       ├── IndexLayer.jsx        # Index raster tile rendering
-│       │   │       ├── TopographyLayer.jsx   # Topo COG rendering
-│       │   │       ├── ClimateProbeTooltip.jsx  # Hover probe tooltip
-│       │   │       ├── ClimatePointModal.jsx    # Pinnable probe result modal
-│       │   │       ├── climateConfig.js      # PRISM + index layer config & URLs
-│       │   │       └── topographyConfig.js   # Topo layer config & AVA registry
-│       │   ├── layers/
-│       │   │   ├── AVAListPanel.jsx
-│       │   │   ├── LayersModal.jsx
-│       │   │   ├── LayerPanel.jsx
-│       │   │   ├── LayerToggle.jsx
-│       │   │   └── OpacitySlider.jsx
-│       │   ├── Navigation/
-│       │   │   └── Breadcrumb.jsx
+│       │   │       ├── InfoPanel.jsx           # AVA metadata + stats panel
+│       │   │       ├── DataLayerPanel.jsx      # Layer selector
+│       │   │       ├── ScalePanel.jsx          # Legend + colormap + auto-adjust
+│       │   │       ├── MapToolkit.jsx          # Pan/Probe/Measure + view controls
+│       │   │       ├── DesktopDock.jsx         # Desktop layout shell
+│       │   │       ├── MobileDock.jsx          # Mobile layout shell
+│       │   │       ├── ClimateLayer.jsx        # PRISM raster tile rendering
+│       │   │       ├── IndexLayer.jsx          # Index raster tile rendering
+│       │   │       ├── TopographyLayer.jsx     # Topo COG rendering
+│       │   │       ├── ClimateProbeTooltip.jsx # Hover probe tooltip
+│       │   │       ├── ClimatePointModal.jsx   # Pinnable probe result card
+│       │   │       ├── climateConfig.js        # Layer config + Titiler URLs
+│       │   │       ├── topographyConfig.js     # Topo config + AVA registry
+│       │   │       └── layerInfoContent.jsx    # Layer descriptions + ranges
 │       │   └── ui/
-│       │       ├── LayersMenuButton.jsx
 │       │       ├── WelcomeModal.jsx
 │       │       └── ProjectionInfoModal.jsx
 │       ├── config/
-│       │   ├── stateConfig.js             # State bounds, metadata, AVA counts
-│       │   └── avaFileMap.js              # AVA slug → GeoJSON file mapping
+│       │   ├── stateConfig.js       # State bounds, zoom, AVA file paths
+│       │   └── avaFileMap.js        # State slug → GeoJSON filename
 │       ├── context/
-│       │   ├── MapContext.jsx             # Map instance + camera state
-│       │   └── LayerContext.jsx           # Active layer state
+│       │   ├── MapContext.jsx       # Map instance + camera state
+│       │   └── LayerContext.jsx     # Active layer state
 │       ├── hooks/
-│       │   ├── useClimateProbe.js         # Titiler point-query hook
-│       │   ├── useClimateScale.js         # Viewport bbox auto-scale hook
-│       │   └── useMapMeasure.js           # Geodesic distance measurement hook
-│       ├── data/
-│       │   ├── states.json
-│       │   ├── us-states.json
-│       │   ├── layerDefinitions.json
-│       │   └── avas/                      # Individual AVA GeoJSON files
+│       │   ├── useAvaClimateStats.js   # Fetches DB-backed polygon stats
+│       │   ├── useClimateProbe.js      # Titiler point-query (hover + pin)
+│       │   ├── useClimateScale.js      # Viewport bbox auto-scale
+│       │   ├── useTopoScale.js         # Full-raster topo min/max fetch
+│       │   └── useMapMeasure.js        # Geodesic distance measurement
 │       └── pages/
 │           ├── StatePage.jsx
 │           ├── AVAPage.jsx
 │           └── About.jsx
-├── ClimateData/
-│   ├── Processed/                         # Computed index COGs (2025 season)
-│   └── Unprocessed/                       # Raw PRISM downloads + ingestion scripts
-├── data-pipeline/
-│   └── scripts/fetch-prism.py
-├── database/
-│   └── schema.sql                         # PostgreSQL + PostGIS schema
-├── server/                                # Node.js + Express API (planned)
-├── docker-compose.yml
-└── ARCHITECTURE.md
+└── data-pipeline/
+    └── scripts/
+        ├── compute-ava-climate-stats.py  # Clip COGs to AVA polygons → Postgres
+        ├── generate-terrain-cogs.py      # USGS 3DEP DEM → elevation/slope/aspect COGs
+        ├── fetch-prism.py                # Download PRISM monthly normals
+        ├── seed-avas.js                  # Seed AVA records into Postgres
+        ├── update-topo-config.js         # Regenerate topographyConfig.js registry
+        ├── upload-topography-r2.sh       # Upload topo COGs to Cloudflare R2
+        └── upload-terrain-r2.sh          # Upload terrain COGs to Cloudflare R2
 ```
 
 ---
 
-## 🌡️ Raster Data Architecture
+## Data Layers
 
-All raster layers are served as Cloud Optimized GeoTIFFs (COGs) via two local services:
+### PRISM Climate Normals
 
-| Service | Port | Role |
+| Layer | Variable | Status |
 |---|---|---|
-| `http-server` | 8080 | Serves raw `.tif` files from `public/` |
-| Titiler (Docker) | 8000 | Reads COGs and serves XYZ map tiles + statistics + point queries |
+| Mean Temperature | `tdmean` | ✅ Active |
+| Max Temperature | `tmax` | 🔲 COG pending |
+| Min Temperature | `tmin` | 🔲 COG pending |
+| Precipitation | `ppt` | 🔲 COG pending |
 
-Titiler fetches COGs from `host.docker.internal:8080` (Docker-internal host resolution). MapLibre fetches rendered PNG tiles from `localhost:8000/cog/tiles/{z}/{x}/{y}.png`.
+30-year normals (1991–2020) at 800 m resolution, tiled via Titiler from Cloudflare R2.
 
----
+### Growing-Season Indices (2025)
 
-## 🗂️ Data Layer Status
-
-| Category | Layers | Status |
+| Layer | Type | Description |
 |---|---|---|
-| PRISM Mean Temperature | `tdmean` | ✅ Active |
-| PRISM Max/Min/Precip | `tmax`, `tmin`, `ppt` | 🔲 Data needed |
-| GDD / Winkler | Accumulated + Classified | ✅ Active (2025) |
-| Growing Season Temp | Smart-Hobday | ✅ Active (2025) |
-| Huglin Index | Raw + Classified | ✅ Active (2025) |
-| Topography | Elevation, Slope, Aspect | ✅ Active (OR 17 AVAs + CA 1 AVA) |
-| Soils | USDA SSURGO | 🔲 Planned |
-| Geology | USGS bedrock | 🔲 Planned |
-| Viticulture | Vineyard boundaries | 🔲 Planned |
+| GDD Winkler | Continuous | Growing degree days Apr–Oct (base 10°C) |
+| Winkler Regions | Classified | Winkler I–V+ classification |
+| Huglin Index | Continuous | Heliothermal index with day-length factor, Apr–Sep |
+| Huglin Classes | Classified | 8-zone Huglin climate classification |
+| Growing Season Temp | Continuous | Mean daily temp Apr–Oct (Smart-Hobday) |
+| Growing Season Precip | Continuous | Cumulative precipitation Apr–Oct |
 
----
+### Topography
 
-## 🎨 Design System
-
-**Glassmorphism** throughout — frosted-glass panels, `backdrop-filter: blur`, semi-transparent surfaces, thin white borders, soft multi-layered glow shadows.
-
-### Colors
-
-| Token | Hex | Usage |
+| Layer | Colormap | Unit |
 |---|---|---|
-| Primary Burgundy | `#C41E3A` | Accents, interactive elements |
-| Primary Gold | `#FFB81C` | Highlights, data callouts |
-| Primary Violet | `#6B2D5C` | Secondary accents |
-| Base Cream | `#FFFEF7` | Warm background |
-| Text Charcoal | `#2B2B2B` | Body text |
+| Elevation | terrain | m |
+| Slope | rdylgn_r | ° |
+| Aspect | hsv | ° |
 
-### Typography
-- **Headers**: Montserrat (700 weight, uppercase)
-- **Body / UI**: Inter (400–600 weight)
+COGs derived from USGS 3DEP 1/3 arc-second (~10 m) DEM. Served from Cloudflare R2.
 
----
+**State coverage (registered in topographyConfig.js):**
 
-## 🚧 Known Issues
-
-- **Titiler networking**: Docker cannot always resolve `host.docker.internal` on some macOS configs — requires manual `http-server` + Titiler startup for raster layers to work locally
-- **Climate variable coverage**: Only `tdmean` (mean temperature) is currently active; `tmax`, `tmin`, and `ppt` are defined but COG files are not yet available
-- **Index year**: Only the 2025 season is processed; the year dropdown currently shows 2025 only
-- **Topography coverage**: 17 Oregon AVAs + 1 California AVA — remaining states not yet processed
+| State | AVAs |
+|---|---|
+| California | 145 |
+| Oregon | 17 |
+| New York | 4 |
+| Arkansas | 1 |
 
 ---
 
-## 🎯 Roadmap
+## AVA Info Panel
 
-### High Priority
-- [ ] Add PRISM COGs for `tmax`, `tmin`, `ppt` variables
-- [ ] Expand topography COG coverage to WA and remaining CA AVAs
-- [ ] Resolve Titiler Docker networking for reliable local development
+When viewing an AVA with no layer active, the right-side info panel shows:
 
-### Medium Priority
-- [ ] Add AVA metadata panel (establishment year, grape varieties, description)
-- [ ] Process 2024 and 2026 season growing-season indices
-- [ ] Add soils layer (USDA SSURGO)
-- [ ] Mobile-responsive layout improvements
+- State + county, established date, CFR reference
+- Parent AVAs ("Part of") and sub-AVAs ("Contains") with navigation links
+- **2025 Growing Season** stats (where computed in DB): Winkler GDD, Huglin Index, Growing Season Temp, Growing Season Precip — each with a large mean value, min/max range bar, and p10–p90 highlight
+- **Elevation Range** card (where topo COG is available): mean elevation + min/max bar fetched live from Titiler
 
-### Future
-- [ ] Node.js + Express backend API
-- [ ] PostgreSQL + PostGIS for AVA metadata and spatial queries
-- [ ] Cloud-hosted COG tile service (remove Docker dependency for production)
-- [ ] Export / share map view functionality
+When a layer is active, the panel switches to show the layer's scientific context, AVA-clipped statistics, formula, data source, and reference ranges.
 
 ---
 
-## 🌐 Data Sources
+## Map Toolkit
 
-| Data | Source | Status |
+Available at the AVA level (top-right panel):
+
+| Tool | Description |
+|---|---|
+| **Pan** | Default drag-to-navigate |
+| **Probe** | Click any active raster to read its pixel value; shows hover tooltip + pinnable point card |
+| **Measure** | Place waypoints and compute cumulative geodesic distance (km) |
+| **Zoom In / Out** | Programmatic zoom |
+| **Reset View** | Fly back to AVA bounds |
+| **3D Terrain** | Toggle MapLibre terrain extrusion |
+| **Bearing** | Rotate map 0°–360° with cardinal label |
+| **Pitch** | Tilt map 0°–85° (terrain mode only) |
+
+---
+
+## Scale Panel
+
+- **Continuous layers**: gradient bar with live min/max labels, 10-colormap picker (Plasma, Viridis, Inferno, Magma, RdYlGn, Blues, Reds, RdBu, Spectral, Cool), and **Auto Adjust** (samples current viewport via Titiler p2–p98)
+- **Classified layers** (Winkler Regions, Huglin Classes): discrete swatches — no colormap picker
+- Hidden when no layer is active
+
+---
+
+## Data Pipeline
+
+Scripts in `data-pipeline/scripts/`:
+
+```bash
+# Download PRISM monthly normals
+python scripts/fetch-prism.py
+
+# Generate elevation/slope/aspect COGs from USGS 3DEP
+python scripts/generate-terrain-cogs.py --state OR
+
+# Clip COGs to AVA polygons and write stats to Postgres
+python scripts/compute-ava-climate-stats.py --state OR --year 2025
+
+# Upload topo COGs to Cloudflare R2
+./scripts/upload-topography-r2.sh <bucket-name>
+./scripts/upload-topography-r2.sh <bucket-name> --dry-run
+
+# Regenerate topographyConfig.js from local tif inventory
+node scripts/update-topo-config.js
+
+# Seed AVA records into Postgres from GeoJSON
+node scripts/seed-avas.js
+```
+
+---
+
+## API Routes (Vercel Serverless)
+
+| Method | Route | Description |
 |---|---|---|
-| AVA Boundaries | UC Davis Viticulture & Enology / TTB | ✅ 33 states |
-| Climate (PRISM) | PRISM Climate Group (30-arcsec normals) | ✅ `tdmean` active |
-| Topography | USGS 3DEP elevation data | ✅ OR (17 AVAs), CA (1 AVA) |
-| Climate Indices | Computed from PRISM via Python | ✅ 2025 season |
-| Satellite Imagery | ESRI World Imagery / MapTiler | ✅ Active |
-| Soil Data | USDA SSURGO | 🔲 Planned |
-| Geology | USGS | 🔲 Planned |
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/avas/:slug` | Single AVA with geometry, parents, children, counties |
+| `GET` | `/api/avas/state/:stateAbbrev` | All AVAs for a state |
+| `GET` | `/api/climate/:slug/stats?year=` | Pre-computed polygon-clipped growing-season stats |
+| `GET` | `/api/layers/:avaId` | Layer metadata for an AVA |
+| `GET` | `/api/layers/national` | National layer list |
+| `GET` | `/api/layers/state/:stateId` | State-level layer list |
+
+All routes connect to Neon Postgres via `api/lib/db.js`.
 
 ---
 
-## 📄 License
+## Data Sources
 
-MIT License
-
-## 🙏 Acknowledgments
-
-- UC Davis Department of Viticulture & Enology for AVA datasets
-- PRISM Climate Group for high-resolution US climate data
-- MapLibre GL JS community for open-source mapping
-- ESRI for World Imagery satellite basemap tiles
-- MapTiler for hybrid satellite tiles
+| Data | Source |
+|---|---|
+| AVA Boundaries | UC Davis Viticulture & Enology / TTB |
+| Climate Normals | PRISM Climate Group, Oregon State University (800 m) |
+| Climate Indices | Computed from PRISM via Python |
+| Topography | USGS 3D Elevation Program (3DEP) — 1/3 arc-second DEM |
+| Satellite Imagery | ESRI World Imagery · MapTiler Hybrid |
+| Soil Data | USDA NRCS SSURGO *(planned)* |
+| Geology | USGS *(planned)* |
 
 ---
 
-**Version**: 0.7.0  
-**Last Updated**: March 2026
+## Roadmap
+
+- [ ] PRISM COGs for `tmax`, `tmin`, `ppt`
+- [ ] Expand topo COG coverage to WA and remaining CA AVAs
+- [ ] 2024 and 2026 growing-season index vintages
+- [ ] Soils layer (USDA SSURGO)
+- [ ] Mobile layout polish
+- [ ] AVA comparison view
+
+---
+
+## License
+
+MIT
+
+---
+
+**Version:** 0.8.0 · **Updated:** March 2026

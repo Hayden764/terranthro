@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LAYER_INFO } from './layerInfoContent';
 import { useAvaClimateStats } from '../../../hooks/useAvaClimateStats';
+import { getTopoStatsUrl, hasTopographyData } from './topographyConfig';
 
 /**
  * InfoPanel
@@ -33,6 +34,47 @@ const InfoPanel = ({
   // ── Climate stats (DB-backed, Oregon only for now) ─────────────────────
   const avaSlug = dbSlug || props.slug || null;
   const { stats: climateStats, loading: climateLoading } = useAvaClimateStats(avaSlug, 2025);
+
+  // Topo registry uses URL slugs (dashes); dbSlug uses underscores — normalise once
+  const topoSlug = avaSlug ? avaSlug.replace(/_/g, '-') : null;
+
+  // ── Elevation stats (Titiler COG, for AVAs with topo data) ─────────────
+  const [elevStats, setElevStats] = useState(null);
+  const [elevLoading, setElevLoading] = useState(false);
+
+  useEffect(() => {
+    if (!topoSlug || !hasTopographyData(topoSlug)) {
+      setElevStats(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchElevStats = async () => {
+      setElevLoading(true);
+      try {
+        const url = getTopoStatsUrl(topoSlug, 'elevation');
+        if (!url) return;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        const bandKey = Object.keys(data)[0];
+        const band = data[bandKey];
+        if (!band || cancelled) return;
+        setElevStats({
+          min: parseFloat(band.min.toFixed(0)),
+          max: parseFloat(band.max.toFixed(0)),
+          mean: parseFloat(band.mean.toFixed(0)),
+          p10: parseFloat((band.percentile_2 ?? band.min).toFixed(0)),
+          p90: parseFloat((band.percentile_98 ?? band.max).toFixed(0)),
+        });
+      } catch {
+        // silently skip — elevation card just won't show
+      } finally {
+        if (!cancelled) setElevLoading(false);
+      }
+    };
+    fetchElevStats();
+    return () => { cancelled = true; };
+  }, [topoSlug]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const toSlug = (name) => name.toLowerCase().replace(/\s+/g, '-');
@@ -411,6 +453,81 @@ const InfoPanel = ({
                   </div>
                 );
               })}
+            </>
+          );
+        })()}
+
+        {/* ── Elevation Range ──────────────────────────────────────────────── */}
+        {elevLoading && !elevStats && (
+          <div style={{ ...card, textAlign: 'center', color: T.textMuted, fontSize: '12px', padding: '16px' }}>
+            Loading elevation data…
+          </div>
+        )}
+
+        {elevStats && (() => {
+          const range    = elevStats.max - elevStats.min;
+          const barLeft  = range > 0 ? ((elevStats.p10 - elevStats.min) / range) * 100 : 0;
+          const barWidth = range > 0 ? ((elevStats.p90 - elevStats.p10) / range) * 100 : 100;
+
+          return (
+            <>
+              {/* Section divider — only if there were no climate stats shown */}
+              {!climateStats && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '4px 2px',
+                }}>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.10)' }} />
+                  <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+                    letterSpacing: '1px', color: 'rgba(255,255,255,0.30)' }}>
+                    Terrain
+                  </span>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.10)' }} />
+                </div>
+              )}
+
+              <div style={card}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    <span style={{ fontSize: '15px' }}>⛰️</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
+                      letterSpacing: '0.8px', color: 'rgba(255,255,255,0.45)' }}>
+                      Elevation Range
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: T.textMuted }}>m</span>
+                </div>
+
+                {/* Mean */}
+                <div style={{ fontSize: '26px', fontWeight: 700, color: T.textPrimary,
+                  letterSpacing: '-0.5px', lineHeight: 1, marginBottom: '10px' }}>
+                  {elevStats.mean}
+                </div>
+
+                {/* Min–Max range bar */}
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{
+                    position: 'relative', height: '5px',
+                    background: 'rgba(255,255,255,0.10)', borderRadius: '99px',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 0,
+                      left: `${barLeft}%`, width: `${Math.max(barWidth, 4)}%`,
+                      height: '100%', borderRadius: '99px',
+                      background: 'rgba(56,189,248,0.55)',
+                    }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between',
+                    marginTop: '4px', fontSize: '10px', color: T.textMuted }}>
+                    <span>{elevStats.min} m</span>
+                    <span style={{ color: 'rgba(56,189,248,0.70)', fontSize: '9px' }}>
+                      {elevStats.min}–{elevStats.max} m
+                    </span>
+                    <span>{elevStats.max} m</span>
+                  </div>
+                </div>
+              </div>
             </>
           );
         })()}
