@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" class="page">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Public Projects · Terranthro</title>
+  <meta name="description" content="Maps from Terranthro: the Willamette Valley AVA Flyover and a vineyard map for the Oregon Wine Board." />
+  <meta name="theme-color" content="#080A0F" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F3F0E9" media="(prefers-color-scheme: light)" />
+  <!-- Apply a saved light/dark choice before first paint (see theme.js). -->
+  <script>
+    try {
+      var t = localStorage.getItem('terranthro-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/src/styles/tokens.css" />
+  <link rel="stylesheet" href="/src/styles/style.css" />
+  <link rel="stylesheet" href="/src/styles/page.css" />
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <canvas id="terrain" aria-hidden="true"></canvas>
+  <div class="scrim" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="site-mark" href="/">TERRANTHRO<span class="visually-hidden">, home</span></a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul class="nav-list">
+        <li><a class="nav-link" href="/about/"><span class="nav-index" aria-hidden="true">02</span>About</a></li>
+        <li><a class="nav-link" href="/projects/" aria-current="page"><span class="nav-index" aria-hidden="true">03</span>Projects</a></li>
+        <li><button class="nav-link theme-toggle" type="button"><span class="nav-index" aria-hidden="true"></span><span class="visually-hidden">Switch to </span><span class="theme-label">Light</span><span class="visually-hidden"> mode</span></button></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="content" class="doc" tabindex="-1">
+    <div class="doc-intro">
+      <h1 class="doc-title">Public Projects <span class="dash" aria-hidden="true">&mdash;</span></h1>
+      <p class="doc-lede">
+        Selected work from the studio: maps and tools for understanding
+        what the Earth holds.
+      </p>
+      <p class="doc-note">What's here is the work we can show. There's more on the way.</p>
+    </div>
+
+    <ul class="chips" aria-label="Jump to a project">
+      <li><a class="chip" href="#p-owb"><span>Vineyard Map</span> <span class="chip-meta">&mdash; In progress</span></a></li>
+      <li><a class="chip" href="#p-flyover"><span>AVA Flyover</span> <span class="chip-meta">&mdash; Finished</span></a></li>
+      <li><a class="chip" href="#p-more"><span>More</span> <span class="chip-meta">&mdash; In development</span></a></li>
+    </ul>
+
+    <section class="section" aria-labelledby="s-work">
+      <h2 class="section-title" id="s-work">Work</h2>
+
+      <article class="entry" id="p-owb" aria-labelledby="t-owb">
+        <div class="entry-head">
+          <p class="entry-label status status--progress"><span class="status-dot" aria-hidden="true"></span>In progress &middot; 01</p>
+          <h3 class="entry-title" id="t-owb">Oregon Wine Board Vineyard Map</h3>
+          <p class="entry-client">Contract work for the <a href="https://www.oregonwine.org">Oregon Wine Board</a></p>
+        </div>
+        <div class="plate" style="--plate-color: var(--color-crimson); --cx: 70%; --cy: 30%;" aria-hidden="true"><span class="plate-cap">Oregon</span></div>
+        <div class="entry-body">
+          <p>
+            A map of every vineyard in Oregon, and the data to understand
+            them. We ran a statewide analysis to find each one, outlined it,
+            and set it against the climate, terrain and soil that shape it.
+            A portal lets wineries add what only they know, building a
+            database of Oregon vineyards unlike anything that has existed
+            before.
+          </p>
+          <details class="more">
+            <summary>More info</summary>
+            <ul class="breakdown">
+              <li>
+                <strong>Finds every vineyard.</strong> A machine learning model
+                trained on the fingerprint of a vineyard, its long, evenly
+                spaced rows of trellised vines, scans the whole state from
+                above. The map starts from a complete inventory rather than a
+                list of the ones already known.
+              </li>
+              <li>
+                <strong>Traces the true footprint.</strong> Each vineyard is
+                mapped to its actual boundary rather than a dot on a map, and
+                placed within the AVA that surrounds it.
+              </li>
+              <li>
+                <strong>Adds the ground, climate and soil.</strong> Elevation,
+                slope, aspect, long-term climate normals, vintage-by-vintage
+                weather and soil data sit alongside each vineyard, so the
+                conditions it grows in are on the same map as the vineyard
+                itself.
+              </li>
+              <li>
+                <strong>Opens it to wineries.</strong> Through a winery portal,
+                growers and producers claim their vineyards and add the details
+                only they know, the things no analysis can see from above.
+              </li>
+              <li>
+                <strong>Builds one shared record.</strong> The statewide
+                analysis and the wineries' own input feed a single database,
+                where every site in Oregon can be understood and compared on
+                the same footing.
+              </li>
+            </ul>
+          </details>
+          <span class="pill pill--static">Not yet public</span>
+        </div>
+      </article>
+
+      <article class="entry" id="p-flyover" aria-labelledby="t-flyover">
+        <div class="entry-head">
+          <p class="entry-label status"><span class="status-dot" aria-hidden="true"></span>Finished &middot; 02</p>
+          <h3 class="entry-title" id="t-flyover">AVA Flyover</h3>
+          <p class="entry-client">Willamette Valley AVA tour, built for the <a href="https://willamettewines.com">Willamette Valley Wineries Association</a></p>
+        </div>
+        <div class="plate" style="--plate-color: var(--color-electric-blue); --cx: 25%; --cy: 65%;" aria-hidden="true"><span class="plate-cap">Willamette</span></div>
+        <div class="entry-body">
+          <p>
+            A guided flight through the Willamette Valley and the 11 AVAs
+            nested inside it. On a paper map the valley's appellations are a
+            tangle of overlapping boundaries. The flyover turns them into a
+            tour you scroll through, one place at a time, so you can see how
+            the valley fits together.
+          </p>
+          <details class="more">
+            <summary>More info</summary>
+            <ul class="breakdown">
+              <li>
+                <strong>Starts wide.</strong> The tour opens on the globe and
+                flies down into Oregon, so you begin with where the valley sits
+                in the world.
+              </li>
+              <li>
+                <strong>Flies AVA by AVA.</strong> As you scroll, the camera
+                moves north to south over 3D terrain, from the Tualatin Hills to
+                the Lower Long Tom, and outlines each AVA as it arrives.
+              </li>
+              <li>
+                <strong>Profiles each stop.</strong> Every AVA gets a short card
+                with its key figures: the year it was established, how many
+                wineries and vineyards it holds, and the grapes planted there.
+              </li>
+              <li>
+                <strong>Shows the lay of the land.</strong> Seen from the air,
+                the hills, ridges and gaps that separate one AVA from the next
+                become obvious in a way a flat map can't show.
+              </li>
+            </ul>
+            <dl class="spec">
+              <dt>Coverage</dt>
+              <dd>Willamette Valley and its 11 nested AVAs</dd>
+              <dt>Built with</dt>
+              <dd>MapLibre GL, React, 3D terrain tiles</dd>
+            </dl>
+          </details>
+          <a class="pill" href="https://terranthro-wvwa-avatour.vercel.app">
+            Take the flyover <span class="arrow" aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+      </article>
+    </section>
+
+    <section class="section" aria-labelledby="s-more">
+      <h2 class="section-title" id="s-more">In development</h2>
+      <article class="entry" id="p-more">
+        <div class="entry-head">
+          <p class="entry-label status status--dev"><span class="status-dot" aria-hidden="true"></span>Coming soon</p>
+          <h3 class="entry-title">Atlases &amp; data tools</h3>
+        </div>
+        <div class="plate" style="--plate-color: var(--color-violet); --cx: 60%; --cy: 55%;" aria-hidden="true"><span class="plate-cap">Private beta</span></div>
+        <div class="entry-body">
+          <p>
+            Behind these are several more maps and tools in development and
+            private beta, from regional atlases to data tools.
+            They'll join this page as they launch.
+          </p>
+          <p>
+            Want an early look, or have something you'd like us to build?
+            <a href="mailto:hayden@terranthro.com">Get in touch</a>.
+          </p>
+          <a class="pill" href="mailto:hayden@terranthro.com">Get in touch <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Terranthro &middot; Geospatial studio</span>
+    <a href="mailto:hayden@terranthro.com">hayden@terranthro.com</a>
+  </footer>
+
+  <script type="module" src="/src/js/page.js"></script>
+</body>
+</html>
