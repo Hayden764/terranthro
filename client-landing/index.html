@@ -5,11 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terranthro</title>
   <meta name="description" content="New wave cartography. Climate, soil, terrain — the data that shapes a place." />
-  <meta name="theme-color" content="#080A0F" />
+  <meta name="theme-color" content="#080A0F" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F3F0E9" media="(prefers-color-scheme: light)" />
+  <!-- Apply a saved light/dark choice before first paint (see theme.js). -->
+  <script>
+    try {
+      var t = localStorage.getItem('terranthro-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="/src/styles/tokens.css" />
   <link rel="stylesheet" href="/src/styles/style.css" />
@@ -44,10 +52,9 @@
 
   <!-- ── 05 · CENTER · WORDMARK + DESCRIPTOR ── -->
   <main class="hero">
-    <h1 class="wordmark" id="wordmark" aria-label="Terranthro">TERRANTHRO</h1>
+    <h1 class="wordmark" id="wordmark" aria-label="Terranthro">TERRANTHRO <span class="dash" aria-hidden="true">&mdash;</span></h1>
     <p class="descriptor">
-      <em>A geospatial practice for the places<br />
-      that shape what we grow, drink, and live with.</em>
+      <em>A geospatial studio for understanding what the Earth holds</em>
     </p>
     <p class="etymology" id="etymology" aria-hidden="true">
       <span class="etym-pair">
@@ -62,13 +69,28 @@
         <span class="etym-gloss">human</span>
       </span>
     </p>
+    <nav class="hero-nav" aria-label="Primary">
+      <ul class="nav-list">
+        <li>
+          <a class="hero-link" href="/about/">
+            <span class="hero-link-label">About</span>
+            <span class="hero-link-sub">&mdash; Who we are <span aria-hidden="true">&rarr;</span></span>
+          </a>
+        </li>
+        <li>
+          <a class="hero-link" href="/projects/">
+            <span class="hero-link-label">Projects</span>
+            <span class="hero-link-sub">&mdash; What we've built <span aria-hidden="true">&rarr;</span></span>
+          </a>
+        </li>
+      </ul>
+    </nav>
   </main>
 
-  <!-- ── 06 · BL · LINK · WVWA ── -->
-  <a class="readout readout--bl readout--link" href="https://wvwa.terranthro.com" aria-label="Willamette Valley Wine Atlas">
-    <span class="rd-label">LINK &middot; 01</span>
-    <span class="readout-target" data-text="WVWA &rarr;">WVWA &rarr;</span>
-  </a>
+  <!-- ── 06 · BL · THEME TOGGLE ── -->
+  <div class="readout readout--bl">
+    <button class="nav-link theme-toggle" type="button"><span class="nav-index" aria-hidden="true"></span><span class="visually-hidden">Switch to </span><span class="theme-label">Light</span><span class="visually-hidden"> mode</span></button>
+  </div>
 
   <!-- ── 07 · BC · BEARING (compass — rotates with camera yaw) ── -->
   <div class="readout readout--bc" aria-label="camera bearing">
@@ -81,7 +103,7 @@
   </div>
 
   <!-- ── 08 · BR · OPERATOR ── -->
-  <a class="readout readout--br readout--link" href="mailto:hayden@terranthro.com" aria-label="contact Hayden Smith">
+  <a class="readout readout--br readout--link" href="mailto:hayden@terranthro.com">
     <span class="rd-label">OPERATOR</span>
     <span class="readout-target">HAYDEN@TERRANTHRO.COM</span>
   </a>
