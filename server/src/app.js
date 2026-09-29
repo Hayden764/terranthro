@@ -7,6 +7,9 @@ import productionRoutes from './routes/production.js';
 import layerRoutes from './routes/layers.js';
 import avaRoutes from './routes/avas.js';
 import climateRoutes from './routes/climate.js';
+import vineyardRoutes from './routes/vineyards.js';
+import wineryRoutes from './routes/wineries.js';
+import { requireApiKey } from './middleware/apiKey.js';
 import { pool } from './db/pool.js';
 
 dotenv.config();
@@ -22,10 +25,30 @@ const limiter = rateLimit({
 
 // Middleware
 app.use(limiter);
+// CORS_ORIGINS env var allows adding extra origins at runtime (comma-separated)
+// e.g. "https://wv.terranthro.com,https://terranthro.com"
+const extraOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+  : [];
+
+const PROD_ORIGINS = [
+  'https://terranthro.com',
+  'https://www.terranthro.com',
+  ...extraOrigins,
+];
+
+const DEV_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
+  'http://localhost:3002',
+  'http://127.0.0.1:3002',
+];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://terranthro.com', 'https://www.terranthro.com']
-    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3001']
+  origin: process.env.NODE_ENV === 'production' ? PROD_ORIGINS : DEV_ORIGINS,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -35,6 +58,8 @@ app.use('/api/production', productionRoutes);
 app.use('/api/layers', layerRoutes);
 app.use('/api/avas', avaRoutes);
 app.use('/api/climate', climateRoutes);
+app.use('/api/wineries', requireApiKey, wineryRoutes);
+app.use('/api/vineyards', requireApiKey, vineyardRoutes);
 
 // Health check — includes DB connectivity
 app.get('/api/health', async (req, res) => {

@@ -26,7 +26,15 @@ export default defineConfig({
   server: {
     port: 3002,
     strictPort: false,
-    host: true
+    host: true,
+    proxy: {
+      // In dev, proxy /api to the local Express server.
+      // In production, VITE_API_BASE_URL points directly to Railway — no proxy needed.
+      '/api': {
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:8000',
+        changeOrigin: true,
+      }
+    }
   },
   preview: {
     port: 3002,

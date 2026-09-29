@@ -132,6 +132,7 @@ const BUTTONS = [
 export default function DesktopDock({
   map,
   mapLoaded,
+  listings,
   selectedAva,
   onSelectAva,
   activeLayer,
@@ -237,6 +238,7 @@ export default function DesktopDock({
       {activePanel === 'wineries' && (
         <PanelShell title="Wineries" onClose={closePanel}>
           <WineriesPanel
+            listings={listings}
             listingFilterMode={listingFilterMode}
             onListingFilterModeChange={onListingFilterModeChange}
             activeFilterLabel={activeFilterLabel}
