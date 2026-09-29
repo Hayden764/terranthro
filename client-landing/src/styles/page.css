@@ -83,7 +83,7 @@ html.page body {
 .doc-title .dash { color: var(--color-electric-blue); }
 
 .doc-lede {
-  max-width: 34ch;
+  max-width: 44ch;
   font-family: var(--font-display);
   font-style: italic;
   font-size: clamp(20px, 2.4vw, 26px);
@@ -192,8 +192,34 @@ html.page body {
     rgb(var(--ink-rgb) / 0.7);
   overflow: hidden;
 }
+/* Live map plate: MapLibre fills the frame. Its default controls are
+ * restyled to match the chips and pills. */
+.plate--map { cursor: grab; touch-action: pan-y; }
+.plate--map:active { cursor: grabbing; }
+.plate--map:focus-visible { outline: 2px solid var(--color-electric-blue); outline-offset: 3px; }
+.plate--map .maplibregl-canvas { outline: none; }
+.plate--map .maplibregl-ctrl-group {
+  background: rgb(var(--ink-rgb) / 0.85);
+  border: 1px solid var(--color-parchment);
+  border-radius: 0;
+  box-shadow: none;
+}
+.plate--map .maplibregl-ctrl-group button {
+  width: 32px;
+  height: 32px;
+  background-color: transparent;
+}
+.plate--map .maplibregl-ctrl-group button + button { border-top: 1px solid var(--color-muted); }
+.plate--map .maplibregl-ctrl-group button:hover { background-color: rgb(var(--ink-rgb) / 0.6); }
+/* The default icons are dark glyphs; invert them on the dark theme. */
+:root[data-theme="dark"] .plate--map .maplibregl-ctrl-icon { filter: invert(1); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .plate--map .maplibregl-ctrl-icon { filter: invert(1); }
+}
 .plate-cap {
   position: absolute;
+  z-index: 2;
+  pointer-events: none;
   left: 8px;
   bottom: 8px;
   padding: 2px 6px;
