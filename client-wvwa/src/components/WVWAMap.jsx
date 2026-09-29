@@ -4,15 +4,22 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import ClimateLayer from './ClimateLayer';
 import TopographyLayer from './TopographyLayer';
 import DesktopDock from './dock/DesktopDock';
-import wineries from '../data/wineries.json';
 import { WV_SUB_AVAS, TOPO_LAYER_TYPES } from '../config/topographyConfig';
 import { AVA_CAMERA, WV_CAMERA } from '../config/avaCameraConfig';
 import { BRAND } from '../config/brandColors';
 
+// In dev, VITE_API_BASE_URL is empty and requests go through the Vite proxy.
+// In production, set VITE_API_BASE_URL to the Railway API URL.
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const API_HEADERS = import.meta.env.VITE_INTERNAL_API_KEY
+  ? { 'x-api-key': import.meta.env.VITE_INTERNAL_API_KEY }
+  : {};
+
 // ── Vineyard parcel data (fetched at map load, indexed here at runtime) ──
 // Keyed by winery_recid (integer) → array of GeoJSON Feature objects
 // so a single winery can map to multiple parcels.
-let VINEYARD_BY_RECID = {}; // populated after fetch in map load effect
+// Populated from /api/vineyards/parcels?dataset=adelsheim during map load.
+let VINEYARD_BY_RECID = {};
 
 // ── Listing categories ────────────────────────────────────────────────────
 export const LISTING_CATEGORIES = {
@@ -31,56 +38,14 @@ export const LISTING_FILTER_MODES = {
   noWineriesVisualized: 'noWineriesVisualized',
 };
 
-function classifyListing(item) {
-  const text = ((item.description || '') + ' ' + item.title).toLowerCase();
-  const isHotel      = /hotel|silo suite|b&b|bed and breakfast|\blodge\b|resort|inn |overnight|accommodation/.test(text);
-  const isRestaurant = /restaurant|\bdining\b|bistro|\bcafe\b|culinary|farm-to-table/.test(text);
-  const isTasting    = /tasting room/.test(text);
-  const isWinery     = /winery|pinot|chardonnay|cellar|vineyard|sparkling|viticulture/.test(text);
-
-  if (isHotel && !isRestaurant && !isWinery) return 'hotel';
-  if (isRestaurant && !isWinery) return 'restaurant';
-  if (isTasting) return 'tasting';
-  if (isWinery) return 'winery';
-  if (isHotel) return 'hotel';
-  return 'other';
-}
-
-// Enrich listings with category + global number at module load time.
-// The source feed can contain duplicate records with the same recid; keep
-// only the first instance so a winery appears once across the experience.
-const seenListingRecids = new Set();
-const LISTINGS = wineries
-  .filter((w) => {
-    if (w.loc?.coordinates?.length !== 2) return false;
-    if (seenListingRecids.has(w.recid)) return false;
-    seenListingRecids.add(w.recid);
-    return true;
-  })
-  .map((w, i) => {
-    const classified = classifyListing(w);
-    return {
-      id:        w.recid,
-      num:       i + 1,               // global sequential number (1-based)
-      title:     w.title,
-      desc:      w.description || '',
-      phone:     w.phone || '',
-      url:       w.url?.url || '',
-      image_url: w.image_url || '',
-      lng:       w.loc.coordinates[0],
-      lat:       w.loc.coordinates[1],
-      // Treat tasting-room records as wineries for this experience.
-      category:  classified === 'tasting' ? 'winery' : classified,
-    };
-  });
 
 // Willamette Valley approximate bounding box
 const WV_BOUNDS = [[-123.8, 44.0], [-122.0, 45.9]];
 
 // Build a GeoJSON FeatureCollection for the listings source, filtered to
 // winery records with optional vineyard polygon and AVA restrictions.
-function buildListingsGeoJSON(listingFilterMode, vineyardRecidSet, insideIds = null) {
-  const features = LISTINGS
+function buildListingsGeoJSON(listings, listingFilterMode, vineyardRecidSet, insideIds = null) {
+  const features = listings
     .filter(l => {
       if (l.category !== 'winery') return false;
       if (listingFilterMode === LISTING_FILTER_MODES.withVineyardPolygons && !vineyardRecidSet.has(l.id)) return false;
@@ -107,45 +72,6 @@ function buildListingsGeoJSON(listingFilterMode, vineyardRecidSet, insideIds = n
   return { type: 'FeatureCollection', features };
 }
 
-// Accept either direct parcel features or winery-point features with nested
-// vineyard_polygons arrays, and normalize into parcel features.
-function normalizeVineyardFeatures(rawGeoJSON) {
-  const features = rawGeoJSON?.features || [];
-  if (!features.length) return [];
-
-  // Already in parcel format
-  const looksLikeParcel = features.some((f) => {
-    const t = f?.geometry?.type;
-    return t === 'Polygon' || t === 'MultiPolygon';
-  });
-  if (looksLikeParcel) return features;
-
-  // Adelsheim format: winery points with nested vineyard_polygons features
-  const flattened = [];
-  for (const wineryFeature of features) {
-    const wp = wineryFeature?.properties || {};
-    const recid = wp.recid ?? null;
-    const title = wp.title ?? null;
-    const nested = Array.isArray(wp.vineyard_polygons) ? wp.vineyard_polygons : [];
-
-    for (const parcelFeature of nested) {
-      if (!parcelFeature?.geometry) continue;
-      flattened.push({
-        type: 'Feature',
-        geometry: parcelFeature.geometry,
-        properties: {
-          ...(parcelFeature.properties || {}),
-          winery_recid: recid,
-          winery_title: title,
-        },
-      });
-    }
-  }
-  return flattened;
-}
-
-// Export LISTINGS so dock panels can render the listing directory.
-export { LISTINGS };
 
 // Ordered list of listing layers — always kept on top of AVA boundary layers.
 // Vineyard-selected layers sit just below the dot layers so dots are visible
@@ -192,6 +118,34 @@ const LISTING_MARKER_LAYERS = [
   'listings-selected-dot',
   'listings-selected-num',
 ];
+
+const DEV_LAYER_DEFAULTS = {
+  wvMask: true,
+  wvBoundary: true,
+  avaBoundaries: true,
+  vineyardsDundeeChehalem: true,
+  vineyardsYC: true,
+  vineyardsAdelsheimReference: true,
+  vineyardsLinked: true,
+  vineyardHighlights: true,
+  wineries: true,
+  climate: true,
+  topography: true,
+};
+
+function setLayerVisibility(map, layerId, isVisible) {
+  if (!map.getLayer(layerId)) return;
+  map.setLayoutProperty(layerId, 'visibility', isVisible ? 'visible' : 'none');
+}
+
+function buildReferenceVineyardFilter(devLayerToggles) {
+  const enabledDatasets = [];
+  if (devLayerToggles.vineyardsDundeeChehalem) enabledDatasets.push('chehalem-dundee');
+  if (devLayerToggles.vineyardsYC) enabledDatasets.push('yamhill-carlton');
+  if (devLayerToggles.vineyardsAdelsheimReference) enabledDatasets.push('adelsheim');
+  if (!enabledDatasets.length) return null;
+  return ['in', ['get', 'source_dataset'], ['literal', enabledDatasets]];
+}
 
 /** Re-raise all listing (+ vineyard-selected) layers to the top of the map stack. */
 function raiseListingLayers(map) {
@@ -858,11 +812,190 @@ function LayerTabContent({ activeLayer, topoStats, selectedAva }) {
   );
 }
 
+function DevLayerPanel({ devPanelOpen, onTogglePanelOpen, devLayerToggles, onToggleLayer, onReset }) {
+  const panelRef = useRef(null);
+  const dragRef = useRef({
+    dragging: false,
+    offsetX: 0,
+    offsetY: 0,
+  });
+  const [position, setPosition] = useState({ top: 16, left: 16 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const beginDrag = useCallback((event) => {
+    if (event.button !== 0) return;
+    dragRef.current.dragging = true;
+    dragRef.current.offsetX = event.clientX - position.left;
+    dragRef.current.offsetY = event.clientY - position.top;
+    setIsDragging(true);
+    event.preventDefault();
+  }, [position.left, position.top]);
+
+  useEffect(() => {
+    const onMove = (event) => {
+      if (!dragRef.current.dragging) return;
+
+      const panelWidth = panelRef.current?.offsetWidth ?? (devPanelOpen ? 250 : 136);
+      const panelHeight = panelRef.current?.offsetHeight ?? 44;
+      const nextLeft = event.clientX - dragRef.current.offsetX;
+      const nextTop = event.clientY - dragRef.current.offsetY;
+
+      const minLeft = 8;
+      const minTop = 8;
+      const maxLeft = Math.max(minLeft, window.innerWidth - panelWidth - 8);
+      const maxTop = Math.max(minTop, window.innerHeight - panelHeight - 8);
+
+      setPosition({
+        left: Math.min(Math.max(nextLeft, minLeft), maxLeft),
+        top: Math.min(Math.max(nextTop, minTop), maxTop),
+      });
+    };
+
+    const endDrag = () => {
+      if (!dragRef.current.dragging) return;
+      dragRef.current.dragging = false;
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', endDrag);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', endDrag);
+    };
+  }, [devPanelOpen]);
+
+  const groupStyle = {
+    background: 'rgba(46,34,26,0.8)',
+    border: '1px solid rgba(250,247,242,0.14)',
+    borderRadius: 10,
+    padding: '8px 10px',
+    marginBottom: 8,
+  };
+
+  const rowStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    fontSize: 11,
+    color: 'rgba(250,247,242,0.88)',
+    gap: 10,
+  };
+
+  const ToggleRow = ({ label, keyName }) => (
+    <label style={rowStyle}>
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={!!devLayerToggles[keyName]}
+        onChange={() => onToggleLayer(keyName)}
+        style={{ cursor: 'pointer' }}
+      />
+    </label>
+  );
+
+  return (
+    <div ref={panelRef} style={{
+      position: 'absolute',
+      top: position.top,
+      left: position.left,
+      zIndex: 55,
+      width: devPanelOpen ? 250 : 136,
+      background: 'rgba(24,20,16,0.84)',
+      backdropFilter: 'blur(14px)',
+      WebkitBackdropFilter: 'blur(14px)',
+      border: '1px solid rgba(250,247,242,0.2)',
+      borderRadius: 12,
+      boxShadow: '0 10px 30px rgba(0,0,0,0.34)',
+      color: 'rgba(250,247,242,0.96)',
+      fontFamily: 'Inter, sans-serif',
+      overflow: 'hidden',
+    }}>
+      <div
+        onMouseDown={beginDrag}
+        style={{
+        padding: '8px 10px',
+        borderBottom: devPanelOpen ? '1px solid rgba(250,247,242,0.14)' : 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        userSelect: 'none',
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.09em' }}>DEV LAYERS {devPanelOpen ? ':: DRAG' : ''}</span>
+        <button
+          onClick={onTogglePanelOpen}
+          onMouseDown={(event) => event.stopPropagation()}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(250,247,242,0.2)',
+            color: 'rgba(250,247,242,0.84)',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '3px 6px',
+          }}
+        >
+          {devPanelOpen ? 'Minimize' : 'Expand'}
+        </button>
+      </div>
+
+      {devPanelOpen && (
+        <div style={{ padding: 10, maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
+          <div style={groupStyle}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', opacity: 0.75, marginBottom: 6 }}>BASE</div>
+            <ToggleRow label="WV Mask" keyName="wvMask" />
+            <ToggleRow label="WV Boundary" keyName="wvBoundary" />
+            <ToggleRow label="AVA Boundaries + Labels" keyName="avaBoundaries" />
+          </div>
+
+          <div style={groupStyle}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', opacity: 0.75, marginBottom: 6 }}>VINEYARDS</div>
+            <ToggleRow label="Dundee/Chehalem Ref" keyName="vineyardsDundeeChehalem" />
+            <ToggleRow label="Yamhill-Carlton Ref" keyName="vineyardsYC" />
+            <ToggleRow label="Adelsheim Ref (white)" keyName="vineyardsAdelsheimReference" />
+            <ToggleRow label="Linked Wineries (green)" keyName="vineyardsLinked" />
+            <ToggleRow label="Selection/Hover Highlights" keyName="vineyardHighlights" />
+          </div>
+
+          <div style={groupStyle}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', opacity: 0.75, marginBottom: 6 }}>OTHER</div>
+            <ToggleRow label="Winery Markers" keyName="wineries" />
+            <ToggleRow label="Climate Raster" keyName="climate" />
+            <ToggleRow label="Topography Raster" keyName="topography" />
+          </div>
+
+          <button
+            onClick={onReset}
+            style={{
+              width: '100%',
+              background: 'rgba(250,247,242,0.08)',
+              border: '1px solid rgba(250,247,242,0.2)',
+              borderRadius: 8,
+              color: 'rgba(250,247,242,0.92)',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+              padding: '7px 8px',
+              letterSpacing: '0.03em',
+            }}
+          >
+            Reset All On
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panelHoveredAva, onPanelHoverAva }) {
   const mapContainerRef = useRef(null);
   const mapRef          = useRef(null);
   const popupRef        = useRef(null);
   const avaDataRef      = useRef({});
+  const [listings, setListings]         = useState([]);
   const [mapLoaded, setMapLoaded]       = useState(false);
   const [introComplete, setIntroComplete] = useState(false);
   const [activeLayer, setActiveLayer]   = useState(null);
@@ -877,8 +1010,11 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
   const [listingFilterMode, setListingFilterMode] = useState(LISTING_FILTER_MODES.allWineries);
   const [vineyardRecidSet, setVineyardRecidSet] = useState(() => new Set());
   const [insideIds, setInsideIds] = useState(null); // IDs inside the selected AVA, null = all
+  const [devPanelOpen, setDevPanelOpen] = useState(true);
+  const [devLayerToggles, setDevLayerToggles] = useState(DEV_LAYER_DEFAULTS);
 
-  const selectedListingRef = useRef(null);
+  const listingsRef           = useRef([]);
+  const selectedListingRef    = useRef(null);
   const setSelectedListingRef = useRef(null); // stable ref to the setter
   const setHoveredListingRef  = useRef(null); // stable ref for map closure hover
 
@@ -983,6 +1119,40 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
   useEffect(() => {
     vineyardRecidSetRef.current = vineyardRecidSet;
   }, [vineyardRecidSet]);
+
+  // Keep listingsRef in sync so map event handler closures can access current listings
+  useEffect(() => {
+    listingsRef.current = listings;
+    // If the map and listings source are ready, refresh the cluster source
+    const map = mapRef.current;
+    if (map && mapLoaded && map.getSource('listings')) {
+      map.getSource('listings').setData(
+        buildListingsGeoJSON(listings, listingFilterModeRef.current, vineyardRecidSetRef.current, insideIdsRef.current)
+      );
+    }
+  }, [listings, mapLoaded]);
+
+  // Fetch wineries from API on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/api/wineries`, { headers: API_HEADERS })
+      .then(r => r.json())
+      .then(fc => {
+        const loaded = fc.features.map((f, i) => ({
+          id:        f.properties.recid,
+          num:       i + 1,
+          title:     f.properties.title,
+          desc:      f.properties.description || '',
+          phone:     f.properties.phone || '',
+          url:       f.properties.url || '',
+          image_url: f.properties.image_url || '',
+          lng:       f.geometry.coordinates[0],
+          lat:       f.geometry.coordinates[1],
+          category:  f.properties.category,
+        }));
+        setListings(loaded);
+      })
+      .catch(err => console.error('WVWAMap: failed to load wineries from API', err));
+  }, []);
 
   const activeFilterLabel = useMemo(() => {
     if (listingFilterMode === LISTING_FILTER_MODES.withVineyardPolygons) {
@@ -1180,14 +1350,14 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
 
       // ── Load vineyard parcels ─────────────────────────────────────────
       try {
-        const vineyardRes = await fetch('/data/Wineries_with_Polygons_Adelsheim.geojson', { cache: 'no-store' });
+        // Fetch Adelsheim parcels from API (replaces the 3.7MB public GeoJSON file)
+        const vineyardRes = await fetch(`${API_BASE}/api/vineyards/parcels?dataset=adelsheim`, { headers: API_HEADERS });
         const vineyardRaw = await vineyardRes.json();
-        const vineyardFeatures = normalizeVineyardFeatures(vineyardRaw);
-        const vineyardData = { type: 'FeatureCollection', features: vineyardFeatures };
+        const vineyardFeatures = vineyardRaw?.features || [];
 
-        // Build recid lookup
+        // Build recid lookup for hover/selection highlighting
         VINEYARD_BY_RECID = {};
-        for (const feature of vineyardData.features) {
+        for (const feature of vineyardFeatures) {
           const recid = feature.properties.winery_recid;
           if (recid != null) {
             if (!VINEYARD_BY_RECID[recid]) VINEYARD_BY_RECID[recid] = [];
@@ -1196,53 +1366,17 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
         }
         setVineyardRecidSet(new Set(Object.keys(VINEYARD_BY_RECID).map((id) => Number(id)).filter(Number.isFinite)));
 
-        const isParcelFeature = (f) => f?.geometry?.type === 'Polygon' || f?.geometry?.type === 'MultiPolygon';
-        const getOrgName = (props = {}) => (
-          props.Vineyard_Organization
-          || props.B1_VineyardOrganization
-          || props.winery_title
-          || props.Vineyard_Name
-          || props.A1_VineyardName
-          || 'Unknown Organization'
-        );
-
-        // White reference polygons: Chehalem/Dundee + YC + Adelsheim parcels.
-        const loadGeoJSONFeatures = async (url) => {
-          try {
-            const res = await fetch(url);
-            if (!res.ok) return [];
-            const raw = await res.json();
-            return ((raw && raw.features) || []).filter(isParcelFeature);
-          } catch {
-            return [];
-          }
-        };
-
-        const [mergedFeatures, ycFeatures] = await Promise.all([
-          loadGeoJSONFeatures('/data/ChehalemMtn_DundeeHills_Vineyards_merged.geojson'),
-          loadGeoJSONFeatures('/data/YC_Vineyards_gdb.geojson'),
-        ]);
-        const adelsheimFeatures = vineyardData.features.filter(isParcelFeature);
-
-        const referenceVineyardsData = {
-          type: 'FeatureCollection',
-          features: [...mergedFeatures, ...ycFeatures, ...adelsheimFeatures].map((f) => {
-            const props = f.properties || {};
-            return {
-              ...f,
-              properties: {
-                ...props,
-                __org_name: getOrgName(props),
-              },
-            };
-          }),
-        };
-
-        map.addSource('vineyards-reference', { type: 'geojson', data: referenceVineyardsData });
+        // White reference polygons — all three datasets via PMTiles vector tiles.
+        // PMTiles file includes source_dataset property for per-dataset filtering.
+        map.addSource('vineyards-reference', {
+          type: 'vector',
+          url: 'pmtiles:///tiles/vineyard_parcels.pmtiles',
+        });
         map.addLayer({
           id: 'vineyards-reference-fill',
           type: 'fill',
           source: 'vineyards-reference',
+          'source-layer': 'vineyard_parcels',
           paint: {
             'fill-color': '#FFFFFF',
             'fill-opacity': 0.01,
@@ -1252,6 +1386,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
           id: 'vineyards-reference-line',
           type: 'line',
           source: 'vineyards-reference',
+          'source-layer': 'vineyard_parcels',
           paint: {
             'line-color': '#FFFFFF',
             'line-width': 3.2,
@@ -1260,25 +1395,13 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
         });
 
         // Linked Adelsheim polygons rendered in green above the white base.
-        const linkedVineyardsData = {
-          type: 'FeatureCollection',
-          features: adelsheimFeatures
-            .filter((f) => f?.properties?.winery_recid != null)
-            .map((f) => {
-              const props = f.properties || {};
-              return {
-                ...f,
-                properties: {
-                  ...props,
-                  __org_name: getOrgName(props),
-                },
-              };
-            }),
-        };
-
+        // Loaded from API (replaces the nested vineyard_polygons in the public GeoJSON).
         map.addSource('vineyards-linked', {
           type: 'geojson',
-          data: linkedVineyardsData,
+          data: {
+            type: 'FeatureCollection',
+            features: vineyardFeatures,
+          },
         });
         map.addLayer({
           id: 'vineyards-linked-line',
@@ -1306,7 +1429,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
           },
         });
 
-        // Group polygons by Vineyard_Organization on hover and highlight the whole org.
+        // Hover on reference vineyard parcels — highlight all parcels for the same winery.
         map.on('mouseenter', 'vineyards-reference-fill', () => {
           map.getCanvas().style.cursor = 'pointer';
         });
@@ -1317,15 +1440,14 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
           const wineryRecid = hoveredProps.winery_recid != null
             ? Number(hoveredProps.winery_recid)
             : null;
-          const org = hoveredProps.__org_name || 'Unknown Organization';
+          const org = hoveredProps.vineyard_org || hoveredProps.winery_title || 'Unknown Organization';
+          // For winery-linked parcels: highlight all parcels for this winery using the cache.
+          // For unlinked parcels: just highlight the single hovered feature.
           const groupedFeatures = wineryRecid != null
-            ? (VINEYARD_BY_RECID[wineryRecid] || [])
-            : referenceVineyardsData.features.filter((f) => {
-              const name = f?.properties?.__org_name || 'Unknown Organization';
-              return name === org;
-            });
+            ? (VINEYARD_BY_RECID[wineryRecid] || [hoveredFeature])
+            : [hoveredFeature];
           const linkedListing = wineryRecid != null
-            ? (LISTINGS.find((l) => l.id === wineryRecid) || null)
+            ? (listingsRef.current.find((l) => l.id === wineryRecid) || null)
             : null;
           const hoverSrc = map.getSource('vineyards-reference-hover');
           if (hoverSrc) {
@@ -1344,7 +1466,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
             ? Number(hoveredProps.winery_recid)
             : null;
           if (wineryRecid == null) return;
-          const linkedListing = LISTINGS.find((l) => l.id === wineryRecid);
+          const linkedListing = listingsRef.current.find((l) => l.id === wineryRecid);
           if (linkedListing) {
             setSelectedListingRef.current?.(linkedListing);
             map.easeTo({ center: [linkedListing.lng, linkedListing.lat], zoom: 15, duration: 1900 });
@@ -1486,7 +1608,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
       // ── GeoJSON source for clustered markers ─────────────────────────
       map.addSource('listings', {
         type: 'geojson',
-        data: buildListingsGeoJSON(listingFilterModeRef.current, vineyardRecidSetRef.current),
+        data: buildListingsGeoJSON(listingsRef.current, listingFilterModeRef.current, vineyardRecidSetRef.current),
         cluster: true,
         clusterMaxZoom: 12,
         clusterRadius: 40,
@@ -1701,7 +1823,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
       map.on('click', 'listings-unclustered', (e) => {
         if (!e.features?.length) return;
         const props = e.features[0].properties;
-        const listing = LISTINGS.find(l => l.id === props.id);
+        const listing = listingsRef.current.find(l => l.id === props.id);
         if (!listing) return;
         setSelectedListingRef.current?.(listing);
         map.easeTo({ center: [listing.lng, listing.lat], zoom: 15, duration: 1900 });
@@ -1714,7 +1836,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
         map.getCanvas().style.cursor = 'pointer';
         if (!e.features?.length) return;
         const props = e.features[0].properties;
-        const listing = LISTINGS.find(l => l.id === props.id);
+        const listing = listingsRef.current.find(l => l.id === props.id);
         if (listing) setHoveredListingRef.current?.(listing);
       });
       map.on('mouseleave', 'listings-unclustered', () => {
@@ -1808,14 +1930,14 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
         const pointInPolygon = (lng, lat) => rings.some(ring => pointInRing(lng, lat, ring));
 
         // Build list of IDs inside the AVA
-        const insideIds = LISTINGS
+        const insideIds = listingsRef.current
           .filter(l => pointInPolygon(l.lng, l.lat))
           .map(l => l.id);
         insideIdsRef.current = insideIds;
         setInsideIds(insideIds);
         // Update source data so clusters re-compute with only the AVA's points
         const src = map.getSource('listings');
-        if (src) src.setData(buildListingsGeoJSON(listingFilterModeRef.current, vineyardRecidSetRef.current, insideIds));
+        if (src) src.setData(buildListingsGeoJSON(listingsRef.current, listingFilterModeRef.current, vineyardRecidSetRef.current, insideIds));
       }
 
       // ── Fly to selected AVA — use curated camera from avaCameraConfig ──
@@ -1851,7 +1973,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
       setInsideIds(null);
       // Restore source to current listing filter (no AVA restriction)
       const src = map.getSource('listings');
-      if (src) src.setData(buildListingsGeoJSON(listingFilterModeRef.current, vineyardRecidSetRef.current, null));
+      if (src) src.setData(buildListingsGeoJSON(listingsRef.current, listingFilterModeRef.current, vineyardRecidSetRef.current, null));
       for (const ava of WV_SUB_AVAS) {
         try {
           if (map.getLayer(`ava-${ava.slug}-fill`)) {
@@ -1891,8 +2013,8 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
     if (!map || !mapLoaded) return;
     const source = map.getSource('listings');
     if (!source) return;
-    source.setData(buildListingsGeoJSON(listingFilterMode, vineyardRecidSet, insideIdsRef.current));
-  }, [listingFilterMode, vineyardRecidSet, mapLoaded, selectedAva]);
+    source.setData(buildListingsGeoJSON(listings, listingFilterMode, vineyardRecidSet, insideIdsRef.current));
+  }, [listings, listingFilterMode, vineyardRecidSet, mapLoaded, selectedAva]);
 
   const handleLayerChange = useCallback((layer) => {
     setActiveLayer(layer);
@@ -1919,9 +2041,76 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
   // Keep setHoveredListingRef in sync so the map's [] closure can call it
   useEffect(() => { setHoveredListingRef.current = handleHoverListing; }, [handleHoverListing]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    setLayerVisibility(map, 'wv-mask-fill', devLayerToggles.wvMask);
+    setLayerVisibility(map, 'wv-boundary-line', devLayerToggles.wvBoundary);
+
+    for (const ava of WV_SUB_AVAS) {
+      setLayerVisibility(map, `ava-${ava.slug}-fill`, devLayerToggles.avaBoundaries);
+      setLayerVisibility(map, `ava-${ava.slug}-line`, devLayerToggles.avaBoundaries);
+      setLayerVisibility(map, `ava-${ava.slug}-label`, devLayerToggles.avaBoundaries);
+    }
+
+    const referenceFilter = buildReferenceVineyardFilter(devLayerToggles);
+    const showReferenceVineyards = !!referenceFilter;
+    if (map.getLayer('vineyards-reference-fill')) {
+      map.setFilter('vineyards-reference-fill', referenceFilter);
+      setLayerVisibility(map, 'vineyards-reference-fill', showReferenceVineyards);
+    }
+    if (map.getLayer('vineyards-reference-line')) {
+      map.setFilter('vineyards-reference-line', referenceFilter);
+      setLayerVisibility(map, 'vineyards-reference-line', showReferenceVineyards);
+    }
+
+    setLayerVisibility(map, 'vineyards-linked-line', devLayerToggles.vineyardsLinked);
+
+    const vineyardHighlightLayerIds = [
+      'vineyards-reference-hover-line',
+      'vineyards-selected-fill',
+      'vineyards-selected-line',
+      'vineyards-hovered-fill',
+      'vineyards-hovered-line',
+    ];
+    for (const layerId of vineyardHighlightLayerIds) {
+      setLayerVisibility(map, layerId, devLayerToggles.vineyardHighlights);
+    }
+
+    for (const layerId of LISTING_MARKER_LAYERS) {
+      setLayerVisibility(map, layerId, devLayerToggles.wineries);
+    }
+  }, [
+    devLayerToggles,
+    mapLoaded,
+    selectedAva,
+    selectedListing,
+    vineyardFocusMode,
+    introComplete,
+    listingFilterMode,
+  ]);
+
+  const toggleDevLayer = useCallback((keyName) => {
+    setDevLayerToggles((prev) => ({
+      ...prev,
+      [keyName]: !prev[keyName],
+    }));
+  }, []);
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+
+      {introComplete && (
+        <DevLayerPanel
+          devPanelOpen={devPanelOpen}
+          onTogglePanelOpen={() => setDevPanelOpen((prev) => !prev)}
+          devLayerToggles={devLayerToggles}
+          onToggleLayer={toggleDevLayer}
+          onReset={() => setDevLayerToggles(DEV_LAYER_DEFAULTS)}
+        />
+      )}
 
       {/* Winery marker hover label */}
       {introComplete && hoveredListing && (
@@ -2002,7 +2191,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
       })()}
 
       {/* Climate raster layer */}
-      {introComplete && mapLoaded && mapRef.current && (
+      {introComplete && mapLoaded && mapRef.current && devLayerToggles.climate && (
         <ClimateLayer
           map={mapRef.current}
           isVisible={isClimateActive}
@@ -2013,7 +2202,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
       )}
 
       {/* Topography raster layers (all sub-AVAs) */}
-      {introComplete && mapLoaded && mapRef.current && (
+      {introComplete && mapLoaded && mapRef.current && devLayerToggles.topography && (
         <TopographyLayer
           map={mapRef.current}
           activeLayer={isTopoActive ? activeLayer : null}
@@ -2027,6 +2216,7 @@ export default function WVWAMap({ selectedAva, onSelectAva, onMarkerClick, panel
         <DesktopDock
           map={mapRef.current}
           mapLoaded={mapLoaded}
+          listings={listings}
           selectedAva={selectedAva}
           onSelectAva={onSelectAva}
           activeLayer={activeLayer}

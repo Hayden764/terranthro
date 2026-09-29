@@ -143,21 +143,86 @@ CREATE INDEX idx_raster_layers_ava ON raster_layers(ava_id);
 CREATE INDEX idx_raster_layers_type ON raster_layers(layer_type, layer_name);
 
 -- ─────────────────────────────────────────────
--- Vineyard parcels (unchanged)
+-- Wineries / tasting rooms / lodging / restaurants
+-- recid: source ID from the original wineries.json dataset
+-- category: winery | hotel | restaurant | other (classified from description text)
 -- ─────────────────────────────────────────────
-CREATE TABLE vineyard_parcels (
-    id SERIAL PRIMARY KEY,
-    ava_id INTEGER REFERENCES avas(id),
-    parcel_id VARCHAR(100),
-    geometry GEOMETRY(MultiPolygon, 4326) NOT NULL,
-    area_acres NUMERIC(10, 2),
-    primary_variety VARCHAR(100),
-    owner_name VARCHAR(255),
-    created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE wineries (
+    id          SERIAL PRIMARY KEY,
+    recid       INTEGER NOT NULL UNIQUE,
+    title       TEXT NOT NULL,
+    description TEXT,
+    phone       VARCHAR(40),
+    url         TEXT,
+    image_url   TEXT,
+    category    VARCHAR(30) DEFAULT 'winery',
+    location    GEOMETRY(Point, 4326) NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_parcels_geometry ON vineyard_parcels USING GIST(geometry);
-CREATE INDEX idx_parcels_ava ON vineyard_parcels(ava_id);
+CREATE INDEX idx_wineries_location ON wineries USING GIST(location);
+CREATE INDEX idx_wineries_recid    ON wineries(recid);
+CREATE INDEX idx_wineries_category ON wineries(category);
+
+-- ─────────────────────────────────────────────
+-- Vineyard parcels
+-- source_dataset: 'adelsheim' | 'chehalem-dundee' | 'yamhill-carlton'
+-- winery_id is NULL for parcels not linked to a winery record
+-- geometry uses GEOMETRY(Geometry) not MultiPolygon — source data mixes Polygon and MultiPolygon
+-- ─────────────────────────────────────────────
+CREATE TABLE vineyard_parcels (
+    id                 SERIAL PRIMARY KEY,
+    winery_id          INTEGER REFERENCES wineries(id) ON DELETE SET NULL,
+    source_dataset     VARCHAR(60) NOT NULL,
+    vineyard_name      TEXT,
+    vineyard_org       TEXT,
+    owner_name         TEXT,
+    ava_name           TEXT,
+    nested_ava         TEXT,
+    nested_nested_ava  TEXT,
+    situs_address      TEXT,
+    situs_city         VARCHAR(100),
+    situs_zip          VARCHAR(20),
+    acres              NUMERIC(10, 3),
+    varietals_list     TEXT,
+    z1_vineyard_id     INTEGER,
+    ava_id             INTEGER REFERENCES avas(id) ON DELETE SET NULL,
+    geometry           GEOMETRY(Geometry, 4326) NOT NULL,
+    created_at         TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_vp_geometry    ON vineyard_parcels USING GIST(geometry);
+CREATE INDEX idx_vp_winery_id   ON vineyard_parcels(winery_id);
+CREATE INDEX idx_vp_ava_id      ON vineyard_parcels(ava_id);
+CREATE INDEX idx_vp_source      ON vineyard_parcels(source_dataset);
+CREATE INDEX idx_vp_ava_name    ON vineyard_parcels(ava_name);
+CREATE INDEX idx_vp_nested_ava  ON vineyard_parcels(nested_ava);
+
+-- ─────────────────────────────────────────────
+-- Vineyard blocks (block-level viticulture data)
+-- Currently sourced from Adelsheim vineyard_blocks CSV only
+-- vineyard_parcel_id is NULL when no matching parcel was found by name
+-- ─────────────────────────────────────────────
+CREATE TABLE vineyard_blocks (
+    id                  SERIAL PRIMARY KEY,
+    vineyard_parcel_id  INTEGER REFERENCES vineyard_parcels(id) ON DELETE CASCADE,
+    vineyard_name       TEXT NOT NULL,
+    block_name          TEXT,
+    variety             VARCHAR(100),
+    clone               VARCHAR(100),
+    rootstock           VARCHAR(100),
+    rows                INTEGER,
+    spacing             VARCHAR(30),
+    vines_per_acre      NUMERIC(10, 2),
+    vines               INTEGER,
+    acres               NUMERIC(10, 3),
+    year_planted        INTEGER,
+    created_at          TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_vb_parcel_id ON vineyard_blocks(vineyard_parcel_id);
+CREATE INDEX idx_vb_variety   ON vineyard_blocks(variety);
+CREATE INDEX idx_vb_vineyard  ON vineyard_blocks(vineyard_name);
 
 -- ─────────────────────────────────────────────
 -- Pre-computed per-AVA statistics

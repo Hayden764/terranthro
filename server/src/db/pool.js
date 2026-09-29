@@ -5,15 +5,19 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const isNeon = process.env.DATABASE_URL?.includes('neon.tech');
+const dbUrl = process.env.DATABASE_URL || '';
+const isNeon      = dbUrl.includes('neon.tech');
+const isSupabase  = dbUrl.includes('supabase.co') || dbUrl.includes('supabase.com');
+const needsSsl    = isNeon || isSupabase;
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Neon serverless requires SSL; harmless on local Docker
-  ssl: isNeon ? { rejectUnauthorized: false } : false,
+  connectionString: dbUrl,
+  ssl: needsSsl ? { rejectUnauthorized: false } : false,
+  // Supabase connection pooler (Transaction mode) caps prepared statements
+  max: isSupabase ? 10 : 20,
 });
 
-// Neon's default search_path omits public — set it on every new connection
+// Neon omits public from search_path by default
 if (isNeon) {
   pool.on('connect', (client) => {
     client.query('SET search_path TO public');
